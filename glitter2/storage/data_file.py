@@ -1,10 +1,16 @@
+"""
+Data channel methods, unless specified should not be called directly.
+"""
+
 import numpy as np
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple, Callable
 import nixio as nix
 
 from base_kivy_app.utils import yaml_dumps, yaml_loads
 
-__all__ = ('DataFile', 'read_nix_prop')
+__all__ = (
+    'DataFile', 'DataChannelBase', 'TemporalDataChannelBase',
+    'EventChannelData', 'PosChannelData', 'ZoneChannelData', 'read_nix_prop')
 
 
 def read_nix_prop(prop):
@@ -20,7 +26,7 @@ def _unsaved_callback():
 
 class DataFile(object):
 
-    unsaved_callback = None
+    unsaved_callback: Callable = None
 
     nix_file: nix.File = None
 
@@ -36,17 +42,17 @@ class DataFile(object):
     :attr:`timestamps`) and the value is the data array.
     """
 
-    timestamp_data_map: Dict[float, int] = {}
+    timestamp_data_map: Dict[float, Tuple[int, int]] = {}
     """For each timestamps in the video, it maps to the key in
     :attr:`timestamps_arrays` whose value is the data array storing this
     timestamp.
     """
 
-    event_channels: List['EventChannelData'] = []
+    event_channels: Dict[int, 'EventChannelData'] = {}
 
-    pos_channels: List['PosChannelData'] = []
+    pos_channels: Dict[int, 'PosChannelData'] = {}
 
-    zone_channels: List['ZoneChannelData'] = []
+    zone_channels: Dict[int, 'ZoneChannelData'] = {}
 
     saw_all_timestamps = False
 
@@ -58,26 +64,39 @@ class DataFile(object):
     """When it's none it means there's nothing to pad in channels.
     """
 
+    ceed_version: str = ''
+
+    ffpyplayer_version: str = ''
+
     def __init__(self, nix_file, unsaved_callback=_unsaved_callback):
         self.nix_file = nix_file
         self.unsaved_callback = unsaved_callback
-        self.event_channels = []
-        self.pos_channels = []
-        self.zone_channels = []
+        self.event_channels = {}
+        self.pos_channels = {}
+        self.zone_channels = {}
         self.timestamps_arrays = {}
         self.timestamp_data_map = {}
 
     def init_new_file(self):
+        import glitter2
+        import ffpyplayer
         f = self.nix_file
+
+        self.unsaved_callback()
 
         sec = f.create_section('app_config', 'configuration')
         sec['channel_count'] = yaml_dumps(0)
 
         sec = f.create_section('data_config', 'configuration')
+        sec['ceed_version'] = yaml_dumps(glitter2.__version__)
+        sec['ffpyplayer_version'] = yaml_dumps(ffpyplayer.__version__)
+
         sec['saw_all_timestamps'] = yaml_dumps(False)
         sec['saw_first_timestamp'] = yaml_dumps(False)
         sec['saw_last_timestamp'] = yaml_dumps(False)
+        # we start at one because zero is the timestamps created below
         sec['timestamps_arrays_counter'] = yaml_dumps(1)
+
         sec.create_section('video_metadata', 'metadata')
 
         block = self.nix_file.create_block('timestamps', 'timestamps')
@@ -90,13 +109,20 @@ class DataFile(object):
 
     def open_file(self):
         self.global_config = self.nix_file.sections['app_config']
-        self.saw_all_timestamps = yaml_loads(
-            self.nix_file.sections['data_config']['saw_all_timestamps'])
-        self._saw_first_timestamp = yaml_loads(
-            self.nix_file.sections['data_config']['saw_first_timestamp'])
-        self._saw_last_timestamp = yaml_loads(
-            self.nix_file.sections['data_config']['saw_last_timestamp'])
 
+        data_config = self.nix_file.sections['data_config']
+        self.saw_all_timestamps = yaml_loads(data_config['saw_all_timestamps'])
+        self._saw_first_timestamp = yaml_loads(
+            data_config['saw_first_timestamp'])
+        self._saw_last_timestamp = yaml_loads(
+            data_config['saw_last_timestamp'])
+        self.ceed_version = yaml_loads(data_config['ceed_version'])
+        self.ffpyplayer_version = yaml_loads(data_config['ffpyplayer_version'])
+
+        self.read_timestamps_from_file()
+        self.create_channels_from_file()
+
+    def read_timestamps_from_file(self):
         timestamps_block = self.nix_file.blocks['timestamps']
         timestamps = self.timestamps = timestamps_block.data_arrays[0]
 
@@ -109,9 +135,10 @@ class DataFile(object):
 
         data_map = self.timestamp_data_map
         for i, timestamps in timestamps_arrays.items():
-            for val in timestamps:
-                data_map[val] = i
+            for t_index, val in enumerate(timestamps):
+                data_map[val] = i, t_index
 
+    def create_channels_from_file(self):
         for block in self.nix_file.blocks:
             if block.name == 'timestamps':
                 continue
@@ -132,12 +159,14 @@ class DataFile(object):
             else:
                 raise ValueError(cls_type)
 
-            channel = cls(name=block.name, num=n, block=block)
-            channel.read_data_arrays()
-            items.append(channel)
+            channel = cls(name=block.name, num=n, block=block, data_file=self)
+            channel.read_initial_data()
+            items[n] = channel
 
     def upgrade_file(self):
-        pass
+        """Called before :meth:`open_file`.
+        """
+        self.unsaved_callback()
 
     @property
     def has_content(self):
@@ -157,27 +186,56 @@ class DataFile(object):
         finally:
             f.close()
 
-    def write_config(self, data):
+    def write_app_config(self, data):
         self.unsaved_callback()
         config = self.global_config
         for k, v in data.items():
             config[k] = yaml_dumps(v)
 
-        import glitter2
-        import ffpyplayer
-        config['ceed_version'] = yaml_dumps(glitter2.__version__)
-        config['ffpyplayer_version'] = yaml_dumps(ffpyplayer.__version__)
-
-    def read_config(self):
-        """Reads all the config data, including the channel config
-        and returns it as a dict.
+    def read_app_config(self):
+        """Reads the app config data and returns it as a dict. It does not
+        include the channel config data.
         """
         config = self.nix_file.sections['app_config']
         data = {}
         for prop in config.props:
             data[prop.name] = yaml_loads(read_nix_prop(prop))
-
         return data
+
+    def write_channels_config(
+            self, event_channels: Dict[int, dict] = None,
+            pos_channels: Dict[int, dict] = None,
+            zone_channels: Dict[int, dict] = None):
+        self.unsaved_callback()
+        if event_channels:
+            event_channels_ = self.event_channels
+            for i, data in event_channels:
+                event_channels_[i].write_channel_config(data)
+
+        if pos_channels:
+            pos_channels_ = self.pos_channels
+            for i, data in pos_channels:
+                pos_channels_[i].write_channel_config(data)
+
+        if zone_channels:
+            zone_channels_ = self.zone_channels
+            for i, data in zone_channels:
+                zone_channels_[i].write_channel_config(data)
+
+    def read_channels_config(self):
+        event_channels = {
+            i: chan.read_channel_config()
+            for (i, chan) in self.event_channels.items()
+        }
+        pos_channels = {
+            i: chan.read_channel_config()
+            for (i, chan) in self.pos_channels.items()
+        }
+        zone_channels = {
+            i: chan.read_channel_config()
+            for (i, chan) in self.zone_channels.items()
+        }
+        return event_channels, pos_channels, zone_channels
 
     def increment_channel_count(self):
         """Gets the channel ID for the next channel to be created and
@@ -186,12 +244,14 @@ class DataFile(object):
         :return: The channel ID number to use for the next channel to be
             created.
         """
+        self.unsaved_callback()
         config = self.global_config
         count = yaml_loads(read_nix_prop(config.props['channel_count']))
         config['channel_count'] = yaml_dumps(count + 1)
         return count
 
     def increment_timestamps_arrays_counter(self):
+        self.unsaved_callback()
         config = self.nix_file.sections['data_config']
         count = yaml_loads(config['timestamps_arrays_counter'])
         config['timestamps_arrays_counter'] = yaml_dumps(count + 1)
@@ -208,14 +268,15 @@ class DataFile(object):
             raise ValueError(
                 'Did not understand channel type "{}"'.format(channel_type))
 
+        self.unsaved_callback()
         n = self.increment_channel_count()
         name = '{}_channel_{}'.format(channel_type, n)
         block = self.nix_file.create_block(name, 'channel')
         metadata = self.nix_file.create_section(name + '_metadata', 'metadata')
         block.metadata = metadata
 
-        channel = cls(name=name, num=n, block=block)
-        channel.create_default_array()
+        channel = cls(name=name, num=n, block=block, data_file=self)
+        channel.create_initial_data()
         return channel
 
     def notify_interrupt_timestamps(self):
@@ -232,6 +293,7 @@ class DataFile(object):
             return
 
         self._saw_first_timestamp = True
+        self.unsaved_callback()
         self.nix_file.sections['data_config']['saw_first_timestamp'] = \
             yaml_dumps(True)
 
@@ -245,6 +307,7 @@ class DataFile(object):
             return
 
         self._saw_last_timestamp = True
+        self.unsaved_callback()
         self.nix_file.sections['data_config']['saw_last_timestamp'] = \
             yaml_dumps(True)
 
@@ -257,6 +320,59 @@ class DataFile(object):
             self.nix_file.sections['data_config']['saw_all_timestamps'] = \
                 yaml_dumps(True)
 
+    def merge_timestamp_channels_arrays(self, arr_num1: int, arr_num2: int):
+        timestamps_arrays = self.timestamps_arrays
+        timestamp_data_map = self.timestamp_data_map
+        arr1 = timestamps_arrays[arr_num1]
+        arr2 = timestamps_arrays[arr_num2]
+
+        if arr2.name == 'timestamps':
+            # currently the first timestamps array must start at the first ts
+            raise NotImplementedError
+
+        self.unsaved_callback()
+        self.pad_all_channels_to_num_frames(arr_num1)
+
+        start_index = len(arr1)
+        arr1.append(arr2)
+        for i, t in enumerate(arr2, start_index):
+            timestamp_data_map[t] = arr_num1, i
+        del self.nix_file.blocks['timestamps'].data_arrays[arr2.name]
+        del timestamps_arrays[arr_num2]
+
+        for chan in self.event_channels.values():
+            chan.merge_arrays(arr_num1, arr_num2)
+        for chan in self.pos_channels.values():
+            chan.merge_arrays(arr_num1, arr_num2)
+
+        return arr_num1
+
+    def create_timestamps_channels_array(self) -> int:
+        self.unsaved_callback()
+        n = self.increment_timestamps_arrays_counter()
+
+        block = self.nix_file.blocks['timestamps']
+        self.timestamps_arrays[n] = block.create_data_array(
+            'timestamps_{}'.format(n), 'timestamps', dtype=np.float64,
+            data=[])
+
+        for chan in self.event_channels.values():
+            chan.create_data_array(n)
+        for chan in self.pos_channels.values():
+            chan.create_data_array(n)
+        return n
+
+    def pad_all_channels_to_num_frames(self, array_num):
+        size = len(self.timestamps_arrays[array_num])
+        if not size:
+            return
+
+        self.unsaved_callback()
+        for chan in self.event_channels.values():
+            chan.pad_channel_to_num_frames(array_num, size)
+        for chan in self.pos_channels.values():
+            chan.pad_channel_to_num_frames(array_num, size)
+
     def add_timestamp(self, t: float) -> int:
         """We assume that this is called frame by frame with no skipping unless
         :meth:`notify_interrupt_timestamps` was called.
@@ -267,86 +383,60 @@ class DataFile(object):
         if self.saw_all_timestamps:
             return 0
 
+        self.unsaved_callback()
         last_timestamps_n = self._last_timestamps_n
         timestamps_map = self.timestamp_data_map
 
         # we have seen this time stamp before
         if t in timestamps_map:
-            n = timestamps_map[t]
+            n, index = timestamps_map[t]
             # if the last/current timestamps were in different arrays, merge
             if n != last_timestamps_n and last_timestamps_n is not None:
-                self.pad_all_channels_to_num_frames(last_timestamps_n)
-
-                arr_num1, arr_num2 = self.merge_timestamp_arrays(
-                    last_timestamps_n, n)
-                self.merge_arrays_for_all_channels(arr_num1, arr_num2)
-
-                self._last_timestamps_n = arr_num1
-            else:
-                self._last_timestamps_n = n
+                n = self.merge_timestamp_channels_arrays(last_timestamps_n, n)
+            self._last_timestamps_n = n
             return n
 
         # we have NOT seen this time stamp before. Do we have an array to add
         if last_timestamps_n is None:
             if not self.has_content:
-                last_timestamps_n = self._last_timestamps_n = 0
+                n = 0
             else:
-                n = self.increment_timestamps_arrays_counter()
-                last_timestamps_n = self._last_timestamps_n = n
+                n = self.create_timestamps_channels_array()
+            last_timestamps_n = self._last_timestamps_n = n
 
-                block = self.nix_file.blocks['timestamps']
-                self.timestamps_arrays[n] = block.create_data_array(
-                    'timestamps_{}'.format(n), 'timestamps', dtype=np.float64,
-                    data=[])
-                self.create_data_array_for_all_channels(n)
-
-        timestamps_map[t] = last_timestamps_n
         data_array = self.timestamps_arrays[last_timestamps_n]
+        timestamps_map[t] = last_timestamps_n, len(data_array)
         data_array.append(t)
         return last_timestamps_n
 
-    def merge_timestamp_arrays(self, arr_num1: int, arr_num2: int):
-        timestamps_arrays = self.timestamps_arrays
-        timestamp_data_map = self.timestamp_data_map
-        arr1 = timestamps_arrays[arr_num1]
-        arr2 = timestamps_arrays[arr_num2]
+    def get_channel_from_id(self, i):
+        if i in self.event_channels:
+            return self.event_channels[i]
+        elif i in self.pos_channels:
+            return self.pos_channels[i]
+        elif i in self.zone_channels:
+            return self.zone_channels[i]
+        else:
+            raise ValueError(i)
 
-        if arr2.name == 'timestamps':
-            # currently the first timestamps array must start at the first ts
-            raise NotImplementedError
+    def delete_channel(self, i):
+        if i in self.event_channels:
+            channel = self.event_channels.pop(i)
+        elif i in self.pos_channels:
+            channel = self.pos_channels.pop(i)
+        elif i in self.zone_channels:
+            channel = self.zone_channels.pop(i)
+        else:
+            raise ValueError(i)
 
-        arr1.append(arr2)
-        for t in arr2:
-            timestamp_data_map[t] = arr_num1
-        del arr2[:]
-        del timestamps_arrays[arr_num2]
-
-        return arr_num1, arr_num2
-
-    def pad_all_channels_to_num_frames(self, array_num):
-        size = len(self.timestamps_arrays[array_num])
-        if not size:
-            return
-
-        for chan in self.event_channels:
-            chan.pad_channel_to_num_frames(array_num, size)
-        for chan in self.pos_channels:
-            chan.pad_channel_to_num_frames(array_num, size)
-
-    def merge_arrays_for_all_channels(self, arr_num1: int, arr_num2: int):
-        for chan in self.event_channels:
-            chan.merge_arrays(arr_num1, arr_num2)
-        for chan in self.pos_channels:
-            chan.merge_arrays(arr_num1, arr_num2)
-
-    def create_data_array_for_all_channels(self, arr_num: int):
-        for chan in self.event_channels:
-            chan.create_data_array(arr_num)
-        for chan in self.pos_channels:
-            chan.create_data_array(arr_num)
+        self.unsaved_callback()
+        del self.nix_file.blocks[channel.name]
+        del self.nix_file.sections['channel.name' + '_metadata']
 
 
 class DataChannelBase(object):
+
+    data_file: DataFile = None
 
     metadata: nix.Section = None
 
@@ -356,30 +446,54 @@ class DataChannelBase(object):
 
     block: nix.Block = None
 
-    data_array: nix.DataArray = None
-
-    data_arrays: Dict[int, nix.DataArray] = {}
-
-    default_data_value = None
-
-    def __init__(self, name, num, block, **kwargs):
+    def __init__(self, name, num, block, data_file, **kwargs):
         super(DataChannelBase, self).__init__(**kwargs)
         self.name = name
         self.num = num
         self.block = block
         self.data_arrays = {}
         self.metadata = block.metadata
+        self.data_file = data_file
 
-    def create_default_array(self, n=0):
+    def create_initial_data(self):
+        raise NotImplementedError
+
+    def read_initial_data(self):
+        raise NotImplementedError
+
+    def write_channel_config(self, data: dict):
+        self.data_file.unsaved_callback()
+        config = self.metadata
+        for k, v in data.items():
+            config[k] = yaml_dumps(v)
+
+    def read_channel_config(self):
+        config = self.metadata
+        data = {}
+        for prop in config.props:
+            data[prop.name] = yaml_loads(read_nix_prop(prop))
+        return data
+
+
+class TemporalDataChannelBase(DataChannelBase):
+
+    data_array: nix.DataArray = None
+
+    data_arrays: Dict[int, nix.DataArray] = {}
+
+    default_data_value = None
+
+    def create_initial_data(self):
+        self.data_file.unsaved_callback()
         self.data_array = data_array = self.create_data_array()
         data_array.metadata = self.metadata
-        self.data_arrays[n] = data_array
+        self.data_arrays[0] = data_array
         return data_array
 
     def create_data_array(self, n=None):
         raise NotImplementedError
 
-    def read_data_arrays(self):
+    def read_initial_data(self):
         block = self.block
         data_arrays = self.data_arrays
 
@@ -397,8 +511,9 @@ class DataChannelBase(object):
         arr2 = data_arrays[arr_num2]
         assert arr2 is not self.data_array
 
+        self.data_file.unsaved_callback()
         arr1.append(arr2)
-        del arr2[:]
+        del self.block.data_arrays[arr2.name]
         del data_arrays[arr_num2]
 
     def pad_channel_to_num_frames(self, array_num, size):
@@ -410,34 +525,48 @@ class DataChannelBase(object):
         if not diff:
             return
 
+        self.data_file.unsaved_callback()
         arr.append(self.default_data_value.repeat(diff, axis=0))
 
 
-class EventChannelData(DataChannelBase):
+class EventChannelData(TemporalDataChannelBase):
 
-    default_data_value = np.array([-1], dtype=np.int8)
+    default_data_value = np.array([0], dtype=np.uint8)
 
     def create_data_array(self, n=None):
+        self.data_file.unsaved_callback()
         name = self.name if n is None else '{}_group_{}'.format(self.name, n)
         return self.block.create_data_array(
-            name, 'event', dtype=np.int8, data=[])
+            name, 'event', dtype=np.uint8, data=[])
+
+    def set_time_state(self, t, state):
+        data_file = self.data_file
+        data_file.unsaved_callback()
+        n, i = data_file.timestamp_data_map[t]
+        self.data_arrays[n][i] = state
 
 
-class PosChannelData(DataChannelBase):
+class PosChannelData(TemporalDataChannelBase):
 
     default_data_value = np.array([[-1, -1]], dtype=np.float64)
 
     def create_data_array(self, n=None):
+        self.data_file.unsaved_callback()
         name = self.name if n is None else '{}_group_{}'.format(self.name, n)
         return self.block.create_data_array(
             name, 'pos', dtype=np.float64, data=np.empty((0, 2)))
+
+    def set_time_pos(self, t, pos):
+        data_file = self.data_file
+        data_file.unsaved_callback()
+        n, i = data_file.timestamp_data_map[t]
+        self.data_arrays[n][i, :] = pos
 
 
 class ZoneChannelData(DataChannelBase):
 
-    default_data_value = np.array([[-1, -1]], dtype=np.float64)
+    def create_initial_data(self):
+        pass
 
-    def create_data_array(self, n=None):
-        name = self.name if n is None else '{}_group_{}'.format(self.name, n)
-        return self.block.create_data_array(
-            name, 'pos', dtype=np.float64, data=np.empty((0, 2)))
+    def read_initial_data(self):
+        pass

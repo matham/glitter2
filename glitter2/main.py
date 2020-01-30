@@ -44,25 +44,28 @@ class Glitter2App(BaseKivyApp):
         d = super(Glitter2App, self).get_config_instances()
         return d
 
-    def gather_config_data(self, exclude_app_settings=False):
-        data = {}
-        if exclude_app_settings:
-            return data
-
+    def get_app_config_data(self):
         self.dump_app_settings_to_file()
         self.load_app_settings_from_file()
-        data['app_settings'] = self.app_settings
-        return data
+        return dict(self.app_settings)
+
+    def get_channels_config_data(self):
+        return (), (), ()
 
     def clear_config_data(self):
         pass
 
-    def apply_config_data(self, data, exclude_app_settings=False):
-        if not exclude_app_settings:
-            app_settings = data['app_settings']
+    def apply_config_data(self, channels, app_config=None):
+        """Appends channels to the channels.
+
+        :param channels:
+        :param app_config:
+        :return:
+        """
+        if app_config:
             # filter classes that are not of this app
             classes = self.get_config_instances()
-            self.app_settings = {cls: app_settings[cls] for cls in classes}
+            self.app_settings = {cls: app_config[cls] for cls in classes}
             self.apply_app_settings()
 
     def build(self):

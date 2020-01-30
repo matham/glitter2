@@ -4,6 +4,8 @@
 Handles all data aspects, from the storage, loading and saving of configuration
 data to the acquisition and creation of experimental data.
 
+Whenever we open a new file, the GUI must be cleared.
+
 """
 from typing import Optional
 import nixio as nix
@@ -30,6 +32,11 @@ __all__ = ('StorageController', )
 
 
 class StorageController(EventDispatcher):
+    """This class manages the nix file. It can import config from files and
+    add it to the app. Or it can clear all the config and open/create
+    an existing file.
+
+    """
 
     __config_props__ = ('root_path', 'backup_interval', 'compression')
 
@@ -137,6 +144,8 @@ class StorageController(EventDispatcher):
             return True
 
     def create_file(self, filename, overwrite=False):
+        """All channels should have been cleared before opening.
+        """
         self.config_changed = self.has_unsaved = True
         if exists(filename) and not overwrite:
             raise ValueError('{} already exists'.format(filename))
@@ -169,12 +178,15 @@ class StorageController(EventDispatcher):
             format(self.backup_filename, self.filename))
 
         self.data_file.init_new_file()
+        self.write_changes_to_autosave()
         self.save()
 
     def open_file(self, filename, read_only=False):
-        """Loads the file's config and opens the file for usage. """
+        """Loads the file's config and opens the file for usage.
+        """
         self.config_changed = self.has_unsaved = True
         self.close_file()
+        self.app.clear_config_data()
 
         self.filename = filename
         self.read_only_file = read_only
@@ -187,7 +199,6 @@ class StorageController(EventDispatcher):
         temp.close()
 
         copy2(filename, self.backup_filename)
-        self.app.clear_config_data()
         self.import_file(self.backup_filename)
 
         self.nix_file = nix.File.open(
@@ -201,7 +212,10 @@ class StorageController(EventDispatcher):
 
         self.data_file.upgrade_file()
         self.data_file.open_file()
-        self.data_file.write_config(self.app.gather_config_data())
+        self.app.apply_config_data(
+            self.data_file.read_channels_config(),
+            self.data_file.read_app_config())
+        self.write_changes_to_autosave()
 
     def close_file(self, force_remove_autosave=False):
         """Closes without saving the data. But if data was unsaved, it leaves
@@ -226,20 +240,24 @@ class StorageController(EventDispatcher):
         """Loads the file's config data. """
         Logger.debug(
             'Glitter2: Importing "{}"'.format(self.filename))
-        data = {}
-        f = nix.File.open(filename, nix.FileMode.ReadOnly)
 
+        f = nix.File.open(filename, nix.FileMode.ReadOnly)
         try:
-            for prop in f.sections['app_config']:
-                data[prop.name] = yaml_loads(read_nix_prop(prop))
+            data_file_src = DataFile(nix_file=f)
+            data_file_src.open_file()
+
+            channels = data_file_src.read_channels_config()
+            app_config = None
+            if not exclude_app_settings:
+                app_config = data_file_src.read_app_config()
         finally:
             f.close()
 
         self.has_unsaved = self.config_changed = True
-        self.app.apply_config_data(
-            data, exclude_app_settings=exclude_app_settings)
+        self.app.apply_config_data(channels, app_config)
+        self.write_changes_to_autosave()
 
-    def discard_file(self,):
+    def discard_file(self):
         if not self.has_unsaved and not self.config_changed:
             return
 
@@ -264,8 +282,9 @@ class StorageController(EventDispatcher):
         the file in filename (if None saves to the current filename).
         """
         if self.read_only_file and not force:
-            raise TypeError('Cannot save because file was opened as read only. '
-                            'Try saving as a new file')
+            raise TypeError(
+                'Cannot save because file was opened as read only. '
+                'Try saving as a new file')
 
         if not force and not self.has_unsaved and not self.config_changed:
             return
@@ -274,7 +293,7 @@ class StorageController(EventDispatcher):
         filename = filename or self.filename
         if filename:
             copy2(self.backup_filename, filename)
-            self.config_changed = self.has_unsaved = False
+            self.has_unsaved = False
 
     def write_changes_to_autosave(self, *largs, scheduled=False):
         '''Writes unsaved changes to the current (autosave) file. '''
@@ -282,7 +301,10 @@ class StorageController(EventDispatcher):
             return
 
         if self.config_changed:
-            self.data_file.write_config(self.app.gather_config_data())
+            self.data_file.write_app_config(self.app.get_app_config_data())
+            self.data_file.write_channels_config(
+                *self.app.get_channels_config_data())
+            self.config_changed = False
 
         try:
             self.nix_file.flush()
@@ -294,20 +316,33 @@ class StorageController(EventDispatcher):
         if exists(filename) and not overwrite:
             raise ValueError('{} already exists'.format(filename))
 
-        data = yaml_dumps(
-            self.app.gather_config_data(
-                exclude_app_settings=exclude_app_settings))
+        data = {
+            'channels': self.app.get_channels_config_data(),
+            'app_config': None
+        }
+        if not exclude_app_settings:
+            data['app_config'] = self.app.get_app_config_data()
+
+        data = yaml_dumps(data)
         with open(filename, 'w') as fh:
             fh.write(data)
 
-    def read_yaml_config(self, filename, exclude_app_settings=False):
+    def import_yaml_config(self, filename, exclude_app_settings=False):
         self.config_changed = True
 
         with open(filename, 'r') as fh:
             data = fh.read()
         data = yaml_loads(data)
-        self.app.apply_config_data(
-            data, exclude_app_settings=exclude_app_settings)
+
+        if exclude_app_settings:
+            del data['app_config']
+        self.app.apply_config_data(**data)
+        self.write_changes_to_autosave()
 
     def set_data_unsaved(self):
         self.has_unsaved = True
+
+    def delete_channel(self, i):
+        if self.data_file is None:
+            return
+        self.data_file.delete_channel(i)
