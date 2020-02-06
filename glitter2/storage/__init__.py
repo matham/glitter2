@@ -27,6 +27,8 @@ from base_kivy_app.app import app_error
 from base_kivy_app.utils import yaml_dumps, yaml_loads
 
 from glitter2.storage.data_file import DataFile, read_nix_prop
+from glitter2.channel import ChannelController
+from glitter2.player import GlitterPlayer
 
 __all__ = ('StorageController', )
 
@@ -71,9 +73,15 @@ class StorageController(EventDispatcher):
 
     app = None
 
-    def __init__(self, app=None, **kwargs):
+    channel_controller: ChannelController = None
+
+    player: GlitterPlayer = None
+
+    def __init__(self, app, channel_controller, player, **kwargs):
         super(StorageController, self).__init__(**kwargs)
         self.app = app
+        self.channel_controller = channel_controller
+        self.player = player
         if (not os.environ.get('KIVY_DOC_INCLUDE', None) and
                 self.backup_interval):
             self.backup_event = Clock.schedule_interval(
@@ -102,7 +110,7 @@ class StorageController(EventDispatcher):
 
                 if clear_data:
                     self.close_file(force_remove_autosave=True)
-                    self.app.clear_config_data()
+                    self.channel_controller.delete_all_channels()
                 func(fname, **kwargs)
 
             if clear_data and (self.has_unsaved or self.config_changed):
@@ -124,7 +132,7 @@ class StorageController(EventDispatcher):
             def close_callback(discard):
                 if discard:
                     self.close_file(force_remove_autosave=True)
-                    self.app.clear_config_data()
+                    self.channel_controller.delete_all_channels()
                     if app_close:
                         App.get_running_app().stop()
                     else:
@@ -138,7 +146,7 @@ class StorageController(EventDispatcher):
             return False
         else:
             self.close_file()
-            self.app.clear_config_data()
+            self.channel_controller.delete_all_channels()
             if not app_close:
                 self.create_file('')
             return True
@@ -178,6 +186,7 @@ class StorageController(EventDispatcher):
             format(self.backup_filename, self.filename))
 
         self.data_file.init_new_file()
+        self.channel_controller.populate_timestamps(())
         self.write_changes_to_autosave()
         self.save()
 
@@ -186,7 +195,7 @@ class StorageController(EventDispatcher):
         """
         self.config_changed = self.has_unsaved = True
         self.close_file()
-        self.app.clear_config_data()
+        self.channel_controller.delete_all_channels()
 
         self.filename = filename
         self.read_only_file = read_only
@@ -212,9 +221,10 @@ class StorageController(EventDispatcher):
 
         self.data_file.upgrade_file()
         self.data_file.open_file()
-        self.app.apply_config_data(
-            self.data_file.read_channels_config(),
-            self.data_file.read_app_config())
+        self.app.set_app_config_data(self.data_file.read_app_config())
+        self.channel_controller.populate_timestamps(
+            self.data_file.timestamp_data_map)
+        self.create_gui_channels_from_storage()
         self.write_changes_to_autosave()
 
     def close_file(self, force_remove_autosave=False):
@@ -242,19 +252,19 @@ class StorageController(EventDispatcher):
             'Glitter2: Importing "{}"'.format(self.filename))
 
         f = nix.File.open(filename, nix.FileMode.ReadOnly)
+        self.has_unsaved = self.config_changed = True
         try:
             data_file_src = DataFile(nix_file=f)
             data_file_src.open_file()
 
-            channels = data_file_src.read_channels_config()
-            app_config = None
+            self.create_gui_channels(
+                *(item.values()
+                  for item in data_file_src.read_channels_config()))
             if not exclude_app_settings:
-                app_config = data_file_src.read_app_config()
+                self.app.set_app_config_data(data_file_src.read_app_config())
         finally:
             f.close()
 
-        self.has_unsaved = self.config_changed = True
-        self.app.apply_config_data(channels, app_config)
         self.write_changes_to_autosave()
 
     def discard_file(self):
@@ -264,7 +274,7 @@ class StorageController(EventDispatcher):
         f = self.filename
         read_only = self.read_only_file
         self.close_file(force_remove_autosave=True)
-        self.app.clear_config_data()
+        self.channel_controller.delete_all_channels()
         if f:
             self.open_file(f, read_only=read_only)
         else:
@@ -296,14 +306,14 @@ class StorageController(EventDispatcher):
             self.has_unsaved = False
 
     def write_changes_to_autosave(self, *largs, scheduled=False):
-        '''Writes unsaved changes to the current (autosave) file. '''
+        """Writes unsaved changes to the current (autosave) file. """
         if not self.nix_file or scheduled and self.read_only_file:
             return
 
         if self.config_changed:
             self.data_file.write_app_config(self.app.get_app_config_data())
             self.data_file.write_channels_config(
-                *self.app.get_channels_config_data())
+                *self.channel_controller.get_channels_metadata())
             self.config_changed = False
 
         try:
@@ -317,7 +327,7 @@ class StorageController(EventDispatcher):
             raise ValueError('{} already exists'.format(filename))
 
         data = {
-            'channels': self.app.get_channels_config_data(),
+            'channels': self.channel_controller.get_channels_metadata(),
             'app_config': None
         }
         if not exclude_app_settings:
@@ -334,15 +344,45 @@ class StorageController(EventDispatcher):
             data = fh.read()
         data = yaml_loads(data)
 
-        if exclude_app_settings:
-            del data['app_config']
-        self.app.apply_config_data(**data)
+        if not exclude_app_settings and data['app_config'] is not None:
+            self.app.set_app_config_data(data['app_config'])
+        self.create_gui_channels(*(item.values() for item in data['channels']))
         self.write_changes_to_autosave()
 
     def set_data_unsaved(self):
         self.has_unsaved = True
 
-    def delete_channel(self, i):
-        if self.data_file is None:
-            return
-        self.data_file.delete_channel(i)
+    def create_gui_channels(self, event_channels, pos_channels, zone_channels):
+        data_create_channel = self.data_file.create_channel
+        create_channel = self.channel_controller.create_channel
+
+        for metadata in event_channels:
+            data_channel = data_create_channel('event')
+            create_channel('event', data_channel, **metadata)
+
+        for metadata in pos_channels:
+            data_channel = data_create_channel('pos')
+            create_channel('pos', data_channel, **metadata)
+
+        for metadata in zone_channels:
+            data_channel = data_create_channel('zone')
+            create_channel('zone', data_channel, **metadata)
+
+    def create_gui_channels_from_storage(self):
+        get_channel_from_id = self.data_file.get_channel_from_id
+        create_channel = self.channel_controller.create_channel
+
+        event_channels, pos_channels, zone_channels = \
+            self.data_file.read_channels_config()
+
+        for i, metadata in event_channels.items():
+            data_channel = get_channel_from_id(i)
+            create_channel('event', data_channel, **metadata)
+
+        for i, metadata in pos_channels.items():
+            data_channel = get_channel_from_id(i)
+            create_channel('pos', data_channel, **metadata)
+
+        for i, metadata in zone_channels.items():
+            data_channel = get_channel_from_id(i)
+            create_channel('zone', data_channel, **metadata)

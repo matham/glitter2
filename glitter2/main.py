@@ -3,9 +3,8 @@
 
 The main module that provides the app that runs the GUI.
 """
-import glitter2
 from os.path import join, dirname
-
+from typing import Iterable, List, Dict
 from base_kivy_app.app import BaseKivyApp, run_app as run_cpl_app
 
 from kivy.lang import Builder
@@ -14,8 +13,10 @@ from kivy.properties import ObjectProperty, BooleanProperty, NumericProperty
 
 from kivy.core.window import Window
 
+import glitter2
 from glitter2.storage import StorageController
-from glitter2.channel import ChannelController
+from glitter2.channel import ChannelController, ChannelBase
+from glitter2.player import GlitterPlayer
 
 __all__ = ('Glitter2App', 'run_app')
 
@@ -35,6 +36,8 @@ class Glitter2App(BaseKivyApp):
 
     channel_controller: ChannelController = None
 
+    player: GlitterPlayer = None
+
     @classmethod
     def get_config_classes(cls):
         d = super(Glitter2App, cls).get_config_classes()
@@ -49,31 +52,50 @@ class Glitter2App(BaseKivyApp):
         self.load_app_settings_from_file()
         return dict(self.app_settings)
 
-    def get_channels_config_data(self):
-        return (), (), ()
+    def set_app_config_data(self, data):
+        # filter classes that are not of this app
+        classes = self.get_config_instances()
+        self.app_settings = {cls: data[cls] for cls in classes}
+        self.apply_app_settings()
 
-    def clear_config_data(self):
-        pass
+    def create_channel(self, channel_type: str, **kwargs) -> ChannelBase:
+        data_channel = self.storage_controller.data_file.create_channel(
+            channel_type)
+        return self.channel_controller.create_channel(
+            channel_type, data_channel, **kwargs)
 
-    def apply_config_data(self, channels, app_config=None):
-        """Appends channels to the channels.
+    def delete_channel(self, channel: ChannelBase):
+        self.channel_controller.delete_channel(channel)
+        if self.storage_controller.data_file is None:
+            return
+        self.storage_controller.data_file.delete_channel(
+            channel.data_channel.num)
 
-        :param channels:
-        :param app_config:
-        :return:
-        """
-        if app_config:
-            # filter classes that are not of this app
-            classes = self.get_config_instances()
-            self.app_settings = {cls: app_config[cls] for cls in classes}
-            self.apply_app_settings()
+    def notify_video_change(self, item, value=None):
+        if self.storage_controller.data_file is None:
+            return
+        if item == 'opened':
+            self.storage_controller.data_file.set_video_metadata(value)
+        elif item == 'seek':
+            self.storage_controller.data_file.notify_interrupt_timestamps()
+        elif item == 'first_ts':
+            self.storage_controller.data_file.notify_saw_first_timestamp()
+        elif item == 'last_ts':
+            self.storage_controller.data_file.notify_saw_last_timestamp()
+
+    def add_video_frame(self, t, image):
+        self.storage_controller.data_file.add_timestamp(t)
+        self.channel_controller.set_current_timestamp(t)
 
     def build(self):
         base = dirname(glitter2.__file__)
         Builder.load_file(join(base, 'glitter2_style.kv'))
 
-        self.storage_controller = StorageController(app=self)
         self.channel_controller = ChannelController()
+        self.player = GlitterPlayer(app=self)
+        self.storage_controller = StorageController(
+            app=self, channel_controller=self.channel_controller,
+            player=self.player)
 
         self.yesno_prompt = Factory.FlatYesNoPrompt()
         root = Factory.get('MainView')()

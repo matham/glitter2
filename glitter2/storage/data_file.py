@@ -186,6 +186,12 @@ class DataFile(object):
         finally:
             f.close()
 
+    def set_video_metadata(self, metadata: dict):
+        self.unsaved_callback()
+        config = self.global_config.sections['video_metadata']
+        for k, v in metadata.items():
+            config[k] = yaml_dumps(v)
+
     def write_app_config(self, data):
         self.unsaved_callback()
         config = self.global_config
@@ -528,6 +534,15 @@ class TemporalDataChannelBase(DataChannelBase):
         self.data_file.unsaved_callback()
         arr.append(self.default_data_value.repeat(diff, axis=0))
 
+    def get_timestamps_modified_state(self) -> Dict[float, bool]:
+        raise NotImplementedError
+
+    def set_timestamp_value(self, t, value):
+        raise NotImplementedError
+
+    def get_timestamp_value(self, t):
+        raise NotImplementedError
+
 
 class EventChannelData(TemporalDataChannelBase):
 
@@ -539,11 +554,23 @@ class EventChannelData(TemporalDataChannelBase):
         return self.block.create_data_array(
             name, 'event', dtype=np.uint8, data=[])
 
-    def set_time_state(self, t, state):
+    def get_timestamps_modified_state(self):
+        timestamp_data_map = self.data_file.timestamp_data_map
+        data_arrays = self.data_arrays
+
+        return {t: data_arrays[n][i]
+                for t, (n, i) in timestamp_data_map.items()}
+
+    def set_timestamp_value(self, t, value):
         data_file = self.data_file
         data_file.unsaved_callback()
         n, i = data_file.timestamp_data_map[t]
-        self.data_arrays[n][i] = state
+        self.data_arrays[n][i] = value
+        return bool(value)
+
+    def get_timestamp_value(self, t):
+        n, i = self.data_file.timestamp_data_map[t]
+        return bool(self.data_arrays[n][i])
 
 
 class PosChannelData(TemporalDataChannelBase):
@@ -556,11 +583,24 @@ class PosChannelData(TemporalDataChannelBase):
         return self.block.create_data_array(
             name, 'pos', dtype=np.float64, data=np.empty((0, 2)))
 
-    def set_time_pos(self, t, pos):
+    def get_timestamps_modified_state(self):
+        timestamp_data_map = self.data_file.timestamp_data_map
+        data_arrays = self.data_arrays
+
+        return {t: data_arrays[n][i, 0] != -1
+                for t, (n, i) in timestamp_data_map.items()}
+
+    def set_timestamp_value(self, t, value):
         data_file = self.data_file
         data_file.unsaved_callback()
         n, i = data_file.timestamp_data_map[t]
-        self.data_arrays[n][i, :] = pos
+        self.data_arrays[n][i, :] = value
+        return value[0] != -1
+
+    def get_timestamp_value(self, t):
+        n, i = self.data_file.timestamp_data_map[t]
+        x, y = self.data_arrays[n][i, :]
+        return float(x), float(y)
 
 
 class ZoneChannelData(DataChannelBase):
