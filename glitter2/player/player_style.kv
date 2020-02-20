@@ -1,0 +1,103 @@
+<ControlDisplay@BoxLayout>:
+    spacing: '5dp'
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: '5dp'
+        padding: '2dp'
+        size_hint_x: None
+        width: self.minimum_width
+        size_hint_min_y: self.minimum_height
+        canvas:
+            Color:
+                rgba: app.theme.primary
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        Slider:
+            id: rate_slider
+            orientation: 'vertical'
+            size_hint_min_y: '100dp'
+            max: 1
+            min: -1
+            value: 0
+            canvas:
+                Color:
+                    rgba: 0, 0, 0, 1
+                Rectangle:
+                    pos: self.center_x - dp(10), self.center_y
+                    size: dp(20), dp(2)
+        FlatSizedTextInput:
+            background_color: app.theme.primary_light
+            on_focus: if not self.focus: self.text, rate_slider.value = app.player.set_play_rate(float(self.text or 0), is_log=False)
+            text: app.player.set_play_rate(rate_slider.value)[0]
+            input_filter: 'float'
+            size_hint_min_x: '46dp'
+        FlatImageToggleButton:
+            size_hint_y: None
+            height: '44dp'
+            source: 'flat_play.png' if self.state == 'normal' or app.player.reached_end else 'flat_stop.png'
+            flat_color: app.theme.accent
+            state: 'down' if not app.player.paused else 'normal'
+            on_release: app.player.seek(0) if app.player.reached_end else app.player.set_pause(self.state == 'normal')
+        FlatImageButton:
+            size_hint_y: None
+            height: '44dp'
+            on_release: slider.value = max(slider.min, slider.value - 0.25)
+            source: 'magnify-minus-outline.png'
+            scale_down_color: True
+            flat_color: app.theme.accent
+        FlatImageButton:
+            size_hint_y: None
+            height: '44dp'
+            on_release: slider.value = min(slider.max, slider.value + 0.25)
+            source: 'magnify-plus-outline.png'
+            scale_down_color: True
+            flat_color: app.theme.accent
+        Slider:
+            id: slider
+            orientation: 'vertical'
+            size_hint_y: None
+            height: '200dp'
+            max: 4
+            min: min((scroll.width - dp(15)) / image_display.width, (scroll.height - dp(15)) / image_display.height)
+            on_min: self.value = self.min
+            value: 1.
+            on_value: scatter.scale = self.value
+    ScrollView:
+        id: scroll
+        scroll_type: ['bars']
+        bar_width: '15dp'
+        canvas.before:
+            Color:
+                rgba: [0, 0, 0, 1]
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        BoxLayout:
+            id: box
+            size_hint: None, None
+            size: image_display.width * scatter.scale + dp(15), image_display.height * scatter.scale + dp(15)
+            padding: 0, 0, '15dp', '15dp'
+            Scatter:
+                id: scatter
+                do_scale: False
+                do_translation: False, False
+                do_rotation: False
+                auto_bring_to_front: False
+                do_collide_after_children: True
+                size_hint: None, None
+                size: image_display.size
+                RelativeLayout:
+                    size: image_display.size
+                    BufferImage:
+                        id: image_display
+                        on_kv_post: app.image_display = self.__self__
+                        auto_bring_to_front: False
+                        size_hint: None, None
+                        on_image_size: self.size = self.image_size
+                        scale_to_image: False
+
+                        do_scale: False
+                        do_translation: False, False
+                        do_rotation: False

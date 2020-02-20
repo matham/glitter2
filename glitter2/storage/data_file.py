@@ -32,6 +32,8 @@ class DataFile(object):
 
     global_config: nix.Section = None
 
+    video_metadata_config: nix.Section = None
+
     timestamps: nix.DataArray = None
     """The first timestamps data array. If there's only one, this is used.
     """
@@ -111,6 +113,8 @@ class DataFile(object):
         self.global_config = self.nix_file.sections['app_config']
 
         data_config = self.nix_file.sections['data_config']
+        self.video_metadata_config = data_config.sections['video_metadata']
+
         self.saw_all_timestamps = yaml_loads(data_config['saw_all_timestamps'])
         self._saw_first_timestamp = yaml_loads(
             data_config['saw_first_timestamp'])
@@ -173,7 +177,7 @@ class DataFile(object):
         return bool(len(self.timestamps))
 
     @staticmethod
-    def get_video_metadata(filename):
+    def get_file_video_metadata(filename):
         f = nix.File.open(filename, nix.FileMode.ReadOnly)
 
         try:
@@ -186,9 +190,17 @@ class DataFile(object):
         finally:
             f.close()
 
+    def get_video_metadata(self) -> dict:
+        config = self.video_metadata_config
+        data = {}
+        for prop in config.props:
+            data[prop.name] = yaml_loads(read_nix_prop(prop))
+
+        return data
+
     def set_video_metadata(self, metadata: dict):
         self.unsaved_callback()
-        config = self.global_config.sections['video_metadata']
+        config = self.video_metadata_config
         for k, v in metadata.items():
             config[k] = yaml_dumps(v)
 

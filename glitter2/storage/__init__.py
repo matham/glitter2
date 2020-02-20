@@ -4,8 +4,56 @@
 Handles all data aspects, from the storage, loading and saving of configuration
 data to the acquisition and creation of experimental data.
 
-Whenever we open a new file, the GUI must be cleared.
+Whenever we open a new file, the GUI must be cleared and old file closed.
 
+.. list-table:: GUI file operations
+   :header-rows: 1
+   :stub-columns: 1
+
+   * - Operation
+     - H5 file
+     - Video file
+     - App data
+   * - Open file (video file selected)
+     - Opens file next to video, or creates a new one
+     - Opens video file
+     - Clears and loads data from file (if it existed)
+   * - Open file (h5 file selected)
+     - Opens h5 file
+     - Tries to open video file in same folder, if it's found and matches.
+     - Clears and loads data from file
+   * - Open h5 RO
+     - Closes and opens the h5 file in RO mode
+     - Tries to open video file in same folder, if it's found and matches.
+     - Cleared and loaded from file
+   * - Open video file with current h5
+     - ---
+     - Opens the video file (error may occur later if the file doesn't match)
+     - ---
+   * - Save
+     - Saves unsaved data to current h5 file
+     - ---
+     - ---
+   * - Save as
+     - Saves unsaved data to new h5 file
+     - Reloads
+     - Reloads all the data
+   * - Discard changes
+     - Discards and opens last saved h5 file state
+     - Reloads
+     - Reloads all the data
+   * - Close and clear
+     - Closes h5 file and creates new black autosave
+     - Closed
+     - Cleared
+   * - Import H5
+     - ---
+     - ---
+     - Import the channels from the h5 file
+   * - Import YAML
+     - ---
+     - ---
+     - Import the channels from the yaml file
 """
 from typing import Optional
 import nixio as nix
@@ -15,6 +63,7 @@ import os
 from tempfile import NamedTemporaryFile
 from shutil import copy2
 from functools import partial
+import h5py
 
 from kivy.event import EventDispatcher
 from kivy.properties import StringProperty, NumericProperty, ListProperty, \
@@ -22,6 +71,7 @@ from kivy.properties import StringProperty, NumericProperty, ListProperty, \
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.logger import Logger
+from kivy.lang import Builder
 
 from base_kivy_app.app import app_error
 from base_kivy_app.utils import yaml_dumps, yaml_loads
@@ -69,6 +119,8 @@ class StorageController(EventDispatcher):
     saving.
     """
 
+    saw_all_timestamps = BooleanProperty(False)
+
     backup_event = None
 
     app = None
@@ -104,6 +156,7 @@ class StorageController(EventDispatcher):
             fname = paths[0]
             self.root_path = dirname(fname)
 
+            @app_error
             def discard_callback(discard):
                 if clear_data and not discard:
                     return
@@ -111,6 +164,7 @@ class StorageController(EventDispatcher):
                 if clear_data:
                     self.close_file(force_remove_autosave=True)
                     self.channel_controller.delete_all_channels()
+                    self.player.close_file()
                 func(fname, **kwargs)
 
             if clear_data and (self.has_unsaved or self.config_changed):
@@ -122,6 +176,7 @@ class StorageController(EventDispatcher):
                 discard_callback(True)
         return callback
 
+    @app_error
     def ui_close(self, app_close=False):
         """The UI asked for to close a file. We create a new one if the app
         doesn't close.
@@ -133,6 +188,8 @@ class StorageController(EventDispatcher):
                 if discard:
                     self.close_file(force_remove_autosave=True)
                     self.channel_controller.delete_all_channels()
+                    self.player.close_file()
+
                     if app_close:
                         App.get_running_app().stop()
                     else:
@@ -147,6 +204,8 @@ class StorageController(EventDispatcher):
         else:
             self.close_file()
             self.channel_controller.delete_all_channels()
+            self.player.close_file()
+
             if not app_close:
                 self.create_file('')
             return True
@@ -189,13 +248,36 @@ class StorageController(EventDispatcher):
         self.channel_controller.populate_timestamps(())
         self.write_changes_to_autosave()
         self.save()
+        self.saw_all_timestamps = self.data_file.saw_all_timestamps
+
+    @app_error
+    def ui_open_file(self, filename, read_only=False):
+        """GUI requested that the file be opened. Previously open file should
+        have been closed.
+
+        :param filename:
+        :param read_only:
+        """
+        if h5py.h5f.is_hdf5(filename.encode()):
+            self.open_file(filename, read_only=read_only)
+            self.try_open_video_from_h5()
+        else:
+            h5_filename = self.get_h5_filename_from_video(filename)
+            if exists(h5_filename):
+                metadata = DataFile.get_file_video_metadata(h5_filename)
+                if metadata.get('file_size') == os.stat(filename).st_size:
+                    self.open_file(h5_filename, read_only=read_only)
+                else:
+                    self.create_file('')
+            else:
+                self.create_file(h5_filename)
+            self.player.open_file(filename)
 
     def open_file(self, filename, read_only=False):
         """Loads the file's config and opens the file for usage.
         """
         self.config_changed = self.has_unsaved = True
         self.close_file()
-        self.channel_controller.delete_all_channels()
 
         self.filename = filename
         self.read_only_file = read_only
@@ -208,7 +290,7 @@ class StorageController(EventDispatcher):
         temp.close()
 
         copy2(filename, self.backup_filename)
-        self.import_file(self.backup_filename)
+        #self.import_file(self.backup_filename)
 
         self.nix_file = nix.File.open(
             self.backup_filename, nix.FileMode.ReadWrite,
@@ -226,6 +308,7 @@ class StorageController(EventDispatcher):
             self.data_file.timestamp_data_map)
         self.create_gui_channels_from_storage()
         self.write_changes_to_autosave()
+        self.saw_all_timestamps = self.data_file.saw_all_timestamps
 
     def close_file(self, force_remove_autosave=False):
         """Closes without saving the data. But if data was unsaved, it leaves
@@ -246,6 +329,7 @@ class StorageController(EventDispatcher):
         self.filename = self.backup_filename = ''
         self.read_only_file = False
 
+    @app_error
     def import_file(self, filename, exclude_app_settings=False):
         """Loads the file's config data. """
         Logger.debug(
@@ -267,6 +351,7 @@ class StorageController(EventDispatcher):
 
         self.write_changes_to_autosave()
 
+    @app_error
     def discard_file(self):
         if not self.has_unsaved and not self.config_changed:
             return
@@ -279,14 +364,22 @@ class StorageController(EventDispatcher):
             self.open_file(f, read_only=read_only)
         else:
             self.create_file('')
+        self.player.reopen_file()
 
+    @app_error
     def save_as(self, filename, overwrite=False):
         if exists(filename) and not overwrite:
             raise ValueError('{} already exists'.format(filename))
         self.save(filename, True)
+
+        self.close_file(force_remove_autosave=True)
+        self.channel_controller.delete_all_channels()
+
         self.open_file(filename)
+        self.player.reopen_file()
         self.save()
 
+    @app_error
     def save(self, filename=None, force=False):
         """Saves the changes to the autosave and also saves the changes to
         the file in filename (if None saves to the current filename).
@@ -321,6 +414,7 @@ class StorageController(EventDispatcher):
         except AttributeError:
             self.nix_file._h5file.flush()
 
+    @app_error
     def write_yaml_config(
             self, filename, overwrite=False, exclude_app_settings=False):
         if exists(filename) and not overwrite:
@@ -337,6 +431,7 @@ class StorageController(EventDispatcher):
         with open(filename, 'w') as fh:
             fh.write(data)
 
+    @app_error
     def import_yaml_config(self, filename, exclude_app_settings=False):
         self.config_changed = True
 
@@ -352,6 +447,7 @@ class StorageController(EventDispatcher):
     def set_data_unsaved(self):
         self.has_unsaved = True
 
+    @app_error
     def create_gui_channels(self, event_channels, pos_channels, zone_channels):
         data_create_channel = self.data_file.create_channel
         create_channel = self.channel_controller.create_channel
@@ -368,6 +464,7 @@ class StorageController(EventDispatcher):
             data_channel = data_create_channel('zone')
             create_channel('zone', data_channel, **metadata)
 
+    @app_error
     def create_gui_channels_from_storage(self):
         get_channel_from_id = self.data_file.get_channel_from_id
         create_channel = self.channel_controller.create_channel
@@ -386,3 +483,66 @@ class StorageController(EventDispatcher):
         for i, metadata in zone_channels.items():
             data_channel = get_channel_from_id(i)
             create_channel('zone', data_channel, **metadata)
+
+    @app_error
+    def notify_video_change(self, item, value=None):
+        if self.data_file is None:
+            return
+
+        if item == 'opened':
+            metadata = self.data_file.get_video_metadata()
+            if metadata:
+                if 'duration' in metadata and \
+                        metadata['duration'] != value['duration'] or \
+                        'src_vid_size' in metadata and \
+                        metadata['src_vid_size'] != value['src_vid_size']:
+                    self.player.close_file()
+                    raise ValueError(
+                        'Video file opened is not the original video file '
+                        'that created the data file. Please make sure to '
+                        'open the correct video file')
+            self.data_file.set_video_metadata(value)
+        elif item == 'seek':
+            self.data_file.notify_interrupt_timestamps()
+        elif item == 'first_ts':
+            self.data_file.notify_saw_first_timestamp()
+        elif item == 'last_ts':
+            self.data_file.notify_saw_last_timestamp()
+        self.saw_all_timestamps = self.data_file.saw_all_timestamps
+
+    def add_timestamp(self, t: float):
+        self.data_file.add_timestamp(t)
+        self.saw_all_timestamps = self.data_file.saw_all_timestamps
+
+    @app_error
+    def try_open_video_from_h5(self):
+        metadata = self.data_file.get_video_metadata()
+        if 'filename_tail' not in metadata:
+            return
+
+        head = metadata['filename_head']
+        tail = metadata['filename_tail']
+        f_size = metadata['file_size']
+
+        fname = join(head, tail)
+        if exists(fname) and os.stat(fname).st_size == f_size:
+            self.player.open_file(fname)
+        else:
+            fname = join(dirname(self.filename), tail)
+            if exists(fname) and os.stat(fname).st_size == f_size:
+                self.player.open_file(fname)
+
+    @app_error
+    def open_video_for_current_h5(self, filenames):
+        if not filenames:
+            return
+        fname = filenames[0]
+        self.root_path = dirname(fname)
+        self.player.open_file(fname)
+
+    def get_h5_filename_from_video(self, filename):
+        head, _ = splitext(filename)
+        return head + '.h5'
+
+
+Builder.load_file(join(dirname(__file__), 'storage_style.kv'))

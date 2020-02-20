@@ -5,13 +5,14 @@ The main module that provides the app that runs the GUI.
 """
 from os.path import join, dirname
 from typing import Iterable, List, Dict
-from base_kivy_app.app import BaseKivyApp, run_app as run_cpl_app
 
 from kivy.lang import Builder
 from kivy.factory import Factory
 from kivy.properties import ObjectProperty, BooleanProperty, NumericProperty
-
 from kivy.core.window import Window
+
+from base_kivy_app.app import BaseKivyApp, run_app as run_cpl_app
+from base_kivy_app.graphics import BufferImage
 
 import glitter2
 from glitter2.storage import StorageController
@@ -37,6 +38,8 @@ class Glitter2App(BaseKivyApp):
     channel_controller: ChannelController = None
 
     player: GlitterPlayer = None
+
+    image_display: BufferImage = None
 
     @classmethod
     def get_config_classes(cls):
@@ -72,20 +75,12 @@ class Glitter2App(BaseKivyApp):
             channel.data_channel.num)
 
     def notify_video_change(self, item, value=None):
-        if self.storage_controller.data_file is None:
-            return
-        if item == 'opened':
-            self.storage_controller.data_file.set_video_metadata(value)
-        elif item == 'seek':
-            self.storage_controller.data_file.notify_interrupt_timestamps()
-        elif item == 'first_ts':
-            self.storage_controller.data_file.notify_saw_first_timestamp()
-        elif item == 'last_ts':
-            self.storage_controller.data_file.notify_saw_last_timestamp()
+        return self.storage_controller.notify_video_change(item, value)
 
     def add_video_frame(self, t, image):
-        self.storage_controller.data_file.add_timestamp(t)
+        self.storage_controller.add_timestamp(t)
         self.channel_controller.set_current_timestamp(t)
+        self.image_display.update_img(image)
 
     def build(self):
         base = dirname(glitter2.__file__)
@@ -106,17 +101,40 @@ class Glitter2App(BaseKivyApp):
         return super(Glitter2App, self).build(root)
 
     def on_start(self):
+        self.storage_controller.fbind('has_unsaved', self.set_tittle)
+        self.storage_controller.fbind('config_changed', self.set_tittle)
+        self.storage_controller.fbind('filename', self.set_tittle)
+        self.player.fbind('filename', self.set_tittle)
         self.set_tittle()
 
     def set_tittle(self, *largs):
         """ Sets the title of the window.
         """
-        Window.set_title('Glitter2 v{}, CPL lab'.format(glitter2.__version__))
+        storage_controller = self.storage_controller
+        star = ''
+        if storage_controller.has_unsaved or storage_controller.config_changed:
+            star = '*'
+        s = 'Glitter2 v{}, CPL lab.'.format(glitter2.__version__)
+
+        video_file = self.player.filename
+        h5_file = self.storage_controller.filename
+        if video_file and h5_file:
+            s = '{}{} {} ({})'.format(star, s, video_file, h5_file)
+        elif video_file:
+            s = '*{} {} unsaved'.format(s, video_file)
+        elif h5_file:
+            s = '{}{} ({})'.format(star, s, h5_file)
+        else:
+            s = '*{} unsaved'.format(s)
+
+        Window.set_title(s)
 
     def check_close(self):
-        if not self.ceed_data.ui_close(app_close=True):
+        if not self.storage_controller.ui_close(app_close=True):
             self._close_message = ''
             return False
+        if self.player is not None:
+            self.player.close_file()
         return True
 
     def clean_up(self):
