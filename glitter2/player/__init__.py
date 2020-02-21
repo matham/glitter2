@@ -16,6 +16,9 @@ from kivy.event import EventDispatcher
 from kivy.clock import Clock
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty
 from kivy.lang import Builder
+from kivy.uix.slider import Slider
+
+from kivy_garden.tickmarker import TickMarker
 
 from base_kivy_app.app import app_error
 
@@ -48,7 +51,7 @@ class GlitterPlayer(EventDispatcher):
     """The size of the video frames, set once the file is open. Read only.
     """
 
-    duration: float = 0
+    duration: float = NumericProperty(0)
     """The duration of of the video, set once the file is open. Read only.
     """
 
@@ -74,7 +77,7 @@ class GlitterPlayer(EventDispatcher):
     immediately since there's no previous frame.
     """
 
-    _last_frame_pts: float = 0
+    last_frame_pts: float = NumericProperty(0)
     """The timestamp (pts) in video time of the last shown frame.
     """
 
@@ -152,12 +155,13 @@ class GlitterPlayer(EventDispatcher):
         self.duration = 0
         self._last_frame = None
         self._last_frame_clock = 0
-        self._last_frame_pts = 0
+        self.last_frame_pts = 0
         self.reached_end = False
         self._next_frame = None
         self._seeked_since_frame = False
         self.filename = ''
         self.paused = True
+        self.app.clear_video()
 
         if self.ff_player is not None:
             self.ff_player.close_player()
@@ -184,12 +188,12 @@ class GlitterPlayer(EventDispatcher):
 
                 remaining_t = max(
                     0.,
-                    (pts - self._last_frame_pts) / self.play_rate - (t - ts))
+                    (pts - self.last_frame_pts) / self.play_rate - (t - ts))
 
             if remaining_t < 0.005:
                 self._last_frame_clock = t
                 self._last_frame = image
-                self._last_frame_pts = pts
+                self.last_frame_pts = pts
 
                 # there has been no seeking since this frame was read, because
                 # the frame is cleared during a seek
@@ -236,8 +240,8 @@ class GlitterPlayer(EventDispatcher):
             return
 
         # simply display this frame
-        self._last_frame, self._last_frame_pts = frame
-        self.app.add_video_frame(self._last_frame_pts, self._last_frame)
+        self._last_frame, self.last_frame_pts = frame
+        self.app.add_video_frame(self.last_frame_pts, self._last_frame)
         self._seeked_since_frame = False  # reset as above
 
         # if we got a frame, we can pause again
@@ -265,7 +269,7 @@ class GlitterPlayer(EventDispatcher):
             image, pts = frame
             self._last_frame_clock = 0
             self._last_frame = image
-            self._last_frame_pts = pts
+            self.last_frame_pts = pts
             self._seeked_since_frame = False
             self.app.add_video_frame(pts, image)
             self.app.notify_video_change('first_ts')
@@ -370,6 +374,33 @@ class GlitterPlayer(EventDispatcher):
         filename = self.filename
         self.close_file()
         self.open_file(filename)
+
+    def gui_play_button_press(self):
+        if self.paused:
+            # always unpause, but if reached end, also seek to start
+            self.set_pause(False)
+            if self.reached_end:
+                self.seek(0)
+        else:
+            # not paused, so if reached end, seek to start, otherwise pause
+            if self.reached_end:
+                self.seek(0)
+            else:
+                self.set_pause(True)
+
+
+class TickSlider(Slider, TickMarker):
+
+    __events__ = ('on_release', )
+
+    def on_touch_up(self, touch):
+        if super(TickSlider, self).on_touch_up(touch):
+            self.dispatch('on_release')
+            return True
+        return False
+
+    def on_release(self, *args):
+        pass
 
 
 Builder.load_file(join(dirname(__file__), 'player_style.kv'))

@@ -198,6 +198,13 @@ class DataFile(object):
 
         return data
 
+    def set_default_video_metadata(self, metadata: dict):
+        self.unsaved_callback()
+        config = self.video_metadata_config
+        for k, v in metadata.items():
+            if k not in config:
+                config[k] = yaml_dumps(v)
+
     def set_video_metadata(self, metadata: dict):
         self.unsaved_callback()
         config = self.video_metadata_config

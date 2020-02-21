@@ -15,7 +15,7 @@ Whenever we open a new file, the GUI must be cleared and old file closed.
      - Video file
      - App data
    * - Open file (video file selected)
-     - Opens file next to video, or creates a new one
+     - Opens file next to video or creates a new one, if not open
      - Opens video file
      - Clears and loads data from file (if it existed)
    * - Open file (h5 file selected)
@@ -258,20 +258,31 @@ class StorageController(EventDispatcher):
         :param filename:
         :param read_only:
         """
+        # did we open a h5 file? try opening its video
         if h5py.h5f.is_hdf5(filename.encode()):
             self.open_file(filename, read_only=read_only)
             self.try_open_video_from_h5()
-        else:
-            h5_filename = self.get_h5_filename_from_video(filename)
-            if exists(h5_filename):
-                metadata = DataFile.get_file_video_metadata(h5_filename)
-                if metadata.get('file_size') == os.stat(filename).st_size:
-                    self.open_file(h5_filename, read_only=read_only)
-                else:
-                    self.create_file('')
+            return
+
+        # user selected a video file
+        h5_filename = self.get_h5_filename_from_video(filename)
+        # is the video's h5 already open, then just open video
+        if (self.filename and os.path.abspath(h5_filename) ==
+                os.path.abspath(self.filename)):
+            metadata = self.data_file.get_video_metadata()
+            if metadata.get('file_size') == os.stat(filename).st_size:
+                self.player.open_file(filename)
+                return
+
+        if exists(h5_filename):
+            metadata = DataFile.get_file_video_metadata(h5_filename)
+            if metadata.get('file_size') == os.stat(filename).st_size:
+                self.open_file(h5_filename, read_only=read_only)
             else:
-                self.create_file(h5_filename)
-            self.player.open_file(filename)
+                self.create_file('')
+        else:
+            self.create_file(h5_filename)
+        self.player.open_file(filename)
 
     def open_file(self, filename, read_only=False):
         """Loads the file's config and opens the file for usage.
@@ -495,13 +506,16 @@ class StorageController(EventDispatcher):
                 if 'duration' in metadata and \
                         metadata['duration'] != value['duration'] or \
                         'src_vid_size' in metadata and \
-                        metadata['src_vid_size'] != value['src_vid_size']:
+                        tuple(metadata['src_vid_size']) != \
+                        tuple(value['src_vid_size']):
                     self.player.close_file()
                     raise ValueError(
                         'Video file opened is not the original video file '
                         'that created the data file. Please make sure to '
                         'open the correct video file')
-            self.data_file.set_video_metadata(value)
+                self.data_file.set_default_video_metadata(value)
+            else:
+                self.data_file.set_video_metadata(value)
         elif item == 'seek':
             self.data_file.notify_interrupt_timestamps()
         elif item == 'first_ts':

@@ -10,6 +10,7 @@ from kivy.lang import Builder
 from kivy.factory import Factory
 from kivy.properties import ObjectProperty, BooleanProperty, NumericProperty
 from kivy.core.window import Window
+import kivy_garden.graph
 
 from base_kivy_app.app import BaseKivyApp, run_app as run_cpl_app
 from base_kivy_app.graphics import BufferImage
@@ -33,13 +34,17 @@ class Glitter2App(BaseKivyApp):
     by this app class. That class is described in ``base_kivy_app/graphics.kv``.
     '''
 
-    storage_controller: StorageController = None
+    storage_controller: StorageController = ObjectProperty(None)
 
-    channel_controller: ChannelController = None
+    channel_controller: ChannelController = ObjectProperty(None)
 
-    player: GlitterPlayer = None
+    player: GlitterPlayer = ObjectProperty(None)
 
-    image_display: BufferImage = None
+    image_display: BufferImage = ObjectProperty(None)
+
+    scoring_viewer = ObjectProperty(None)
+    """The widget that displays the channel status for time based channels.
+    """
 
     @classmethod
     def get_config_classes(cls):
@@ -82,6 +87,9 @@ class Glitter2App(BaseKivyApp):
         self.channel_controller.set_current_timestamp(t)
         self.image_display.update_img(image)
 
+    def clear_video(self):
+        self.image_display.clear_image()
+
     def build(self):
         base = dirname(glitter2.__file__)
         Builder.load_file(join(base, 'glitter2_style.kv'))
@@ -121,11 +129,11 @@ class Glitter2App(BaseKivyApp):
         if video_file and h5_file:
             s = '{}{} {} ({})'.format(star, s, video_file, h5_file)
         elif video_file:
-            s = '*{} {} unsaved'.format(s, video_file)
+            s = '*{} {} Missing data file'.format(s, video_file)
         elif h5_file:
-            s = '{}{} ({})'.format(star, s, h5_file)
+            s = '{}{} No video file ({})'.format(star, s, h5_file)
         else:
-            s = '*{} unsaved'.format(s)
+            s = '*{} No file'.format(s)
 
         Window.set_title(s)
 
