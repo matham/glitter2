@@ -30,7 +30,8 @@ setup(
     ],
     packages=find_packages(),
     install_requires=[
-        'base_kivy_app', 'ffpyplayer', 'kivy', 'nixio', 'numpy', 'h5py'],
+        'base_kivy_app', 'ffpyplayer', 'kivy', 'nixio', 'numpy', 'h5py',
+        'kivy_garden.graph>=0.4.0', 'kivy_garden.tickmarker>=3.0.0'],
     extras_require={
         'dev': ['pytest>=3.6', 'pytest-cov', 'flake8', 'sphinx-rtd-theme',
                 'coveralls', 'trio', 'pytest-trio', 'pyinstaller'],
