@@ -301,7 +301,6 @@ class StorageController(EventDispatcher):
         temp.close()
 
         copy2(filename, self.backup_filename)
-        #self.import_file(self.backup_filename)
 
         self.nix_file = nix.File.open(
             self.backup_filename, nix.FileMode.ReadWrite,
@@ -465,15 +464,15 @@ class StorageController(EventDispatcher):
 
         for metadata in event_channels:
             data_channel = data_create_channel('event')
-            create_channel('event', data_channel, **metadata)
+            create_channel('event', data_channel, metadata)
 
         for metadata in pos_channels:
             data_channel = data_create_channel('pos')
-            create_channel('pos', data_channel, **metadata)
+            create_channel('pos', data_channel, metadata)
 
         for metadata in zone_channels:
             data_channel = data_create_channel('zone')
-            create_channel('zone', data_channel, **metadata)
+            create_channel('zone', data_channel, metadata)
 
     @app_error
     def create_gui_channels_from_storage(self):
@@ -485,15 +484,15 @@ class StorageController(EventDispatcher):
 
         for i, metadata in event_channels.items():
             data_channel = get_channel_from_id(i)
-            create_channel('event', data_channel, **metadata)
+            create_channel('event', data_channel, metadata)
 
         for i, metadata in pos_channels.items():
             data_channel = get_channel_from_id(i)
-            create_channel('pos', data_channel, **metadata)
+            create_channel('pos', data_channel, metadata)
 
         for i, metadata in zone_channels.items():
             data_channel = get_channel_from_id(i)
-            create_channel('zone', data_channel, **metadata)
+            create_channel('zone', data_channel, metadata)
 
     @app_error
     def notify_video_change(self, item, value=None):

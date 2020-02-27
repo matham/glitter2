@@ -234,17 +234,17 @@ class DataFile(object):
         self.unsaved_callback()
         if event_channels:
             event_channels_ = self.event_channels
-            for i, data in event_channels:
+            for i, data in event_channels.items():
                 event_channels_[i].write_channel_config(data)
 
         if pos_channels:
             pos_channels_ = self.pos_channels
-            for i, data in pos_channels:
+            for i, data in pos_channels.items():
                 pos_channels_[i].write_channel_config(data)
 
         if zone_channels:
             zone_channels_ = self.zone_channels
-            for i, data in zone_channels:
+            for i, data in zone_channels.items():
                 zone_channels_[i].write_channel_config(data)
 
     def read_channels_config(self):
@@ -285,10 +285,13 @@ class DataFile(object):
     def create_channel(self, channel_type):
         if channel_type == 'event':
             cls = EventChannelData
+            items = self.event_channels
         elif channel_type == 'pos':
             cls = PosChannelData
+            items = self.pos_channels
         elif channel_type == 'zone':
             cls = ZoneChannelData
+            items = self.zone_channels
         else:
             raise ValueError(
                 'Did not understand channel type "{}"'.format(channel_type))
@@ -301,6 +304,7 @@ class DataFile(object):
         block.metadata = metadata
 
         channel = cls(name=name, num=n, block=block, data_file=self)
+        items[n] = channel
         channel.create_initial_data()
         return channel
 
@@ -456,7 +460,7 @@ class DataFile(object):
 
         self.unsaved_callback()
         del self.nix_file.blocks[channel.name]
-        del self.nix_file.sections['channel.name' + '_metadata']
+        del self.nix_file.sections[channel.name + '_metadata']
 
 
 class DataChannelBase(object):

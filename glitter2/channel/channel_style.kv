@@ -1,0 +1,202 @@
+<BoxShowMore@ShowMoreBehavior+BoxLayout>
+
+<ChannelList@BoxLayout>:
+    orientation: 'vertical'
+    size_hint_x: None
+    width: '150dp'
+    size_hint_min_y: self.minimum_height
+    spacing: '2dp'
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: '5dp'
+        size_hint_min_y: self.minimum_height
+        canvas:
+            Color:
+                rgba: app.theme.primary
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        BoxLayout:
+            size_hint_y: None
+            height: self.minimum_height
+            FlatImageToggleButton:
+                id: expand_event
+                height: '34dp'
+                size_hint_y: None
+                state: 'down'
+                scale_down_color: False
+                flat_color: app.theme.accent
+                source: 'flat_arrow_right.png' if self.state == 'normal' else 'flat_arrow_down.png'
+            FlatImageButton:
+                scale_down_color: True
+                source: 'flat_plus.png'
+                flat_color: app.theme.accent
+                on_release: app.create_channel('event')
+            FlatLabel:
+                text: 'Events'
+                flat_color: app.theme.text_primary
+        BoxShowMore:
+            more: more_event.__self__
+            show_more: expand_event.state == 'down'
+            # size_hint_max_y: event_container.height
+            ScrollView:
+                id: more_event
+                bar_width: '10dp'
+                scroll_type: ['bars']
+                do_scroll_y: False
+                BoxLayout:
+                    id: event_container
+                    on_kv_post: app.event_container_widget = self.__self__
+                    orientation: 'vertical'
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: '3dp'
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: '5dp'
+        size_hint_min_y: self.minimum_height
+        canvas:
+            Color:
+                rgba: app.theme.primary
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        BoxLayout:
+            size_hint_y: None
+            height: self.minimum_height
+            FlatImageToggleButton:
+                id: expand_pos
+                height: '34dp'
+                size_hint_y: None
+                state: 'down'
+                scale_down_color: False
+                flat_color: app.theme.accent
+                source: 'flat_arrow_right.png' if self.state == 'normal' else 'flat_arrow_down.png'
+            FlatImageButton:
+                scale_down_color: True
+                source: 'flat_plus.png'
+                flat_color: app.theme.accent
+                on_release: app.create_channel('pos')
+            FlatLabel:
+                text: 'Pos'
+                flat_color: app.theme.text_primary
+        BoxShowMore:
+            more: more_pos.__self__
+            show_more: expand_pos.state == 'down'
+            # size_hint_max_y: event_container.height
+            ScrollView:
+                id: more_pos
+                bar_width: '10dp'
+                scroll_type: ['bars']
+                do_scroll_y: False
+                BoxLayout:
+                    id: pos_container
+                    on_kv_post: app.pos_container_widget = self.__self__
+                    orientation: 'vertical'
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: '3dp'
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: '5dp'
+        size_hint_min_y: self.minimum_height
+        canvas:
+            Color:
+                rgba: app.theme.primary
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        BoxLayout:
+            size_hint_y: None
+            height: self.minimum_height
+            FlatImageToggleButton:
+                id: expand_zone
+                height: '34dp'
+                size_hint_y: None
+                state: 'down'
+                scale_down_color: False
+                flat_color: app.theme.accent
+                source: 'flat_arrow_right.png' if self.state == 'normal' else 'flat_arrow_down.png'
+            FlatLabel:
+                text: 'Zones'
+                flat_color: app.theme.text_primary
+        BoxShowMore:
+            more: more_zone.__self__
+            show_more: expand_zone.state == 'down'
+            size_hint_min_y: self.minimum_height
+            # size_hint_max_y: event_container.height
+            ScrollView:
+                id: more_zone
+                bar_width: '10dp'
+                scroll_type: ['bars']
+                do_scroll_y: False
+                BoxLayout:
+                    id: zone_container
+                    on_kv_post: app.zone_container_widget = self.__self__
+                    orientation: 'vertical'
+                    size_hint_y: None
+                    height: self.minimum_height
+                    spacing: '3dp'
+
+
+<EventChannelWidget>:
+    size_hint_y: None
+    height: '34dp'
+    FlatToggleButton:
+        center_texture: True
+        padding: ('5dp', '5dp')
+        flat_color: app.theme.text_primary
+        text: root.channel.name
+        shorten: True
+        shorten_from: 'right'
+    FlatImageButton:
+        scale_down_color: True
+        source: 'flat_delete.png'
+        flat_color: app.theme.accent
+        on_release: app.delete_channel(root.channel)
+    FlatImageButton:
+        scale_down_color: True
+        source: 'flat_dots_vertical.png'
+        flat_color: app.theme.accent
+
+
+<PosChannelWidget>:
+    size_hint_y: None
+    height: '34dp'
+    FlatToggleButton:
+        center_texture: True
+        padding: ('5dp', '5dp')
+        flat_color: app.theme.text_primary
+        text: root.channel.name
+        shorten: True
+        shorten_from: 'right'
+    FlatImageButton:
+        scale_down_color: True
+        source: 'flat_delete.png'
+        flat_color: app.theme.accent
+        on_release: app.delete_channel(root.channel)
+    FlatImageButton:
+        scale_down_color: True
+        source: 'flat_dots_vertical.png'
+        flat_color: app.theme.accent
+
+
+<ZoneChannelWidget>:
+    size_hint_y: None
+    height: '34dp'
+    FlatLabel:
+        center_texture: True
+        padding: ('5dp', '5dp')
+        flat_color: app.theme.text_primary
+        text: root.channel.name
+        shorten: True
+        shorten_from: 'right'
+    FlatImageButton:
+        scale_down_color: True
+        source: 'flat_delete.png'
+        flat_color: app.theme.accent
+        on_release: app.delete_channel(root.channel)
+    FlatImageButton:
+        scale_down_color: True
+        source: 'flat_dots_vertical.png'
+        flat_color: app.theme.accent

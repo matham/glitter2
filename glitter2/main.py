@@ -10,17 +10,45 @@ from kivy.lang import Builder
 from kivy.factory import Factory
 from kivy.properties import ObjectProperty, BooleanProperty, NumericProperty
 from kivy.core.window import Window
+from kivy.uix.widget import Widget
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.behaviors.focus import FocusBehavior
+
 import kivy_garden.graph
+import kivy_garden.tickmarker
 
 from base_kivy_app.app import BaseKivyApp, run_app as run_cpl_app
 from base_kivy_app.graphics import BufferImage
+from base_kivy_app.config import get_class_config_props_names
 
 import glitter2
 from glitter2.storage import StorageController
-from glitter2.channel import ChannelController, ChannelBase
+from glitter2.channel import ChannelController, ChannelBase, EventChannel, \
+    PosChannel, ZoneChannel
 from glitter2.player import GlitterPlayer
+from glitter2.channel.channel_widgets import EventChannelWidget, \
+    PosChannelWidget, ZoneChannelWidget, ImageDisplayWidgetManager
 
 __all__ = ('Glitter2App', 'run_app')
+
+
+class MainView(FocusBehavior, BoxLayout):
+
+    app: 'Glitter2App' = None
+
+    def keyboard_on_key_down(self, *args, **kwargs):
+        if super(MainView, self).keyboard_on_key_down(*args, **kwargs):
+            return True
+        if self.app.player.player_on_key_down(*args, **kwargs):
+            return True
+        return self.app.image_display_manager.root_on_key_down(*args, **kwargs)
+
+    def keyboard_on_key_up(self, *args, **kwargs):
+        if super(MainView, self).keyboard_on_key_up(*args, **kwargs):
+            return True
+        if self.app.player.player_on_key_up(*args, **kwargs):
+            return True
+        return self.app.image_display_manager.root_on_key_up(*args, **kwargs)
 
 
 class Glitter2App(BaseKivyApp):
@@ -42,17 +70,27 @@ class Glitter2App(BaseKivyApp):
 
     image_display: BufferImage = ObjectProperty(None)
 
-    scoring_viewer = ObjectProperty(None)
-    """The widget that displays the channel status for time based channels.
-    """
+    event_container_widget: Widget = None
+
+    pos_container_widget: Widget = None
+
+    zone_container_widget: Widget = None
+
+    image_display_manager: ImageDisplayWidgetManager = None
 
     @classmethod
     def get_config_classes(cls):
         d = super(Glitter2App, cls).get_config_classes()
+        d['storage'] = StorageController
+        d['player'] = GlitterPlayer
+        d['channels'] = ChannelController
         return d
 
     def get_config_instances(self):
         d = super(Glitter2App, self).get_config_instances()
+        d['storage'] = self.storage_controller
+        d['player'] = self.player
+        d['channels'] = self.channel_controller
         return d
 
     def get_app_config_data(self):
@@ -72,14 +110,47 @@ class Glitter2App(BaseKivyApp):
         return self.channel_controller.create_channel(
             channel_type, data_channel, **kwargs)
 
+    def create_channel_widget(self, channel: ChannelBase):
+        if isinstance(channel, EventChannel):
+            self.event_container_widget.add_widget(
+                EventChannelWidget(channel=channel))
+        elif isinstance(channel, PosChannel):
+            self.pos_container_widget.add_widget(
+                PosChannelWidget(channel=channel))
+        else:
+            self.zone_container_widget.add_widget(
+                ZoneChannelWidget(channel=channel))
+
     def delete_channel(self, channel: ChannelBase):
         self.channel_controller.delete_channel(channel)
+        if isinstance(channel, ZoneChannel):
+            if channel.shape is not None:
+                channel.shape.channel = None
+                self.image_display_manager.zone_painter.remove_shape(
+                    channel.shape)
+
         if self.storage_controller.data_file is None:
             return
         self.storage_controller.data_file.delete_channel(
             channel.data_channel.num)
 
+    def delete_channel_widget(self, channel: ChannelBase):
+        if isinstance(channel, EventChannel):
+            container = self.event_container_widget
+        elif isinstance(channel, PosChannel):
+            container = self.pos_container_widget
+        else:
+            container = self.zone_container_widget
+
+        for widget in container.children:
+            if widget.channel is channel:
+                container.remove_widget(widget)
+                return
+        assert False
+
     def notify_video_change(self, item, value=None):
+        if item == 'opened':
+            self.channel_controller.max_duration = self.player.duration
         return self.storage_controller.notify_video_change(item, value)
 
     def add_video_frame(self, t, image):
@@ -94,14 +165,15 @@ class Glitter2App(BaseKivyApp):
         base = dirname(glitter2.__file__)
         Builder.load_file(join(base, 'glitter2_style.kv'))
 
-        self.channel_controller = ChannelController()
+        self.channel_controller = ChannelController(app=self)
         self.player = GlitterPlayer(app=self)
         self.storage_controller = StorageController(
             app=self, channel_controller=self.channel_controller,
             player=self.player)
 
         self.yesno_prompt = Factory.FlatYesNoPrompt()
-        root = Factory.get('MainView')()
+        root = MainView()
+        root.app = self
 
         self.load_app_settings_from_file()
         self.apply_app_settings()
@@ -109,11 +181,20 @@ class Glitter2App(BaseKivyApp):
         return super(Glitter2App, self).build(root)
 
     def on_start(self):
+        self.storage_controller.create_file('')
         self.storage_controller.fbind('has_unsaved', self.set_tittle)
         self.storage_controller.fbind('config_changed', self.set_tittle)
         self.storage_controller.fbind('filename', self.set_tittle)
         self.player.fbind('filename', self.set_tittle)
         self.set_tittle()
+
+        for obj in (self.player, self.channel_controller,
+                    self.storage_controller):
+            for prop in get_class_config_props_names(obj.__class__):
+                obj.fbind(prop, self.trigger_config_updated)
+
+    def trigger_config_updated(self, *args):
+        self.storage_controller.config_changed = True
 
     def set_tittle(self, *largs):
         """ Sets the title of the window.

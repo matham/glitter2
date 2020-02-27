@@ -18,17 +18,17 @@ from kivy.properties import BooleanProperty, NumericProperty, StringProperty
 from kivy.lang import Builder
 from kivy.uix.slider import Slider
 
-from kivy_garden.tickmarker import TickMarker
-
 from base_kivy_app.app import app_error
 
-__all__ = ('GlitterPlayer', )
+__all__ = ('GlitterPlayer', 'SeekSlider')
 
 
 class GlitterPlayer(EventDispatcher):
     """Player that reads from the video file and sends frames as they need to
     be displayed.
     """
+
+    __config_props__ = ()
 
     filename = StringProperty('')
     """Full path to the video file. Read only.
@@ -60,16 +60,19 @@ class GlitterPlayer(EventDispatcher):
     """
 
     paused = BooleanProperty(True)
+    """Whether we are currently paused. Read only.
+    """
 
     _frame_trigger = None
     """Trigger to call to get the next frame. This is automatically called
     each kivy clock frame by the kivy clock.
     """
 
-    player_state: str = 'none'
+    player_state: str = StringProperty('none')
     """The current state of the player.
 
-    Can be one of opening, seeking_paused, none, playing, finished, paused.
+    Can be one of opening, seeking_paused, seeking, none, playing, finished,
+    paused.
     """
 
     _last_frame_clock: float = 0
@@ -89,8 +92,13 @@ class GlitterPlayer(EventDispatcher):
     """We keep here the next frame until we show it at the right time.
     """
 
-    _seeked_since_frame = False
+    _seeked_since_frame = None
     """This keeps track whether we have seeked since seeing the last frame.
+    If we did, it's a timestamps of the seek, otherwise, it's None.
+    """
+
+    _seeking_skip_count = 0
+    """Number of frames we skipped since a seek - we need to skip one frame.
     """
 
     def __init__(self, app, **kwargs):
@@ -158,7 +166,7 @@ class GlitterPlayer(EventDispatcher):
         self.last_frame_pts = 0
         self.reached_end = False
         self._next_frame = None
-        self._seeked_since_frame = False
+        self._seeked_since_frame = None
         self.filename = ''
         self.paused = True
         self.app.clear_video()
@@ -197,7 +205,7 @@ class GlitterPlayer(EventDispatcher):
 
                 # there has been no seeking since this frame was read, because
                 # the frame is cleared during a seek
-                self._seeked_since_frame = False
+                self._seeked_since_frame = None
                 self.app.add_video_frame(pts, image)
                 self._next_frame = None
             else:
@@ -211,7 +219,7 @@ class GlitterPlayer(EventDispatcher):
             self.reached_end = True
 
             # if we got eof directly after reading a frame, we can notify
-            if not self._seeked_since_frame:
+            if self._seeked_since_frame is None:
                 # only if we hit eof after seeing a previous frame
                 self.app.notify_video_change('last_ts')
             return
@@ -220,7 +228,7 @@ class GlitterPlayer(EventDispatcher):
 
         self._next_frame = frame
 
-    def callback_seeking_paused(self):
+    def callback_seeking(self, state):
         """Handles the player callback (:attr:`_frame_trigger`) when the player
         is in "seeking_paused" mode.
         """
@@ -239,14 +247,21 @@ class GlitterPlayer(EventDispatcher):
         if frame is None:
             return
 
+        if not self._seeking_skip_count:
+            self._seeking_skip_count += 1
+            return
+
         # simply display this frame
         self._last_frame, self.last_frame_pts = frame
         self.app.add_video_frame(self.last_frame_pts, self._last_frame)
-        self._seeked_since_frame = False  # reset as above
+        self._seeked_since_frame = None  # reset as above
 
-        # if we got a frame, we can pause again
-        ffplayer.set_pause(True)
-        self.player_state = 'paused'
+        # if we got a frame, we can break out
+        if state == 'seeking_paused':
+            ffplayer.set_pause(True)
+            self.player_state = 'paused'
+        else:
+            self.player_state = 'playing'
 
     def callback_opening(self):
         """Handles the player callback (:attr:`_frame_trigger`) when the player
@@ -270,7 +285,7 @@ class GlitterPlayer(EventDispatcher):
             self._last_frame_clock = 0
             self._last_frame = image
             self.last_frame_pts = pts
-            self._seeked_since_frame = False
+            self._seeked_since_frame = None
             self.app.add_video_frame(pts, image)
             self.app.notify_video_change('first_ts')
             self._next_frame = None
@@ -315,8 +330,8 @@ class GlitterPlayer(EventDispatcher):
                 self.callback_opening()
             elif state == 'paused':
                 pass
-            elif state == 'seeking_paused':
-                self.callback_seeking_paused()
+            elif state.startswith('seeking'):
+                self.callback_seeking(state)
             elif state == 'finished':
                 pass
             else:
@@ -340,15 +355,16 @@ class GlitterPlayer(EventDispatcher):
         if self.player_state == 'paused':
             self.player_state = 'seeking_paused'
             self.ff_player.set_pause(False)
-        elif self.player_state == 'finished':
-            self.player_state = 'playing'
+        else:
+            self.player_state = 'seeking'
 
         self.ff_player.seek(t, relative=False, accurate=True)
         self.app.notify_video_change('seek')
         # clear the frame and note that we seeked. The next frame will have to
         # be a newly read frame after this
         self._next_frame = None
-        self._seeked_since_frame = True
+        self._seeked_since_frame = t
+        self._seeking_skip_count = 0
 
     @app_error
     def set_pause(self, pause):
@@ -388,13 +404,21 @@ class GlitterPlayer(EventDispatcher):
             else:
                 self.set_pause(True)
 
+    def player_on_key_down(self, window, keycode, text, modifiers):
+        print('player', keycode, text, modifiers)
+        return False
 
-class TickSlider(Slider, TickMarker):
+    def player_on_key_up(self, window, keycode):
+        print('player', keycode)
+        return False
+
+
+class SeekSlider(Slider):
 
     __events__ = ('on_release', )
 
     def on_touch_up(self, touch):
-        if super(TickSlider, self).on_touch_up(touch):
+        if super(SeekSlider, self).on_touch_up(touch):
             self.dispatch('on_release')
             return True
         return False

@@ -1,5 +1,5 @@
 
-<MainView@BoxLayout>:
+<MainView>:
     orientation: 'vertical'
     spacing: '5dp'
     canvas:
@@ -23,6 +23,14 @@
         DataBar
         FlatDivider:
             color: app.theme.divider
+        FlatImageToggleButton:
+            disabled: app.player.player_state not in ('playing', 'finished', 'paused')
+            source: 'flat_play.png' if self.state == 'normal' else 'flat_pause.png'
+            flat_color: app.theme.accent
+            state: 'down' if not app.player.paused and not app.player.reached_end else 'normal'
+            on_release: app.player.gui_play_button_press()
+        FlatDivider:
+            color: app.theme.divider
         FlatLabel:
             text: 'No missing frames' if app.storage_controller.saw_all_timestamps else 'Missing frames'
             bold: not app.storage_controller.saw_all_timestamps
@@ -33,10 +41,67 @@
             flat_color: app.theme.text_primary
             canvas.before:
                 Color:
-                    rgba: app.theme.primary if app.storage_controller.saw_all_timestamps else app.theme.primary_light
+                    rgba: app.theme.primary if app.storage_controller.saw_all_timestamps else (1, 0.53, 0.302, 1)
                 Rectangle:
                     pos: self.pos
                     size: self.size
+        FlatDivider:
+            color: app.theme.divider
+        FlatToggleButton:
+            text: 'Zone mode'
+            bold: True
+            padding: '2dp', '2dp'
+            size_hint_x: None
+            width: self.texture_size[0]
+            state: 'normal'
+            center_texture: True
+            group: 'zone_drawing'
+            allow_no_selection: False
+            scale_down_color: True
+            flat_color: app.theme.text_primary
+            flat_background_color: app.theme.primary_light if self.state == 'down' else app.theme.primary
+        FlatToggleButton:
+            text: 'Player mode'
+            bold: True
+            padding: '2dp', '2dp'
+            size_hint_x: None
+            width: self.texture_size[0]
+            center_texture: True
+            group: 'zone_drawing'
+            allow_no_selection: False
+            state: 'down'
+            on_state: app.image_display_manager.zone_painter.locked = self.state == 'down'
+            scale_down_color: True
+            flat_color: app.theme.text_primary
+            flat_background_color: app.theme.primary_light if self.state == 'down' else app.theme.primary
+        BoxLayout:
+            size_hint_x: None
+            width: self.minimum_width
+            FlatImageToggleButton:
+                group: 'paint'
+                scale_down_color: True
+                source: 'flat_circle.png'
+                flat_color: app.theme.accent
+                on_state: app.image_display_manager.zone_painter.draw_mode = 'circle' if self.state == 'down' else 'none'
+            FlatImageToggleButton:
+                group: 'paint'
+                scale_down_color: True
+                source: 'flat_ellipse.png'
+                flat_color: app.theme.accent
+                on_state: app.image_display_manager.zone_painter.draw_mode = 'ellipse' if self.state == 'down' else 'none'
+            FlatImageToggleButton:
+                group: 'paint'
+                scale_down_color: True
+                source: 'flat_polyline.png'
+                flat_color: app.theme.accent
+                state: 'down'
+                on_state: app.image_display_manager.zone_painter.draw_mode = 'freeform' if self.state == 'down' else 'none'
+            FlatImageToggleButton:
+                group: 'paint'
+                scale_down_color: True
+                source: 'flat_polygon.png'
+                flat_color: app.theme.accent
+                on_state: app.image_display_manager.zone_painter.draw_mode = 'polygon' if self.state == 'down' else 'none'
         FlatDivider:
             color: app.theme.divider
         FlatLabel:
@@ -52,4 +117,10 @@
             flat_color: app.theme.accent
             on_kv_post: app.error_indicator = self
             on_release: self.count = 0
-    ControlDisplay
+    BoxLayout:
+        spacing: '3dp'
+        ControlDisplay
+        ChannelList
+
+
+<TickSlider@TickMarker+Slider>

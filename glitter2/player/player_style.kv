@@ -4,73 +4,80 @@
     spacing: '5dp'
     BoxLayout:
         orientation: 'vertical'
-        spacing: '5dp'
+        spacing: '2dp'
         padding: '2dp'
         size_hint_x: None
-        width: self.minimum_width
+        width: '46dp'
         size_hint_min_y: self.minimum_height
-        canvas:
-            Color:
-                rgba: app.theme.primary
-            Rectangle:
-                pos: self.pos
-                size: self.size
-
-        FlatSizedTextInput:
-            background_color: app.theme.primary_light
-            on_focus: if not self.focus: self.text, rate_slider.value = app.player.set_play_rate(float(self.text or 0), is_log=False)
-            text: app.player.set_play_rate(rate_slider.value)[0]
-            input_filter: 'float'
-            size_hint_min_x: '46dp'
-        TickSlider:
-            id: rate_slider
+        BoxLayout:
             orientation: 'vertical'
-            size_hint_min_y: '100dp'
-            max: 1
-            min: -1
-            value: 0
-            log: True
-            ticks_major: 1
-            ticks_minor: 5
+            spacing: '5dp'
+            size_hint_min_y: self.minimum_height
             canvas:
                 Color:
-                    rgba: app.theme.accent
-        FlatImageToggleButton:
-            disabled: not app.player.filename
-            size_hint_y: None
-            height: '44dp'
-            source: 'flat_play.png' if self.state == 'normal' else 'flat_pause.png'
-            flat_color: app.theme.accent
-            state: 'down' if not app.player.paused and not app.player.reached_end else 'normal'
-            on_release: app.player.gui_play_button_press()
-        FlatImageButton:
-            size_hint_y: None
-            height: '36dp'
-            on_release: slider.value = max(slider.min, slider.value - 0.25)
-            source: 'magnify-minus-outline.png'
-            scale_down_color: True
-            flat_color: app.theme.accent
-        FlatImageButton:
-            size_hint_y: None
-            height: '36dp'
-            on_release: slider.value = min(slider.max, slider.value + 0.25)
-            source: 'magnify-plus-outline.png'
-            scale_down_color: True
-            flat_color: app.theme.accent
-        Slider:
-            id: slider
+                    rgba: app.theme.primary
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+            FlatSizedTextInput:
+                background_color: app.theme.primary_light
+                on_focus: if not self.focus: self.text, rate_slider.value = app.player.set_play_rate(float(self.text or 0), is_log=False)
+                text: app.player.set_play_rate(rate_slider.value)[0]
+                input_filter: 'float'
+            TickSlider:
+                id: rate_slider
+                orientation: 'vertical'
+                size_hint_min_y: '100dp'
+                max: 1
+                min: -1
+                value: 0
+                log: True
+                ticks_major: 1
+                ticks_minor: 5
+                canvas:
+                    Color:
+                        rgba: app.theme.accent
+        BoxLayout:
             orientation: 'vertical'
+            spacing: '5dp'
             size_hint_y: None
-            height: '200dp'
-            max: 4
-            min: min((scroll.width - dp(15)) / image_display.width, (scroll.height - dp(15)) / image_display.height)
-            on_min: self.value = self.min
-            value: 1.
-            on_value: scatter.scale = self.value
+            height: self.minimum_height
+            canvas:
+                Color:
+                    rgba: app.theme.primary
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
+            FlatImageButton:
+                size_hint_y: None
+                height: '36dp'
+                on_release: slider.value = max(slider.min, slider.value - 0.25)
+                source: 'magnify-minus-outline.png'
+                scale_down_color: True
+                flat_color: app.theme.accent
+            FlatImageButton:
+                size_hint_y: None
+                height: '36dp'
+                on_release: slider.value = min(slider.max, slider.value + 0.25)
+                source: 'magnify-plus-outline.png'
+                scale_down_color: True
+                flat_color: app.theme.accent
+            Slider:
+                id: slider
+                disabled: app.player.player_state in ('none', 'opening')
+                orientation: 'vertical'
+                size_hint_y: None
+                height: '200dp'
+                max: 4
+                min: max(0.01, min((scroll.width - dp(15)) / max(image_display.width, 1), (scroll.height - dp(15)) / max(image_display.height, 1)))
+                on_min: self.value = self.min
+                value: 1.
+                on_value: scatter.scale = self.value
     BoxLayout:
         orientation: 'vertical'
         size_hint_min_y: self.minimum_height
         size_hint_min_x: '200dp'
+        spacing: '5dp'
         BoxLayout:
             orientation: 'vertical'
             size_hint_max_y: dp(47) + min(dp(100), scoring_viewer.height)
@@ -92,11 +99,12 @@
                     Rectangle:
                         size: self.size
                         pos: self.pos
-                Widget:
+                RelativeLayout:
                     id: scoring_viewer
-                    on_kv_post: app.scoring_viewer = self.__self__
+                    on_kv_post: app.channel_controller.set_overview_widget(self.__self__)
                     size_hint_y: None
                     height: 0
+                    on_width: app.channel_controller.overview_width = int(self.width)
             FloatLayout:
                 size_hint_y: None
                 height: '42dp'
@@ -112,7 +120,8 @@
                     draw_border: False
                     _with_stencilbuffer: False
                     label_options: {'color': (0, 0, 0, 1)}
-                TickSlider:
+                SeekSlider:
+                    disabled: app.player.player_state not in ('playing', 'finished', 'paused')
                     padding: 0
                     disabled: not app.player.filename
                     size_hint_y: None
@@ -121,8 +130,6 @@
                     max: app.player.duration
                     min: 0
                     value: app.player.last_frame_pts
-                    # ticks_major: 10 ** max(0, math.floor(math.log10(app.player.duration / 5))) if app.player.duration > 1 else 1
-                    # ticks_minor: 5
                     on_release: app.player.seek(self.value)
         ScrollView:
             id: scroll
@@ -149,16 +156,31 @@
                     do_collide_after_children: True
                     size_hint: None, None
                     size: image_display.size
-                    RelativeLayout:
+                    ImageDisplayWidgetManager:
+                        on_kv_post:
+                            app.image_display_manager = self.__self__
+                            app.image_display_manager.zone_painter = zone_painter.__self__
+                            app.image_display_manager.pos_channel_painter = pos_channel_painter.__self__
                         size: image_display.size
                         BufferImage:
                             id: image_display
                             on_kv_post: app.image_display = self.__self__
                             auto_bring_to_front: False
                             size_hint: None, None
+                            size: 0, 0
                             on_image_size: self.size = self.image_size
                             scale_to_image: False
 
                             do_scale: False
                             do_translation: False, False
                             do_rotation: False
+                        ZonePainter:
+                            id: zone_painter
+                            app: app.__self__
+                            size_hint: None, None
+                            size: image_display.size
+                            locked: True
+                        PosChannelPainter:
+                            id: pos_channel_painter
+                            size_hint: None, None
+                            size: image_display.size
