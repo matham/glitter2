@@ -42,6 +42,7 @@ jobs:
         python3 -m pip install kivy[base] --pre --extra-index-url https://kivy.org/downloads/simple/
         python3 -m pip install https://github.com/kivy/plyer/archive/master.zip
         python3 -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
+        python3 -m pip install --upgrade nixio --pre
     - name: Install project
       run: python3 -m pip install -e .[dev]
     - name: Make wheel
@@ -81,6 +82,7 @@ jobs:
         python -m pip install kivy[base] --pre --extra-index-url  https://kivy.org/downloads/simple/
         python -m pip install https://github.com/kivy/plyer/archive/master.zip
         python -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
+        python -m pip install --upgrade nixio --pre
         python -m pip install -e .[dev]
     - name: Make PyInstaller app
       run: |
@@ -116,6 +118,7 @@ jobs:
         python3 -m pip install -e .
         cd ..
 
+        python3 -m pip install --upgrade nixio --pre
         python3 -m pip install -e .[dev]
     - name: Generate docs
       run: |
