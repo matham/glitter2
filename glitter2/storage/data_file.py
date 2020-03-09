@@ -437,7 +437,8 @@ class DataFile(object):
             # if the last/current timestamps were in different arrays, merge
             if n != last_timestamps_n and last_timestamps_n is not None:
                 n = self.merge_timestamp_channels_arrays(last_timestamps_n, n)
-                if self._saw_last_timestamp and self._saw_first_timestamp and len(self.timestamps_arrays) == 1:
+                if self._saw_last_timestamp and self._saw_first_timestamp and \
+                        len(self.timestamps_arrays) == 1:
                     self.mark_saw_all_timestamps()
             self._last_timestamps_n = n
             return n
