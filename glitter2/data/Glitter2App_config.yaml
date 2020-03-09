@@ -1,0 +1,4 @@
+app: {inspect: false}
+channels: {n_pixels_per_channel: 5, n_sep_pixels_per_channel: 3}
+player: {seek_duration: 10}
+storage: {backup_interval: 5.0, compression: Auto, root_path: ''}
