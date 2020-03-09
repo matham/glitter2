@@ -77,7 +77,6 @@ from base_kivy_app.app import app_error
 from base_kivy_app.utils import yaml_dumps, yaml_loads
 
 from glitter2.storage.data_file import DataFile, read_nix_prop
-from glitter2.channel import ChannelController
 from glitter2.player import GlitterPlayer
 
 __all__ = ('StorageController', )
@@ -87,7 +86,6 @@ class StorageController(EventDispatcher):
     """This class manages the nix file. It can import config from files and
     add it to the app. Or it can clear all the config and open/create
     an existing file.
-
     """
 
     __config_props__ = ('root_path', 'backup_interval', 'compression')
@@ -125,7 +123,7 @@ class StorageController(EventDispatcher):
 
     app = None
 
-    channel_controller: ChannelController = None
+    channel_controller = None
 
     player: GlitterPlayer = None
 
@@ -313,7 +311,6 @@ class StorageController(EventDispatcher):
 
         self.data_file.upgrade_file()
         self.data_file.open_file()
-        self.app.set_app_config_data(self.data_file.read_app_config())
         self.channel_controller.populate_timestamps(
             self.data_file.timestamp_data_map)
         self.create_gui_channels_from_storage()

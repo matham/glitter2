@@ -1,4 +1,6 @@
-"""
+"""Data file
+============
+
 Data channel methods, unless specified should not be called directly.
 """
 
@@ -308,14 +310,16 @@ class DataFile(object):
         channel.create_initial_data()
         return channel
 
+    def mark_saw_all_timestamps(self):
+        self.saw_all_timestamps = True
+        self.nix_file.sections['data_config']['saw_all_timestamps'] = \
+            yaml_dumps(True)
+
     def notify_interrupt_timestamps(self):
         if self.saw_all_timestamps:
             return
 
-        if self._last_timestamps_n is None:
-            return
-        self.pad_all_channels_to_num_frames(self._last_timestamps_n)
-        self._last_timestamps_n = None
+        self.pad_all_channels_to_num_frames()
 
     def notify_saw_first_timestamp(self):
         if self.saw_all_timestamps:
@@ -327,9 +331,7 @@ class DataFile(object):
             yaml_dumps(True)
 
         if self._saw_last_timestamp and len(self.timestamps_arrays) == 1:
-            self.saw_all_timestamps = True
-            self.nix_file.sections['data_config']['saw_all_timestamps'] = \
-                yaml_dumps(True)
+            self.mark_saw_all_timestamps()
 
     def notify_saw_last_timestamp(self):
         if self.saw_all_timestamps:
@@ -340,14 +342,10 @@ class DataFile(object):
         self.nix_file.sections['data_config']['saw_last_timestamp'] = \
             yaml_dumps(True)
 
-        if self._last_timestamps_n is not None:
-            self.pad_all_channels_to_num_frames(self._last_timestamps_n)
-            self._last_timestamps_n = None
+        self.pad_all_channels_to_num_frames()
 
         if self._saw_first_timestamp and len(self.timestamps_arrays) == 1:
-            self.saw_all_timestamps = True
-            self.nix_file.sections['data_config']['saw_all_timestamps'] = \
-                yaml_dumps(True)
+            self.mark_saw_all_timestamps()
 
     def merge_timestamp_channels_arrays(self, arr_num1: int, arr_num2: int):
         timestamps_arrays = self.timestamps_arrays
@@ -391,7 +389,24 @@ class DataFile(object):
             chan.create_data_array(n)
         return n
 
-    def pad_all_channels_to_num_frames(self, array_num):
+    def pad_channel_to_num_frames(self, channel: 'TemporalDataChannelBase'):
+        array_num = self._last_timestamps_n
+        if array_num is None:
+            return
+
+        size = len(self.timestamps_arrays[array_num])
+        if not size:
+            return
+
+        channel.pad_channel_to_num_frames(array_num, size)
+
+    def pad_all_channels_to_num_frames(self, array_num=None):
+        if array_num is None:
+            array_num = self._last_timestamps_n
+            if array_num is None:
+                return
+            self._last_timestamps_n = None
+
         size = len(self.timestamps_arrays[array_num])
         if not size:
             return
@@ -422,6 +437,8 @@ class DataFile(object):
             # if the last/current timestamps were in different arrays, merge
             if n != last_timestamps_n and last_timestamps_n is not None:
                 n = self.merge_timestamp_channels_arrays(last_timestamps_n, n)
+                if self._saw_last_timestamp and self._saw_first_timestamp and len(self.timestamps_arrays) == 1:
+                    self.mark_saw_all_timestamps()
             self._last_timestamps_n = n
             return n
 
@@ -514,12 +531,15 @@ class TemporalDataChannelBase(DataChannelBase):
 
     def create_initial_data(self):
         self.data_file.unsaved_callback()
-        self.data_array = data_array = self.create_data_array()
-        data_array.metadata = self.metadata
-        self.data_arrays[0] = data_array
-        return data_array
 
-    def create_data_array(self, n=None):
+        timestamps = self.data_file.timestamps_arrays
+        for i, timestamps_arr in timestamps.items():
+            self.create_data_array(i, count=len(timestamps_arr))
+
+        self.data_array = data_array = self.data_arrays[0]
+        data_array.metadata = self.metadata
+
+    def create_data_array(self, n=0, count=None):
         raise NotImplementedError
 
     def read_initial_data(self):
@@ -571,20 +591,34 @@ class EventChannelData(TemporalDataChannelBase):
 
     default_data_value = np.array([0], dtype=np.uint8)
 
-    def create_data_array(self, n=None):
+    def create_data_array(self, n=0, count=None):
         self.data_file.unsaved_callback()
-        name = self.name if n is None else '{}_group_{}'.format(self.name, n)
-        return self.block.create_data_array(
-            name, 'event', dtype=np.uint8, data=[])
+        name = self.name if not n else '{}_group_{}'.format(self.name, n)
+
+        if not count:
+            self.data_arrays[n] = self.block.create_data_array(
+                name, 'event', dtype=np.uint8, data=[])
+        else:
+            self.data_arrays[n] = self.block.create_data_array(
+                name, 'event', dtype=np.uint8,
+                data=self.default_data_value.repeat(count, axis=0))
 
     def get_timestamps_modified_state(self):
-        timestamp_data_map = self.data_file.timestamp_data_map
+        self.data_file.pad_channel_to_num_frames(self)
         data_arrays = self.data_arrays
+        timestamp_arrays = self.data_file.timestamps_arrays
 
-        return {t: data_arrays[n][i]
-                for t, (n, i) in timestamp_data_map.items()}
+        results = {}
+        for i in data_arrays:
+            data_array = np.array(data_arrays[i]) != 0
+            timestamp_array = np.array(timestamp_arrays[i])
+            for j in range(len(timestamp_array)):
+                results[timestamp_array[j]] = data_array[j]
+
+        return results
 
     def set_timestamp_value(self, t, value):
+        self.data_file.pad_channel_to_num_frames(self)
         data_file = self.data_file
         data_file.unsaved_callback()
         n, i = data_file.timestamp_data_map[t]
@@ -593,6 +627,8 @@ class EventChannelData(TemporalDataChannelBase):
 
     def get_timestamp_value(self, t):
         n, i = self.data_file.timestamp_data_map[t]
+        if len(self.data_arrays[n]) <= i:
+            return False
         return bool(self.data_arrays[n][i])
 
 
@@ -600,20 +636,34 @@ class PosChannelData(TemporalDataChannelBase):
 
     default_data_value = np.array([[-1, -1]], dtype=np.float64)
 
-    def create_data_array(self, n=None):
+    def create_data_array(self, n=0, count=None):
         self.data_file.unsaved_callback()
-        name = self.name if n is None else '{}_group_{}'.format(self.name, n)
-        return self.block.create_data_array(
-            name, 'pos', dtype=np.float64, data=np.empty((0, 2)))
+        name = self.name if not n else '{}_group_{}'.format(self.name, n)
+
+        if not count:
+            self.data_arrays[n] = self.block.create_data_array(
+                name, 'pos', dtype=np.float64, data=np.empty((0, 2)))
+        else:
+            self.data_arrays[n] = self.block.create_data_array(
+                name, 'pos', dtype=np.float64,
+                data=self.default_data_value.repeat(count, axis=0))
 
     def get_timestamps_modified_state(self):
-        timestamp_data_map = self.data_file.timestamp_data_map
+        self.data_file.pad_channel_to_num_frames(self)
         data_arrays = self.data_arrays
+        timestamp_arrays = self.data_file.timestamps_arrays
 
-        return {t: data_arrays[n][i, 0] != -1
-                for t, (n, i) in timestamp_data_map.items()}
+        results = {}
+        for i in data_arrays:
+            data_array = np.array(data_arrays[i])[:, 0] != -1
+            timestamp_array = np.array(timestamp_arrays[i])
+            for j in range(len(timestamp_array)):
+                results[timestamp_array[j]] = data_array[j]
+
+        return results
 
     def set_timestamp_value(self, t, value):
+        self.data_file.pad_channel_to_num_frames(self)
         data_file = self.data_file
         data_file.unsaved_callback()
         n, i = data_file.timestamp_data_map[t]
@@ -622,6 +672,8 @@ class PosChannelData(TemporalDataChannelBase):
 
     def get_timestamp_value(self, t):
         n, i = self.data_file.timestamp_data_map[t]
+        if len(self.data_arrays[n]) <= i:
+            return -1, -1
         x, y = self.data_arrays[n][i, :]
         return float(x), float(y)
 

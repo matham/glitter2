@@ -48,19 +48,6 @@
         FlatDivider:
             color: app.theme.divider
         FlatToggleButton:
-            text: 'Zone mode'
-            bold: True
-            padding: '2dp', '2dp'
-            size_hint_x: None
-            width: self.texture_size[0]
-            state: 'normal'
-            center_texture: True
-            group: 'zone_drawing'
-            allow_no_selection: False
-            scale_down_color: True
-            flat_color: app.theme.text_primary
-            flat_background_color: app.theme.primary_light if self.state == 'down' else app.theme.primary
-        FlatToggleButton:
             text: 'Player mode'
             bold: True
             padding: '2dp', '2dp'
@@ -70,7 +57,20 @@
             group: 'zone_drawing'
             allow_no_selection: False
             state: 'down'
-            on_state: app.image_display_manager.zone_painter.locked = self.state == 'down'
+            on_state: app.interactive_player_mode = app.image_display_manager.zone_painter.locked = self.state == 'down'
+            scale_down_color: True
+            flat_color: app.theme.text_primary
+            flat_background_color: app.theme.primary_light if self.state == 'down' else app.theme.primary
+        FlatToggleButton:
+            text: 'Zone mode'
+            bold: True
+            padding: '2dp', '2dp'
+            size_hint_x: None
+            width: self.texture_size[0]
+            state: 'normal'
+            center_texture: True
+            group: 'zone_drawing'
+            allow_no_selection: False
             scale_down_color: True
             flat_color: app.theme.text_primary
             flat_background_color: app.theme.primary_light if self.state == 'down' else app.theme.primary

@@ -27,28 +27,45 @@ from glitter2.channel import ChannelController, ChannelBase, EventChannel, \
     PosChannel, ZoneChannel
 from glitter2.player import GlitterPlayer
 from glitter2.channel.channel_widgets import EventChannelWidget, \
-    PosChannelWidget, ZoneChannelWidget, ImageDisplayWidgetManager
+    PosChannelWidget, ZoneChannelWidget, ImageDisplayWidgetManager, ZonePainter
 
-__all__ = ('Glitter2App', 'run_app')
+__all__ = ('Glitter2App', 'run_app', 'MainView')
 
 
 class MainView(FocusBehavior, BoxLayout):
+    """The root widget displayed in the GUI.
+    """
 
     app: 'Glitter2App' = None
+
+    def on_focus(self, *args):
+        if not self.focus:
+            self.app.image_display_manager.clear_delete()
 
     def keyboard_on_key_down(self, *args, **kwargs):
         if super(MainView, self).keyboard_on_key_down(*args, **kwargs):
             return True
-        if self.app.player.player_on_key_down(*args, **kwargs):
-            return True
+        if self.app.interactive_player_mode:
+            if self.app.player.player_on_key_down(*args, **kwargs):
+                return True
+        else:
+            if self.app.zone_painter.keyboard_on_key_down(*args, **kwargs):
+                return True
         return self.app.image_display_manager.root_on_key_down(*args, **kwargs)
 
-    def keyboard_on_key_up(self, *args, **kwargs):
-        if super(MainView, self).keyboard_on_key_up(*args, **kwargs):
+    def keyboard_on_key_up(self, window, keycode):
+        if keycode[1] == 'delete':
+            # have to make sure that we always get the up-key for delete
+            self.app.image_display_manager.clear_delete()
+        if super(MainView, self).keyboard_on_key_up(window, keycode):
             return True
-        if self.app.player.player_on_key_up(*args, **kwargs):
-            return True
-        return self.app.image_display_manager.root_on_key_up(*args, **kwargs)
+        if self.app.interactive_player_mode:
+            if self.app.player.player_on_key_up(window, keycode):
+                return True
+        else:
+            if self.app.zone_painter.keyboard_on_key_up(window, keycode):
+                return True
+        return self.app.image_display_manager.root_on_key_up(window, keycode)
 
 
 class Glitter2App(BaseKivyApp):
@@ -77,6 +94,10 @@ class Glitter2App(BaseKivyApp):
     zone_container_widget: Widget = None
 
     image_display_manager: ImageDisplayWidgetManager = None
+
+    zone_painter: ZonePainter = None
+
+    interactive_player_mode = BooleanProperty(True)
 
     @classmethod
     def get_config_classes(cls):
@@ -112,14 +133,20 @@ class Glitter2App(BaseKivyApp):
 
     def create_channel_widget(self, channel: ChannelBase):
         if isinstance(channel, EventChannel):
-            self.event_container_widget.add_widget(
-                EventChannelWidget(channel=channel))
+            channel.widget = widget = EventChannelWidget(
+                channel=channel,
+                image_display_manager=self.image_display_manager)
+            self.event_container_widget.add_widget(widget)
         elif isinstance(channel, PosChannel):
-            self.pos_container_widget.add_widget(
-                PosChannelWidget(channel=channel))
+            channel.widget = widget = PosChannelWidget(
+                channel=channel,
+                image_display_manager=self.image_display_manager)
+            self.pos_container_widget.add_widget(widget)
         else:
-            self.zone_container_widget.add_widget(
-                ZoneChannelWidget(channel=channel))
+            channel.widget = widget = ZoneChannelWidget(
+                channel=channel,
+                image_display_manager=self.image_display_manager)
+            self.zone_container_widget.add_widget(widget)
 
     def delete_channel(self, channel: ChannelBase):
         self.channel_controller.delete_channel(channel)
@@ -174,6 +201,8 @@ class Glitter2App(BaseKivyApp):
         self.yesno_prompt = Factory.FlatYesNoPrompt()
         root = MainView()
         root.app = self
+        self.channel_controller.zone_painter = \
+            self.image_display_manager.zone_painter
 
         self.load_app_settings_from_file()
         self.apply_app_settings()

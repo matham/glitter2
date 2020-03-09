@@ -1,3 +1,9 @@
+"""Utilities
+============
+
+Used across glitter2.
+"""
+
 import re
 
 __all__ = ('fix_name', )

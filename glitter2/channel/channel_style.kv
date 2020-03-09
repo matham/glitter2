@@ -1,9 +1,12 @@
 <BoxShowMore@ShowMoreBehavior+BoxLayout>
 
+<TrackFlatToggleButton@TrackPressingButtonBehavior+FlatToggleButton>
+<TrackFlatImageButton@TrackPressingButtonBehavior+FlatImageButton>
+
 <ChannelList@BoxLayout>:
     orientation: 'vertical'
     size_hint_x: None
-    width: '150dp'
+    width: '250dp'
     size_hint_min_y: self.minimum_height
     spacing: '2dp'
     BoxLayout:
@@ -38,12 +41,12 @@
         BoxShowMore:
             more: more_event.__self__
             show_more: expand_event.state == 'down'
-            # size_hint_max_y: event_container.height
+            disabled: not app.interactive_player_mode
             ScrollView:
                 id: more_event
                 bar_width: '10dp'
                 scroll_type: ['bars']
-                do_scroll_y: False
+                do_scroll_x: False
                 BoxLayout:
                     id: event_container
                     on_kv_post: app.event_container_widget = self.__self__
@@ -83,12 +86,12 @@
         BoxShowMore:
             more: more_pos.__self__
             show_more: expand_pos.state == 'down'
-            # size_hint_max_y: event_container.height
+            disabled: not app.interactive_player_mode
             ScrollView:
                 id: more_pos
                 bar_width: '10dp'
                 scroll_type: ['bars']
-                do_scroll_y: False
+                do_scroll_x: False
                 BoxLayout:
                     id: pos_container
                     on_kv_post: app.pos_container_widget = self.__self__
@@ -129,7 +132,7 @@
                 id: more_zone
                 bar_width: '10dp'
                 scroll_type: ['bars']
-                do_scroll_y: False
+                do_scroll_x: False
                 BoxLayout:
                     id: zone_container
                     on_kv_post: app.zone_container_widget = self.__self__
@@ -142,61 +145,256 @@
 <EventChannelWidget>:
     size_hint_y: None
     height: '34dp'
-    FlatToggleButton:
+    spacing: '2dp'
+    FlatImageToggleButton:
+        source: 'reorder-horizontal.png'
+        flat_color: list(root.channel.color_gl) + [1]
+        state: 'down' if root.selected else 'normal'
+        on_state: root.selected = self.state == 'down'
+        group: 'channel_selection'
+        canvas.before:
+            Color:
+                rgba: app.theme.primary_light if self.state == 'down' else app.theme.primary
+            Rectangle:
+                pos: self.pos
+                size: self.size
+    TrackFlatToggleButton:
         center_texture: True
         padding: ('5dp', '5dp')
         flat_color: app.theme.text_primary
+        flat_background_color: app.theme.primary_light if self.state == 'down' else app.theme.primary
         text: root.channel.name
+        text_size: self.size
         shorten: True
         shorten_from: 'right'
-    FlatImageButton:
+        valign: 'middle'
+        state: 'down' if root.channel.current_value else 'normal'
+        on_user_pressed:
+            root.channel.button_pressed = True
+        on_user_released: root.channel.button_pressed = False
+        on_press: root.channel.button_state(True)
+        on_release: root.channel.button_state(False)
+    TrackFlatImageButton:
         scale_down_color: True
-        source: 'flat_delete.png'
+        source: 'eraser.png'
         flat_color: app.theme.accent
-        on_release: app.delete_channel(root.channel)
+        on_user_pressed: root.channel.eraser_pressed = True
+        on_user_released: root.channel.eraser_pressed = False
+        on_press: root.channel.reset_current_value()
     FlatImageButton:
+        settings_widget: None
         scale_down_color: True
         source: 'flat_dots_vertical.png'
         flat_color: app.theme.accent
+        on_release:
+            if self.settings_widget is None: self.settings_widget = Factory.EventSettingsDropDown(channel=root.channel)
+            self.settings_widget.open(root)
 
 
 <PosChannelWidget>:
     size_hint_y: None
     height: '34dp'
-    FlatToggleButton:
-        center_texture: True
-        padding: ('5dp', '5dp')
-        flat_color: app.theme.text_primary
-        text: root.channel.name
-        shorten: True
-        shorten_from: 'right'
-    FlatImageButton:
-        scale_down_color: True
-        source: 'flat_delete.png'
-        flat_color: app.theme.accent
-        on_release: app.delete_channel(root.channel)
-    FlatImageButton:
-        scale_down_color: True
-        source: 'flat_dots_vertical.png'
-        flat_color: app.theme.accent
-
-
-<ZoneChannelWidget>:
-    size_hint_y: None
-    height: '34dp'
+    spacing: '2dp'
+    FlatImageToggleButton:
+        source: 'reorder-horizontal.png'
+        flat_color: list(root.channel.color_gl) + [1]
+        state: 'down' if root.selected else 'normal'
+        on_state: root.selected = self.state == 'down'
+        group: 'channel_selection'
+        canvas.before:
+            Color:
+                rgba: app.theme.primary_light if self.state == 'down' else app.theme.primary
+            Rectangle:
+                pos: self.pos
+                size: self.size
     FlatLabel:
         center_texture: True
         padding: ('5dp', '5dp')
         flat_color: app.theme.text_primary
         text: root.channel.name
+        text_size: self.size
         shorten: True
         shorten_from: 'right'
-    FlatImageButton:
+        valign: 'middle'
+    TrackFlatImageButton:
         scale_down_color: True
-        source: 'flat_delete.png'
+        source: 'eraser.png'
         flat_color: app.theme.accent
-        on_release: app.delete_channel(root.channel)
+        on_user_pressed: root.channel.eraser_pressed = True
+        on_user_released: root.channel.eraser_pressed = False
+        on_press: root.channel.reset_current_value()
     FlatImageButton:
+        settings_widget: None
         scale_down_color: True
         source: 'flat_dots_vertical.png'
         flat_color: app.theme.accent
+        on_release:
+            if self.settings_widget is None: self.settings_widget = Factory.PosSettingsDropDown(channel=root.channel)
+            self.settings_widget.open(root)
+
+
+<ZoneChannelWidget>:
+    size_hint_y: None
+    height: '34dp'
+    spacing: '2dp'
+    FlatImageToggleButton:
+        source: 'reorder-horizontal.png'
+        flat_color: list(root.channel.color_gl) + [1]
+        state: 'down' if root.selected else 'normal'
+        on_state: root.selected = self.state == 'down'
+        group: 'channel_selection'
+        canvas.before:
+            Color:
+                rgba: app.theme.primary_light if self.state == 'down' else app.theme.primary
+            Rectangle:
+                pos: self.pos
+                size: self.size
+    FlatLabel:
+        center_texture: True
+        padding: ('5dp', '5dp')
+        flat_color: app.theme.text_primary
+        text: root.channel.name
+        text_size: self.size
+        shorten: True
+        shorten_from: 'right'
+        valign: 'middle'
+    FlatImageButton:
+        settings_widget: None
+        scale_down_color: True
+        source: 'flat_dots_vertical.png'
+        flat_color: app.theme.accent
+        on_release:
+            if self.settings_widget is None: self.settings_widget = Factory.ZoneSettingsDropDown(channel=root.channel)
+            self.settings_widget.open(root)
+
+
+<EventSettingsDropDown@ChannelSettingsDropDown>:
+    do_scroll: False, False
+    flat_color: app.theme.primary_text
+    flat_border_color: app.theme.divider
+    BoxLayout:
+        size_hint: None, None
+        orientation: 'vertical'
+        spacing: '5dp'
+        padding: '5dp'
+        size: self.minimum_size
+        BoxLayout:
+            spacing: '5dp'
+            size_hint_y: None
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+            FlatSizedTextInput:
+                size_hint_min_x: '100dp'
+                background_color: app.theme.primary_light
+                text: root.channel.name
+                on_focus: if not self.focus: root.channel.name = self.text
+            FlatImageButton:
+                scale_down_color: True
+                source: 'flat_delete.png'
+                flat_color: app.theme.accent
+                on_release:
+                    root.dismiss()
+                    app.delete_channel(root.channel)
+        GridLayout:
+            size_hint: None, None
+            size: self.minimum_size
+            padding: '5dp'
+            spacing: '5dp'
+            cols: 2
+            FlatLabel:
+                text: 'Button type:'
+                size_hint: None, None
+                size: self.texture_size
+                center_texture: True
+                flat_color: app.theme.text_primary
+            FlatSpinner:
+                flat_color: app.theme.text_primary
+                flat_menu_color: app.theme.accent
+                flat_drop_background_color: app.theme.primary_text
+                flat_drop_text_color: app.theme.text_primary
+                flat_border_color: app.theme.divider
+                size_hint: None, None
+                size: self.minimum_width, '34dp'
+                values: ['Press to mark', 'Press to toggle mark']
+                text: self.values[1] if root.channel.is_toggle_button else self.values[0]
+                on_text: root.channel.is_toggle_button = self.text == self.values[1]
+            FlatLabel:
+                text: 'Marker key-stroke:'
+                size_hint: None, None
+                size: self.texture_size
+                center_texture: True
+                flat_color: app.theme.text_primary
+            FlatSizedTextInput:
+                size_hint_min_x: '100dp'
+                background_color: app.theme.primary_light
+                text: root.channel.keyboard_key
+                on_focus: if not self.focus: root.channel.keyboard_key = self.text
+            FlatLabel:
+                text: 'Channel group:'
+                size_hint: None, None
+                size: self.texture_size
+                center_texture: True
+                flat_color: app.theme.text_primary
+            FlatSizedTextInput:
+                size_hint_min_x: '100dp'
+                background_color: app.theme.primary_light
+                text: root.channel.channel_group
+                on_focus: if not self.focus: root.channel.channel_group = self.text
+
+
+<PosSettingsDropDown@ChannelSettingsDropDown>:
+    do_scroll: False, False
+    flat_color: app.theme.primary_text
+    flat_border_color: app.theme.divider
+    BoxLayout:
+        size_hint: None, None
+        orientation: 'vertical'
+        spacing: '5dp'
+        padding: '5dp'
+        size: self.minimum_size
+        BoxLayout:
+            spacing: '5dp'
+            size_hint_y: None
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+            FlatSizedTextInput:
+                size_hint_min_x: '100dp'
+                background_color: app.theme.primary_light
+                text: root.channel.name
+                on_focus: if not self.focus: root.channel.name = self.text
+            FlatImageButton:
+                scale_down_color: True
+                source: 'flat_delete.png'
+                flat_color: app.theme.accent
+                on_release:
+                    root.dismiss()
+                    app.delete_channel(root.channel)
+
+
+<ZoneSettingsDropDown@ChannelSettingsDropDown>:
+    do_scroll: False, False
+    flat_color: app.theme.primary_text
+    flat_border_color: app.theme.divider
+    BoxLayout:
+        size_hint: None, None
+        orientation: 'vertical'
+        spacing: '5dp'
+        padding: '5dp'
+        size: self.minimum_size
+        BoxLayout:
+            spacing: '5dp'
+            size_hint_y: None
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+            FlatSizedTextInput:
+                size_hint_min_x: '100dp'
+                background_color: app.theme.primary_light
+                text: root.channel.name
+                on_focus: if not self.focus: root.channel.name = self.text
+            FlatImageButton:
+                scale_down_color: True
+                source: 'flat_delete.png'
+                flat_color: app.theme.accent
+                on_release:
+                    root.dismiss()
+                    app.delete_channel(root.channel)

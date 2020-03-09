@@ -28,7 +28,9 @@ class GlitterPlayer(EventDispatcher):
     be displayed.
     """
 
-    __config_props__ = ()
+    __config_props__ = ('seek_duration', )
+
+    seek_duration = NumericProperty(10)
 
     filename = StringProperty('')
     """Full path to the video file. Read only.
@@ -121,7 +123,7 @@ class GlitterPlayer(EventDispatcher):
             min_val = -1
         else:
             max_val = 10
-            min_val = -10
+            min_val = .1
 
         val = max(min(val, max_val), min_val)
         if val == max_val:
@@ -129,7 +131,7 @@ class GlitterPlayer(EventDispatcher):
             return '10', 1
         elif val == min_val:
             self.play_rate = float('-inf')
-            return '-10', -1
+            return '0.1', -1
         else:
             if is_log:
                 val = math.pow(10, val)
@@ -341,10 +343,11 @@ class GlitterPlayer(EventDispatcher):
             raise
 
     @app_error
-    def seek(self, t):
+    def seek(self, t, relative=False):
         """Seeks the video to given timestamp.
 
         :param t: The timestamp in video time.
+        :param relative: The timestamp in video time.
         """
         if self.player_state not in ('playing', 'finished', 'paused'):
             return
@@ -358,7 +361,7 @@ class GlitterPlayer(EventDispatcher):
         else:
             self.player_state = 'seeking'
 
-        self.ff_player.seek(t, relative=False, accurate=True)
+        self.ff_player.seek(t, relative=relative, accurate=not relative)
         self.app.notify_video_change('seek')
         # clear the frame and note that we seeked. The next frame will have to
         # be a newly read frame after this
@@ -405,15 +408,58 @@ class GlitterPlayer(EventDispatcher):
                 self.set_pause(True)
 
     def player_on_key_down(self, window, keycode, text, modifiers):
-        print('player', keycode, text, modifiers)
+        item = keycode[1]
+        print(self.play_rate)
+
+        if item == 'up':
+            if 0.1 < self.play_rate < 10:
+                rate = self.play_rate = min(
+                    10., math.pow(10, math.log10(self.play_rate) + .05))
+                if rate == 10:
+                    self.play_rate = float('inf')
+            elif self.play_rate <= 0.1:
+                self.play_rate = 0.2
+            return True
+        elif item == 'down':
+            if 0.1 < self.play_rate < 10:
+                rate = self.play_rate = max(
+                    0.1, math.pow(10, math.log10(self.play_rate) - .05))
+                if rate == 0.1:
+                    self.play_rate = float('-inf')
+            elif self.play_rate >= 10:
+                self.play_rate = 9
+            return True
+
+        elif item == 'right':
+            if self.filename:
+                if self.play_rate >= 0.1:
+                    self.seek(min(
+                        self.last_frame_pts + self.seek_duration,
+                        self.duration))
+                else:
+                    if self.player_state == 'playing':
+                        self._last_frame_clock = 0
+            return True
+        elif item == 'left':
+            if self.filename:
+                self.seek(max(self.last_frame_pts - self.seek_duration, 0))
+            return True
+
+        elif item == 'spacebar':
+            if self.filename:
+                self.set_pause(not self.paused)
+            return True
         return False
 
     def player_on_key_up(self, window, keycode):
-        print('player', keycode)
+        item = keycode[1]
+        if item in ('up', 'down', 'right', 'left', 'spacebar'):
+            return True
         return False
 
 
 class SeekSlider(Slider):
+    """widget that controls the speed of video playback."""
 
     __events__ = ('on_release', )
 

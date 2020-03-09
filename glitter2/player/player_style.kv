@@ -10,6 +10,7 @@
         width: '46dp'
         size_hint_min_y: self.minimum_height
         BoxLayout:
+            disabled: not app.interactive_player_mode
             orientation: 'vertical'
             spacing: '5dp'
             size_hint_min_y: self.minimum_height
@@ -160,7 +161,9 @@
                         on_kv_post:
                             app.image_display_manager = self.__self__
                             app.image_display_manager.zone_painter = zone_painter.__self__
+                            app.zone_painter = zone_painter.__self__
                             app.image_display_manager.pos_channel_painter = pos_channel_painter.__self__
+                        channel_controller: app.channel_controller
                         size: image_display.size
                         BufferImage:
                             id: image_display
