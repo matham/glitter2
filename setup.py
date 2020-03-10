@@ -6,7 +6,7 @@ from glitter2 import __version__
 
 here = path.abspath(path.dirname(__file__))
 
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
+with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 URL = 'https://github.com/matham/glitter2'
@@ -20,7 +20,6 @@ setup(
     description=(
         'Video scoring for behavioral experiments.'),
     long_description=long_description,
-    long_description_content_type='text/markdown',
     url=URL,
     classifiers=[
         'Development Status :: 4 - Beta',

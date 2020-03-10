@@ -5,8 +5,10 @@ from kivy_deps import sdl2, glew
 import ffpyplayer
 import base_kivy_app
 import glitter2
+from os.path import dirname, join
 from kivy.tools.packaging.pyinstaller_hooks import get_deps_minimal, \
     get_deps_all, hookspath, runtime_hooks
+import nixio.info
 
 kwargs = get_deps_minimal(video=None, audio=None, camera=None)
 kwargs['hiddenimports'].extend([
@@ -22,7 +24,7 @@ kwargs['hiddenimports'].extend([
 
 a = Analysis(['../glitter2/run_app.py'],
              pathex=['.'],
-             datas=base_kivy_app.get_pyinstaller_datas() + glitter2.get_pyinstaller_datas(),
+             datas=base_kivy_app.get_pyinstaller_datas() + glitter2.get_pyinstaller_datas() + [(join(dirname(nixio.info.__file__), 'info.json'), 'nixio')],
              hookspath=hookspath(),
              runtime_hooks=runtime_hooks(),
              win_no_prefer_redirects=False,
@@ -45,5 +47,5 @@ exe = EXE(pyz,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=False,
+          console=True,
           icon='..\\doc\\source\\images\\glitter2_icon.ico')
