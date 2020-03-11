@@ -72,7 +72,7 @@ class DataFile(object):
 
     ffpyplayer_version: str = ''
 
-    def __init__(self, nix_file, unsaved_callback=_unsaved_callback):
+    def __init__(self, nix_file: nix.File, unsaved_callback=_unsaved_callback):
         self.nix_file = nix_file
         self.unsaved_callback = unsaved_callback
         self.event_channels = {}
@@ -143,6 +143,39 @@ class DataFile(object):
         for i, timestamps in timestamps_arrays.items():
             for t_index, val in enumerate(timestamps):
                 data_map[val] = i, t_index
+
+    def set_file_data(
+            self, file_metadata: Dict, saw_all_timestamps: bool,
+            timestamps: List[np.ndarray],
+            event_channels: List[Tuple[dict, List[np.ndarray]]],
+            pos_channels: List[Tuple[dict, List[np.ndarray]]],
+            zone_channels: List[dict]):
+        self.set_video_metadata(file_metadata)
+        if saw_all_timestamps:
+            self.mark_saw_all_timestamps()
+
+        timestamps_arrays = self.timestamps_arrays
+        idx_map = {}
+        for idx, array in enumerate(timestamps):
+            if not idx:
+                timestamps_arrays[0].append(array)
+                idx_map[idx] = 0
+            else:
+                idx_map[idx] = i = self.create_timestamps_channels_array()
+                timestamps_arrays[i].append(array)
+
+        for event_type, channels in [
+                ('event', event_channels), ('pos', pos_channels)]:
+            for metadata, arrays in channels:
+                channel = self.create_channel(event_type)
+                channel.write_channel_config(metadata)
+                for idx, array in enumerate(arrays):
+                    nix_array = channel.data_arrays[idx_map[idx]]
+                    nix_array[:] = array
+
+        for metadata in zone_channels:
+            channel = self.create_channel('zone')
+            channel.write_channel_config(metadata)
 
     def create_channels_from_file(self):
         for block in self.nix_file.blocks:

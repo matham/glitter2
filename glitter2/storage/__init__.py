@@ -268,13 +268,15 @@ class StorageController(EventDispatcher):
         if (self.filename and os.path.abspath(h5_filename) ==
                 os.path.abspath(self.filename)):
             metadata = self.data_file.get_video_metadata()
-            if metadata.get('file_size') == os.stat(filename).st_size:
+            file_size = metadata.get('file_size')
+            if not file_size or file_size == os.stat(filename).st_size:
                 self.player.open_file(filename)
                 return
 
         if exists(h5_filename):
             metadata = DataFile.get_file_video_metadata(h5_filename)
-            if metadata.get('file_size') == os.stat(filename).st_size:
+            file_size = metadata.get('file_size')
+            if not file_size or file_size == os.stat(filename).st_size:
                 self.open_file(h5_filename, read_only=read_only)
             else:
                 self.create_file('')
@@ -535,11 +537,12 @@ class StorageController(EventDispatcher):
         f_size = metadata['file_size']
 
         fname = join(head, tail)
-        if exists(fname) and os.stat(fname).st_size == f_size:
+        if exists(fname) and (not f_size or os.stat(fname).st_size == f_size):
             self.player.open_file(fname)
         else:
             fname = join(dirname(self.filename), tail)
-            if exists(fname) and os.stat(fname).st_size == f_size:
+            if exists(fname) and (
+                    not f_size or os.stat(fname).st_size == f_size):
                 self.player.open_file(fname)
 
     @app_error
