@@ -26,6 +26,7 @@ from glitter2.storage import StorageController
 from glitter2.channel import ChannelController, ChannelBase, EventChannel, \
     PosChannel, ZoneChannel
 from glitter2.player import GlitterPlayer
+from glitter2.analysis.export import ExportManager
 from glitter2.channel.channel_widgets import EventChannelWidget, \
     PosChannelWidget, ZoneChannelWidget, ImageDisplayWidgetManager, ZonePainter
 
@@ -97,6 +98,10 @@ class Glitter2App(BaseKivyApp):
 
     zone_painter: ZonePainter = None
 
+    export_manager: ExportManager = None
+
+    source_item_log = None
+
     interactive_player_mode = BooleanProperty(True)
 
     @classmethod
@@ -105,6 +110,7 @@ class Glitter2App(BaseKivyApp):
         d['storage'] = StorageController
         d['player'] = GlitterPlayer
         d['channels'] = ChannelController
+        d['export'] = ExportManager
         return d
 
     def get_config_instances(self):
@@ -112,6 +118,7 @@ class Glitter2App(BaseKivyApp):
         d['storage'] = self.storage_controller
         d['player'] = self.player
         d['channels'] = self.channel_controller
+        d['export'] = self.export_manager
         return d
 
     def get_app_config_data(self):
@@ -197,6 +204,7 @@ class Glitter2App(BaseKivyApp):
         self.storage_controller = StorageController(
             app=self, channel_controller=self.channel_controller,
             player=self.player)
+        self.export_manager = ExportManager()
 
         self.yesno_prompt = Factory.FlatYesNoPrompt()
         root = MainView()
@@ -257,6 +265,10 @@ class Glitter2App(BaseKivyApp):
 
     def clean_up(self):
         super(Glitter2App, self).clean_up()
+
+        if self.export_manager is not None:
+            self.dump_app_settings_to_file()
+            self.export_manager.stop()
 
 
 def run_app():

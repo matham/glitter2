@@ -23,29 +23,33 @@ def unicodify(val):
         return [unicodify(element) for element in val]
     elif isinstance(val, bytes):
         return val.decode('utf8')
+    elif isinstance(val, np.str_):
+        return str(val)
     else:
         return val
 
 
 class LegacyFileReader(object):
 
-    def read_legacy_file(self, src_path: str, nix_file: nix.File) -> DataFile:
+    def upgrade_legacy_file(self, src_path: str, nix_file: nix.File) -> None:
+        if DataFile.get_file_glitter2_version(src_path) is not None:
+            raise ValueError(
+                '"{}" is a glitter v2 file already'.format(src_path))
+
         src_file = tb.open_file(src_path, mode='r')
 
-        version = src_file.root._v_attrs.Glitter_version
-        if LooseVersion(str(version)) >= LooseVersion('3'):
-            res = self._read_legacy_v3_file(src_file)
-        else:
-            res = self._read_legacy_file(src_file)
+        try:
+            version = src_file.root._v_attrs['Glitter_version']
+            if LooseVersion(str(version)) >= LooseVersion('3'):
+                res = self._read_legacy_v3_file(src_file)
+            else:
+                res = self._read_legacy_file(src_file)
 
-        data_file = DataFile(nix_file=nix_file)
-        data_file.init_new_file()
-        data_file.set_file_data(*res, [])
-        src_file.close()
-
-        data_file = DataFile(nix_file=nix_file)
-        data_file.open_file()
-        return data_file
+            data_file = DataFile(nix_file=nix_file)
+            data_file.init_new_file()
+            data_file.set_file_data(*res, [])
+        finally:
+            src_file.close()
 
     @staticmethod
     def _read_legacy_file(src_file):
@@ -109,7 +113,8 @@ class LegacyFileReader(object):
                 fix_name(attrs['name'], event_channels, pos_channels))
             metadata = {'name': name}
             if 'keycode' in attrs['config']:
-                metadata['keyboard_key'] = unicodify(attrs['name']['keycode'])
+                metadata['keyboard_key'] = unicodify(
+                    attrs['config']['keycode'])
 
             data = [np.array(d) for d in group._f_iter_nodes()]
             event_channels[name] = (metadata, data)

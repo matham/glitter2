@@ -7,6 +7,7 @@ Data channel methods, unless specified should not be called directly.
 import numpy as np
 from typing import List, Dict, Optional, Tuple, Callable
 import nixio as nix
+from nixio.exceptions.exceptions import InvalidFile
 
 from base_kivy_app.utils import yaml_dumps, yaml_loads
 
@@ -68,7 +69,7 @@ class DataFile(object):
     """When it's none it means there's nothing to pad in channels.
     """
 
-    ceed_version: str = ''
+    glitter2_version: str = ''
 
     ffpyplayer_version: str = ''
 
@@ -92,7 +93,7 @@ class DataFile(object):
         sec['channel_count'] = yaml_dumps(0)
 
         sec = f.create_section('data_config', 'configuration')
-        sec['ceed_version'] = yaml_dumps(glitter2.__version__)
+        sec['glitter2_version'] = yaml_dumps(glitter2.__version__)
         sec['ffpyplayer_version'] = yaml_dumps(ffpyplayer.__version__)
 
         sec['saw_all_timestamps'] = yaml_dumps(False)
@@ -122,7 +123,7 @@ class DataFile(object):
             data_config['saw_first_timestamp'])
         self._saw_last_timestamp = yaml_loads(
             data_config['saw_last_timestamp'])
-        self.ceed_version = yaml_loads(data_config['ceed_version'])
+        self.glitter2_version = yaml_loads(data_config['glitter2_version'])
         self.ffpyplayer_version = yaml_loads(data_config['ffpyplayer_version'])
 
         self.read_timestamps_from_file()
@@ -210,6 +211,21 @@ class DataFile(object):
     @property
     def has_content(self):
         return bool(len(self.timestamps))
+
+    @staticmethod
+    def get_file_glitter2_version(filename):
+        # if the file or data is invalid, return None
+        try:
+            f = nix.File.open(filename, nix.FileMode.ReadOnly)
+
+            # but always close file
+            try:
+                data_config = f.sections['data_config']
+                return yaml_loads(data_config['glitter2_version'])
+            finally:
+                f.close()
+        except (InvalidFile, OSError, KeyError):
+            return None
 
     @staticmethod
     def get_file_video_metadata(filename):

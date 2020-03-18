@@ -1,0 +1,274 @@
+#:import pretty_space base_kivy_app.utils.pretty_space
+
+<ExportWidget@BoxLayout>:
+    size_hint_min_x: self.minimum_width
+    orientation: 'vertical'
+    spacing: '5dp'
+    canvas:
+        Color:
+            rgba: app.theme.primary_light
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    ExportSourceItemLog:
+        on_kv_post:
+            app.source_item_log = self.__self__
+            root.remove_widget(self)
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint_y: None
+        size_hint_min_x: self.minimum_width
+        height: self.minimum_height
+        padding: '15dp', '5dp'
+        spacing: '8dp'
+        canvas:
+            Color:
+                rgba: app.theme.primary
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        FlatLabel:
+            text: 'Source directory'
+            height: self.texture_size[1]
+            size_hint_y: None
+            size_hint_min_x: self.texture_size[0]
+            bold: True
+            center_texture: True
+            flat_color: app.theme.text_primary
+        BoxLayout:
+            size_hint_y: None
+            size_hint_min_x: self.minimum_width
+            height: '34dp'
+            spacing: '5dp'
+            AnimatedToggleButton:
+                anim_active: bool(app.export_manager.source_processing)
+                disabled: bool(app.export_manager.thread_has_job) and not app.export_manager.source_processing
+                scale_down_color: True
+                source: 'flat_refresh.png' if self.state == 'normal' else 'flat_stop.png'
+                flat_color: app.theme.accent
+                state: 'down' if app.export_manager.source_processing else 'normal'
+                on_release:
+                    if self.state == 'down': app.export_manager.request_refresh_source_contents()
+                    if self.state == 'normal': app.export_manager.stop_op = True
+            BoxLayout:
+                disabled: app.export_manager.thread_has_job
+                size_hint_min_x: self.minimum_width
+                spacing: '5dp'
+                FlatLabel:
+                    text: 'Glob file filter:'
+                    size: self.texture_size
+                    size_hint: None, None
+                    flat_color: app.theme.text_primary
+                FlatSizedTextInput:
+                    text: app.export_manager.source_match_suffix
+                    background_color: app.theme.primary_light
+                    hint_text: '.ext'
+                    on_focus: if not self.focus: app.export_manager.source_match_suffix = self.text
+                    width: '100dp'
+                    size_hint_x: None
+                FlatLabel:
+                    text: 'Source path:'
+                    size: self.texture_size
+                    size_hint: None, None
+                    flat_color: app.theme.text_primary
+                FlatImageButton:
+                    scale_down_color: True
+                    source: 'flat_folder.png'
+                    flat_color: app.theme.accent
+                    on_release: app.open_filechooser(callback=app.export_manager.gui_set_source, target=app.export_manager.source_viz, dirselect=True, title='Select data directories')
+                FlatSizedTextInput:
+                    text: app.export_manager.source_viz
+                    background_color: app.theme.primary_light
+                    hint_text: 'Source'
+                    on_focus: if not self.focus: app.export_manager.set_source(self.text)
+                    size_hint_min_x: '100dp'
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint_min: self.minimum_size
+        padding: '15dp', '5dp'
+        spacing: '8dp'
+        canvas:
+            Color:
+                rgba: app.theme.primary
+            Rectangle:
+                pos: self.pos
+                size: self.size
+        FlatLabel:
+            text: 'Data files'
+            height: self.texture_size[1]
+            size_hint_y: None
+            size_hint_min_x: self.texture_size[0]
+            bold: True
+            center_texture: True
+            flat_color: app.theme.text_primary
+        BoxLayout:
+            size_hint_y: None
+            size_hint_min_x: self.minimum_width
+            height: '34dp'
+            padding: '15dp', '5dp'
+            spacing: '5dp'
+            AnimatedToggleButton:
+                anim_active: bool(app.export_manager.currently_processing)
+                disabled: bool(app.export_manager.thread_has_job) and not app.export_manager.currently_processing
+                scale_down_color: True
+                source: 'flat_play.png' if self.state == 'normal' else 'flat_stop.png'
+                flat_color: app.theme.accent
+                state: 'down' if app.export_manager.currently_processing else 'normal'
+                on_state: if self.state == 'normal': upgrade_legacy_files.state = 'normal'
+                on_release:
+                    if self.state == 'down': app.export_manager.request_export_files()
+                    if self.state == 'normal': app.export_manager.stop_op = True
+            FlatDivider:
+                color: app.theme.divider
+            FlatLabel:
+                size: self.texture_size
+                size_hint: None, None
+                text: "Upgrade legacy files:"
+                padding_x: '1dp'
+                flat_color: app.theme.text_primary
+            CheckBox:
+                id: upgrade_legacy_files
+                disabled: bool(app.export_manager.thread_has_job)
+                state: 'down' if app.export_manager.upgrade_legacy_files else 'normal'
+                on_state: app.export_manager.upgrade_legacy_files = self.state == 'down'
+                size_hint_x: None
+                width: self.height
+                color: app.theme.accent
+            FlatImageButton:
+                disabled: bool(app.export_manager.thread_has_job)
+                scale_down_color: True
+                source: 'flat_folder.png'
+                flat_color: app.theme.accent
+                on_release: app.open_filechooser(callback=app.export_manager.gui_set_legacy_upgrade_path, target=app.export_manager.legacy_upgrade_path, dirselect=True, title='Select output directory')
+            FlatSizedTextInput:
+                disabled: bool(app.export_manager.thread_has_job)
+                text: app.export_manager.legacy_upgrade_path
+                background_color: app.theme.primary_light
+                hint_text: 'Legacy output directory'
+                on_focus: if not self.focus: app.export_manager.legacy_upgrade_path = self.text
+                size_hint_min_x: '100dp'
+            FlatDivider:
+                color: app.theme.divider
+            FlatLabel:
+                text:'Succeeded: [b]{}[/b], Failed: [b]{}[/b], Skipped: [b]{}[/b]'.format(app.export_manager.num_processed_files, app.export_manager.num_failed_files, app.export_manager.num_skipped_files)
+                size_hint: None, None
+                size: self.texture_size
+                flat_color: app.theme.text_primary
+                center_texture: False
+                markup: True
+        RecycleView:
+            on_kv_post: app.export_manager.recycle_view = self.__self__
+            viewclass: 'SourceItemView'
+            size_hint_min_x: rv.minimum_width
+            size_hint_min_y: min(dp(50), rv.minimum_height)
+            bar_width: '10dp'
+            scroll_type: ['bars']
+            padding: '10dp', 0
+            RecycleBoxLayout:
+                id: rv
+                default_size: None, None
+                default_size_hint: 1, None
+                size_hint_y: None
+                height: self.minimum_height
+                orientation: 'vertical'
+                spacing: '1dp'
+                canvas:
+                    Color:
+                        rgba: app.theme.accent
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
+
+
+<SourceItemView@BoxLayout>:
+    spacing: '5dp'
+    size_hint_y: None
+    height: self.minimum_height
+    filename: ''
+    file_size: 0
+    result: ''
+    status: ''
+    source_obj: None
+    skip: False
+    padding: '10dp', '2dp'
+    canvas:
+        Color:
+            rgba: app.theme.primary
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    FlatLabel:
+        text: 'Filename:'
+        size: self.texture_size
+        size_hint: None, None
+        flat_color: app.theme.text_primary
+        bold: True
+        center_texture: False
+    FlatLabel:
+        text: root.filename
+        flat_color: app.theme.text_primary
+        text_size: self.width, None
+        shorten: True
+        shorten_from: 'left'
+        size_hint_min_x: '100dp'
+        padding_y: '2dp'
+    FlatLabel:
+        text: '{}'.format(pretty_space(root.file_size))
+        size: max(self.texture_size[0], self.width), self.texture_size[1]
+        size_hint: None, None
+        flat_color: app.theme.text_primary
+        bold: True
+        center_texture: False
+    FlatToggleButton:
+        disabled: bool(app.export_manager.thread_has_job)
+        text: "Don't skip" if self.state == 'normal' else 'Skip'
+        size_hint: None, None
+        size: max(self.texture_size[0], self.width), self.texture_size[1]
+        padding_x: '1dp'
+        bold: True
+        state: 'down' if root.skip else 'normal'
+        on_release: app.export_manager.request_set_skip(root.source_obj, self.state == 'down')
+        scale_down_color: True
+        flat_color: app.theme.text_primary
+        flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary_dark
+    FlatLabel:
+        text: root.status if root.status else '(no status)'
+        size: '100dp', self.texture_size[1]
+        size_hint: None, None
+        flat_color: [1, 0, 0, 1] if root.status == 'failed' else app.theme.text_primary
+        center_texture: False
+    AnimatedButton:
+        disabled: root.status == 'processing'
+        anim_active: root.status == 'processing'
+        source: 'flat_refresh.png' if root.status == 'processing' else 'flat_dots_vertical.png'
+        flat_color: app.theme.accent
+        on_release:
+            app.source_item_log.result = root.result
+            app.source_item_log.open(root)
+
+
+<ExportSourceItemLog@FlatDropDown>:
+    flat_color: app.theme.primary_text
+    flat_border_color: app.theme.divider
+    do_scroll: False, False
+    result: ''
+    FlatSplitter:
+        size_hint: None, None
+        height: self.minimum_height
+        min_size: '300dp'
+        max_size: '800dp'
+        width: '400'
+        sizable_from: 'right'
+        flat_color: app.theme.accent
+        BoxLayout:
+            size_hint_min_y: self.minimum_height
+            ScrollView:
+                size_hint_min_y: dp(300)
+                bar_width: '10dp'
+                scroll_type: ['bars']
+                FlatLabel:
+                    id: result
+                    text: root.result
+                    size_hint: None, None
+                    size: self.texture_size
+                    flat_color: app.theme.text_primary
