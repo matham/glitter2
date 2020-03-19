@@ -31,7 +31,7 @@ setup(
     install_requires=[
         'base_kivy_app', 'ffpyplayer', 'kivy', 'nixio>=1.5.0b4', 'numpy',
         'h5py', 'kivy_garden.graph>=0.4.0', 'kivy_garden.tickmarker>=3.0.0',
-        'kivy_garden.painter~=0.2.0', 'tables',
+        'kivy_garden.painter~=0.2.0', 'tables', 'pandas', 'xlsxwriter',
     ],
     extras_require={
         'dev': ['pytest>=3.6', 'pytest-cov', 'flake8', 'sphinx-rtd-theme',
