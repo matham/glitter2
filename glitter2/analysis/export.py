@@ -1,5 +1,5 @@
 
-from typing import List
+from typing import Dict, List
 from os.path import dirname, join
 import os
 import sys
@@ -19,6 +19,7 @@ from kivy.logger import Logger
 from base_kivy_app.app import app_error, report_exception_in_app
 
 from glitter2.storage.legacy import LegacyFileReader
+from glitter2.analysis import FileDataAnalysis
 
 
 class SourceFile(object):
@@ -43,6 +44,8 @@ class SourceFile(object):
 
     exception = None
 
+    accumulated_stats = None
+
     def __init__(self, filename: pathlib.Path, source_root: pathlib.Path):
         super(SourceFile, self).__init__()
         self.filename = filename
@@ -59,13 +62,20 @@ class SourceFile(object):
             'source_obj': self,
         }
 
-    def process_file(self, legacy_upgrade_path: pathlib.Path = None):
+    def process_file(
+            self, legacy_upgrade_path: str = None,
+            root_raw_data_export_path: str = None, **kwargs):
         self.exception = None
+        self.accumulated_stats = None
+
         try:
             source_file = self.filename
             if legacy_upgrade_path:
                 source_file = self._upgrade_file(legacy_upgrade_path)
-            self._export_file(source_file)
+
+            self._export_file(
+                source_file,
+                root_raw_data_export_path=root_raw_data_export_path, **kwargs)
         except BaseException as e:
             tb = ''.join(traceback.format_exception(*sys.exc_info()))
             self.result = 'Error: {}\n\n'.format(e)
@@ -76,10 +86,28 @@ class SourceFile(object):
             self.result = ''
             self.status = 'done'
 
-    def _export_file(self, filename: pathlib.Path):
-        pass
+    def _export_file(
+            self, filename: pathlib.Path,
+            root_raw_data_export_path: str = None,
+            **kwargs):
+        analysis = FileDataAnalysis(filename=str(filename))
+
+        try:
+            analysis.load_data()
+
+            if root_raw_data_export_path:
+                root = pathlib.Path(root_raw_data_export_path)
+                raw_filename = root.joinpath(
+                    self.filename.relative_to(
+                        self.source_root)).with_suffix('xlsx')
+                analysis.export_raw_data_to_excel(str(raw_filename))
+
+            self.accumulated_stats = analysis.get_named_statistics(**kwargs)
+        finally:
+            analysis.close()
 
     def _upgrade_file(self, legacy_upgrade_path):
+        legacy_upgrade_path = pathlib.Path(legacy_upgrade_path)
         target_filename = legacy_upgrade_path.joinpath(
             self.filename.relative_to(self.source_root))
 
@@ -151,6 +179,16 @@ class ExportManager(EventDispatcher):
     legacy_upgrade_path = StringProperty('')
 
     upgrade_legacy_files = BooleanProperty(False)
+
+    events_stats: Dict[str, dict] = {}
+
+    pos_stats: Dict[str, dict] = {}
+
+    zones_stats: Dict[str, dict] = {}
+
+    root_raw_data_export_path = ''
+
+    stats_export_path = ''
 
     source_contents: List['SourceFile'] = []
 
@@ -406,6 +444,18 @@ class ExportManager(EventDispatcher):
         queue_put = self.kivy_thread_queue.put
         trigger = self.trigger_run_in_kivy
 
+        root_raw_data_export_path = self.root_raw_data_export_path
+        stats_export_path = self.stats_export_path
+        accumulated_stats = []
+        if stats_export_path:
+            stats_kwargs = {
+                'events': self.events_stats,
+                'pos': self.pos_stats,
+                'zones': self.zones_stats
+            }
+        else:
+            stats_kwargs = {}
+
         for item in self.source_contents:
             if self.stop_op:
                 return
@@ -420,7 +470,13 @@ class ExportManager(EventDispatcher):
             else:
                 legacy_upgrade_path = None
 
-            item.process_file(legacy_upgrade_path)
+            item.process_file(
+                legacy_upgrade_path,
+                root_raw_data_export_path=root_raw_data_export_path,
+                **stats_kwargs)
+            if item.accumulated_stats is not None:
+                accumulated_stats.append(item.accumulated_stats)
+
             queue_put(
                 ('update_source_item', (item.item_index, item.get_data())))
             if item.status != 'done':
@@ -431,6 +487,10 @@ class ExportManager(EventDispatcher):
             if item.exception is not None:
                 queue_put(('exception', item.exception))
             trigger()
+
+        if stats_export_path:
+            FileDataAnalysis.export_accumulated_named_statistics(
+                stats_export_path, accumulated_stats)
 
     def stop(self):
         if self.internal_thread_queue:

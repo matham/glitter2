@@ -39,6 +39,7 @@ class DataFile(object):
 
     timestamps: nix.DataArray = None
     """The first timestamps data array. If there's only one, this is used.
+    It's created when :meth:`init_new_file` is called.
     """
 
     timestamps_arrays: Dict[int, nix.DataArray] = {}
@@ -211,6 +212,11 @@ class DataFile(object):
     @property
     def has_content(self):
         return bool(len(self.timestamps))
+
+    @property
+    def ordered_timestamps_indices(self):
+        arrays = self.timestamps_arrays
+        return list(sorted(arrays, key=lambda i: arrays[i][0]))
 
     @staticmethod
     def get_file_glitter2_version(filename):
