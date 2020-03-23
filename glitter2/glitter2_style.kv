@@ -164,6 +164,7 @@
             on_release: self.count = 0
     ScreenManager:
         id: screen_manager
+        on_current: app.current_view = self.current
         Screen:
             name: 'scoring'
             BoxLayout:

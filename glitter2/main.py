@@ -13,6 +13,7 @@ from kivy.core.window import Window
 from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.behaviors.focus import FocusBehavior
+from kivy.clock import Clock
 
 import kivy_garden.graph
 import kivy_garden.tickmarker
@@ -46,6 +47,9 @@ class MainView(FocusBehavior, BoxLayout):
     def keyboard_on_key_down(self, *args, **kwargs):
         if super(MainView, self).keyboard_on_key_down(*args, **kwargs):
             return True
+        if self.app.current_view != 'scoring':
+            return False
+
         if self.app.interactive_player_mode:
             if self.app.player.player_on_key_down(*args, **kwargs):
                 return True
@@ -60,6 +64,9 @@ class MainView(FocusBehavior, BoxLayout):
             self.app.image_display_manager.clear_delete()
         if super(MainView, self).keyboard_on_key_up(window, keycode):
             return True
+        if self.app.current_view != 'scoring':
+            return False
+
         if self.app.interactive_player_mode:
             if self.app.player.player_on_key_up(window, keycode):
                 return True
@@ -103,6 +110,8 @@ class Glitter2App(BaseKivyApp):
     source_item_log = None
 
     interactive_player_mode = BooleanProperty(True)
+
+    current_view = 'scoring'
 
     @classmethod
     def get_config_classes(cls):
@@ -230,6 +239,9 @@ class Glitter2App(BaseKivyApp):
             for prop in get_class_config_props_names(obj.__class__):
                 obj.fbind(prop, self.trigger_config_updated)
 
+        Clock.schedule_interval(self._set_window_focus, 0)
+        self._set_window_focus()
+
     def trigger_config_updated(self, *args):
         self.storage_controller.config_changed = True
 
@@ -254,6 +266,10 @@ class Glitter2App(BaseKivyApp):
             s = '*{} No file'.format(s)
 
         Window.set_title(s)
+
+    def _set_window_focus(self, *args):
+        if not FocusBehavior._keyboards:
+            self.root.focus = True
 
     def check_close(self):
         if not self.storage_controller.ui_close(app_close=True):
