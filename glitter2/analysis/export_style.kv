@@ -4,6 +4,7 @@
     size_hint_min_x: self.minimum_width
     orientation: 'vertical'
     spacing: '5dp'
+    export_options: export_options.__self__
     canvas:
         Color:
             rgba: app.theme.primary_light
@@ -14,6 +15,9 @@
         on_kv_post:
             app.source_item_log = self.__self__
             root.remove_widget(self)
+    ExportOptionsDropDown:
+        id: export_options
+        on_kv_post: root.remove_widget(self)
     BoxLayout:
         orientation: 'vertical'
         size_hint_y: None
@@ -75,7 +79,7 @@
                     scale_down_color: True
                     source: 'flat_folder.png'
                     flat_color: app.theme.accent
-                    on_release: app.open_filechooser(callback=app.export_manager.gui_set_source, target=app.export_manager.source_viz, dirselect=True, title='Select data directories')
+                    on_release: app.open_filechooser(callback=app.export_manager.gui_set_path('source'), target=app.export_manager.source_viz, dirselect=True, title='Select data directories')
                 FlatSizedTextInput:
                     text: app.export_manager.source_viz
                     background_color: app.theme.primary_light
@@ -106,7 +110,7 @@
             size_hint_min_x: self.minimum_width
             height: '34dp'
             padding: '15dp', '5dp'
-            spacing: '5dp'
+            spacing: '15dp'
             AnimatedToggleButton:
                 anim_active: bool(app.export_manager.currently_processing)
                 disabled: bool(app.export_manager.thread_has_job) and not app.export_manager.currently_processing
@@ -114,41 +118,16 @@
                 source: 'flat_play.png' if self.state == 'normal' else 'flat_stop.png'
                 flat_color: app.theme.accent
                 state: 'down' if app.export_manager.currently_processing else 'normal'
-                on_state: if self.state == 'normal': upgrade_legacy_files.state = 'normal'
+                on_state: if self.state == 'normal': root.export_options.upgrade_legacy_files.state = 'normal'
                 on_release:
                     if self.state == 'down': app.export_manager.request_export_files()
                     if self.state == 'normal': app.export_manager.stop_op = True
-            FlatDivider:
-                color: app.theme.divider
-            FlatLabel:
-                size: self.texture_size
-                size_hint: None, None
-                text: "Upgrade legacy files:"
-                padding_x: '1dp'
-                flat_color: app.theme.text_primary
-            CheckBox:
-                id: upgrade_legacy_files
-                disabled: bool(app.export_manager.thread_has_job)
-                state: 'down' if app.export_manager.upgrade_legacy_files else 'normal'
-                on_state: app.export_manager.upgrade_legacy_files = self.state == 'down'
-                size_hint_x: None
-                width: self.height
-                color: app.theme.accent
             FlatImageButton:
-                disabled: bool(app.export_manager.thread_has_job)
                 scale_down_color: True
-                source: 'flat_folder.png'
+                source: 'flat_dots_vertical.png'
                 flat_color: app.theme.accent
-                on_release: app.open_filechooser(callback=app.export_manager.gui_set_legacy_upgrade_path, target=app.export_manager.legacy_upgrade_path, dirselect=True, title='Select output directory')
-            FlatSizedTextInput:
-                disabled: bool(app.export_manager.thread_has_job)
-                text: app.export_manager.legacy_upgrade_path
-                background_color: app.theme.primary_light
-                hint_text: 'Legacy output directory'
-                on_focus: if not self.focus: app.export_manager.legacy_upgrade_path = self.text
-                size_hint_min_x: '100dp'
-            FlatDivider:
-                color: app.theme.divider
+                on_release: root.export_options.open(self.parent)
+            Widget
             FlatLabel:
                 text:'Succeeded: [b]{}[/b], Failed: [b]{}[/b], Skipped: [b]{}[/b]'.format(app.export_manager.num_processed_files, app.export_manager.num_failed_files, app.export_manager.num_skipped_files)
                 size_hint: None, None
@@ -245,6 +224,107 @@
         on_release:
             app.source_item_log.result = root.result
             app.source_item_log.open(root)
+
+
+<ExportOptionsDropDown@FlatDropDown>:
+    flat_color: app.theme.primary_text
+    flat_border_color: app.theme.divider
+    do_scroll: False, False
+    upgrade_legacy_files: upgrade_legacy_files
+    FlatSplitter:
+        size_hint: None, None
+        height: self.minimum_height
+        min_size: self.minimum_width
+        max_size: self.minimum_width + dp(500)
+        sizable_from: 'right'
+        flat_color: app.theme.accent
+        BoxLayout:
+            disabled: bool(app.export_manager.thread_has_job)
+            orientation: 'vertical'
+            size_hint_y: None
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+            FlatLabel:
+                size_hint_y: None
+                height: self.texture_size[1]
+                text: "Export files"
+                flat_color: app.theme.text_primary
+                bold: True
+            GridLayout:
+                cols: 4
+                size_hint_y: None
+                height: self.minimum_height
+                size_hint_min_x: self.minimum_width
+                FlatLabel:
+                    size: self.texture_size
+                    size_hint: None, None
+                    text: "Upgrade legacy files:"
+                    padding_x: '1dp'
+                    flat_color: app.theme.text_primary
+                CheckBox:
+                    id: upgrade_legacy_files
+                    state: 'down' if app.export_manager.upgrade_legacy_files else 'normal'
+                    on_state: app.export_manager.upgrade_legacy_files = self.state == 'down'
+                    size_hint_x: None
+                    width: self.height
+                    color: app.theme.accent
+                FlatImageButton:
+                    scale_down_color: True
+                    source: 'flat_folder.png'
+                    flat_color: app.theme.accent
+                    on_release: app.open_filechooser(callback=app.export_manager.gui_set_path('legacy_upgrade_path'), target=app.export_manager.legacy_upgrade_path, dirselect=True, title='Select output directory')
+                FlatSizedTextInput:
+                    text: app.export_manager.legacy_upgrade_path
+                    background_color: app.theme.primary_light
+                    hint_text: 'Legacy output directory'
+                    on_focus: if not self.focus: app.export_manager.legacy_upgrade_path = self.text
+                    size_hint_min_x: '200dp'
+                FlatLabel:
+                    size: self.texture_size
+                    size_hint: None, None
+                    text: "Export raw data:"
+                    padding_x: '1dp'
+                    flat_color: app.theme.text_primary
+                CheckBox:
+                    state: 'down' if app.export_manager.export_raw_data else 'normal'
+                    on_state: app.export_manager.export_raw_data = self.state == 'down'
+                    size_hint_x: None
+                    width: self.height
+                    color: app.theme.accent
+                FlatImageButton:
+                    scale_down_color: True
+                    source: 'flat_folder.png'
+                    flat_color: app.theme.accent
+                    on_release: app.open_filechooser(callback=app.export_manager.gui_set_path('root_raw_data_export_path'), target=app.export_manager.root_raw_data_export_path, dirselect=True, title='Select raw data directory')
+                FlatSizedTextInput:
+                    text: app.export_manager.root_raw_data_export_path
+                    background_color: app.theme.primary_light
+                    hint_text: 'Raw data output directory'
+                    on_focus: if not self.focus: app.export_manager.root_raw_data_export_path = self.text
+                    size_hint_min_x: '200dp'
+                FlatLabel:
+                    size: self.texture_size
+                    size_hint: None, None
+                    text: "Export stats file:"
+                    padding_x: '1dp'
+                    flat_color: app.theme.text_primary
+                CheckBox:
+                    state: 'down' if app.export_manager.export_stats_data else 'normal'
+                    on_state: app.export_manager.export_stats_data = self.state == 'down'
+                    size_hint_x: None
+                    width: self.height
+                    color: app.theme.accent
+                FlatImageButton:
+                    scale_down_color: True
+                    source: 'flat_folder.png'
+                    flat_color: app.theme.accent
+                    on_release: app.open_filechooser(callback=app.export_manager.gui_set_path('stats_export_path'), target=app.export_manager.stats_export_path, title='Create output file', mode='save', filters=['*.xlsx'])
+                FlatSizedTextInput:
+                    text: app.export_manager.stats_export_path
+                    background_color: app.theme.primary_light
+                    hint_text: 'Stats filename'
+                    on_focus: if not self.focus: app.export_manager.stats_export_path = self.text
+                    size_hint_min_x: '200dp'
 
 
 <ExportSourceItemLog@FlatDropDown>:

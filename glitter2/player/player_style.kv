@@ -22,16 +22,17 @@
                     size: self.size
             FlatSizedTextInput:
                 background_color: app.theme.primary_light
-                on_focus: if not self.focus: self.text, rate_slider.value = app.player.set_play_rate(float(self.text or 0), is_log=False)
-                text: app.player.set_play_rate(rate_slider.value)[0]
+                on_focus: if not self.focus: app.player.set_play_rate(float(self.text or 0))
+                text: app.player.get_play_rate_text(app.player.play_rate)
                 input_filter: 'float'
             TickSlider:
                 id: rate_slider
                 orientation: 'vertical'
                 size_hint_min_y: '100dp'
+                on_value: app.player.set_log_play_rate(self.value)
                 max: 1
                 min: -1
-                value: 0
+                value: app.player.get_slider_log_play_rate(app.player.play_rate)
                 log: True
                 ticks_major: 1
                 ticks_minor: 5

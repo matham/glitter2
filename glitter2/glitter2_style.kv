@@ -169,7 +169,8 @@
             BoxLayout:
                 spacing: '3dp'
                 ControlDisplay
-                ChannelList
+                ChannelList:
+                    disabled: not app.player.filename
         Screen:
             name: 'export'
             ExportWidget:

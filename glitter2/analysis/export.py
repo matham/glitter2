@@ -99,7 +99,7 @@ class SourceFile(object):
                 root = pathlib.Path(root_raw_data_export_path)
                 raw_filename = root.joinpath(
                     self.filename.relative_to(
-                        self.source_root)).with_suffix('xlsx')
+                        self.source_root)).with_suffix('.xlsx')
                 analysis.export_raw_data_to_excel(str(raw_filename))
 
             self.accumulated_stats = analysis.get_named_statistics(**kwargs)
@@ -128,7 +128,8 @@ class SourceFile(object):
 class ExportManager(EventDispatcher):
 
     __config_props__ = (
-        'source', 'source_match_suffix', 'legacy_upgrade_path')
+        'source', 'source_match_suffix', 'legacy_upgrade_path',
+        'root_raw_data_export_path', 'stats_export_path')
 
     num_files = NumericProperty(0)
 
@@ -180,15 +181,22 @@ class ExportManager(EventDispatcher):
 
     upgrade_legacy_files = BooleanProperty(False)
 
-    events_stats: Dict[str, dict] = {}
+    events_stats: Dict[str, dict] = {
+        'active_duration': {}, 'delay_to_first': {}, 'scored_duration': {},
+        'event_count': {}
+    }
 
     pos_stats: Dict[str, dict] = {}
 
     zones_stats: Dict[str, dict] = {}
 
-    root_raw_data_export_path = ''
+    export_raw_data = BooleanProperty(False)
 
-    stats_export_path = ''
+    root_raw_data_export_path = StringProperty('')
+
+    export_stats_data = BooleanProperty(False)
+
+    stats_export_path = StringProperty('')
 
     source_contents: List['SourceFile'] = []
 
@@ -444,8 +452,20 @@ class ExportManager(EventDispatcher):
         queue_put = self.kivy_thread_queue.put
         trigger = self.trigger_run_in_kivy
 
-        root_raw_data_export_path = self.root_raw_data_export_path
-        stats_export_path = self.stats_export_path
+        if self.export_raw_data:
+            root_raw_data_export_path = self.root_raw_data_export_path
+            if not root_raw_data_export_path:
+                raise ValueError('No export path specified for the raw data')
+        else:
+            root_raw_data_export_path = ''
+
+        if self.export_stats_data:
+            stats_export_path = self.stats_export_path
+            if not stats_export_path:
+                raise ValueError('No export path specified for the stats data')
+        else:
+            stats_export_path = '' \
+                                ''
         accumulated_stats = []
         if stats_export_path:
             stats_kwargs = {
@@ -498,19 +518,26 @@ class ExportManager(EventDispatcher):
         if self.thread is not None:
             self.thread.join()
 
-    def gui_set_source(self, paths):
+    def gui_set_path(self, item):
         """Called by the GUI to set the filename.
         """
-        if not paths:
-            return
-        self.set_source(paths[0])
 
-    def gui_set_legacy_upgrade_path(self, paths):
-        """Called by the GUI to set legacy_upgrade_path.
-        """
-        if not paths:
-            return
-        self.legacy_upgrade_path = paths[0]
+        def set_path(paths):
+            if not paths:
+                return
+
+            if item == 'source':
+                self.set_source(paths[0])
+            elif item == 'legacy_upgrade_path':
+                self.legacy_upgrade_path = paths[0]
+            elif item == 'root_raw_data_export_path':
+                self.root_raw_data_export_path = paths[0]
+            elif item == 'stats_export_path':
+                self.stats_export_path = paths[0]
+                if not self.stats_export_path.endswith('.xlsx'):
+                    self.stats_export_path += '.xlsx'
+
+        return set_path
 
 
 Builder.load_file(join(dirname(__file__), 'export_style.kv'))

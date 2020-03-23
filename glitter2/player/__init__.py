@@ -45,7 +45,7 @@ class GlitterPlayer(EventDispatcher):
     end.
     """
 
-    play_rate = 1
+    play_rate = NumericProperty(1)
     """The playing rate with which we play the video.
     """
 
@@ -117,26 +117,37 @@ class GlitterPlayer(EventDispatcher):
             raise Exception(
                 'FFmpeg Player: internal error "{}", "{}"'.format(mode, value))
 
-    def set_play_rate(self, val: float, is_log=True):
-        if is_log:
-            max_val = 1
-            min_val = -1
-        else:
-            max_val = 10
-            min_val = .1
-
-        val = max(min(val, max_val), min_val)
-        if val == max_val:
+    def set_log_play_rate(self, val: float):
+        val = max(min(val, 1), -1)
+        if val == 1:
             self.play_rate = float('inf')
-            return '10', 1
-        elif val == min_val:
+        elif val == -1:
             self.play_rate = float('-inf')
-            return '0.1', -1
         else:
-            if is_log:
-                val = math.pow(10, val)
+            self.play_rate = math.pow(10, val)
+
+    def set_play_rate(self, val: float):
+        val = max(min(val, 10), .1)
+        if val == 10:
+            self.play_rate = float('inf')
+        elif val == .1:
+            self.play_rate = float('-inf')
+        else:
             self.play_rate = val
-            return '{:0.2f}'.format(val), math.log10(val)
+
+    def get_slider_log_play_rate(self, rate):
+        if rate < .1:
+            return -1
+        if rate > 10:
+            return 1
+        return math.log10(rate)
+
+    def get_play_rate_text(self, rate):
+        if rate < .1:
+            return '0.1'
+        if rate > 10:
+            return '10.0'
+        return '{:0.2f}'.format(rate)
 
     @app_error
     def open_file(self, filename):
@@ -409,7 +420,6 @@ class GlitterPlayer(EventDispatcher):
 
     def player_on_key_down(self, window, keycode, text, modifiers):
         item = keycode[1]
-        print(self.play_rate)
 
         if item == 'up':
             if 0.1 < self.play_rate < 10:

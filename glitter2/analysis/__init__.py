@@ -115,7 +115,7 @@ class FileDataAnalysis(object):
         missed_timestamps = self.missed_timestamps
 
         results = []
-        for stat_names, channels, sheet in [
+        for stat_names, channels in [
                 (events or {}, self.event_channels),
                 (pos or {}, self.pos_channels),
                 (zones or {}, self.zone_channels)]:
@@ -323,23 +323,24 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
         s = 0
         if start is not None:
             s = np.searchsorted(timestamps, start, side='left')
-        e = len(timestamps)
+        e = timestamps.shape[0]
         if end is not None:
             e = np.searchsorted(data, end, side='right')
 
         data = data[s:e]
         timestamps = timestamps[s:e]
-        if len(data) <= 1:
+        if data.shape[0] <= 1:
             intervals = np.empty((0, 2))
             self._active_interval = (intervals, timestamps), (start, end)
             return intervals, timestamps
 
-        diff = data[1:] - data[:-1]
+        signed_data = data.astype(np.int8)
+        diff = signed_data[1:] - signed_data[:-1]
         starts = timestamps[1:][diff == 1]
         ends = timestamps[1:][diff == -1]
 
         # de we need the first index as the start (if array starts with 1)
-        n = len(starts)
+        n = starts.shape[0]
         if data[0] == 1:
             n += 1
         intervals = np.empty((n, 2))
@@ -366,7 +367,7 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
 
         intervals, timestamps = self.get_active_intervals(start, end)
         val = np.sum(
-            intervals[:, 1] - intervals[:, 0]) if len(intervals) else 0.
+            intervals[:, 1] - intervals[:, 0]) if intervals.shape[0] else 0.
         self._active_duration = val, (start, end)
         return val
 
@@ -376,7 +377,7 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
             return delay[0]
 
         intervals, timestamps = self.get_active_intervals(start, end)
-        val = intervals[0, 0] if len(intervals) else -1.
+        val = intervals[0, 0] if intervals.shape[0] else -1.
         self._delay_to_first = val, (start, end)
         return val
 
@@ -386,7 +387,7 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
             return duration[0]
 
         intervals, timestamps = self.get_active_intervals(start, end)
-        val = timestamps[-1] - timestamps[0] if len(timestamps) else 0.
+        val = timestamps[-1] - timestamps[0] if timestamps.shape[0] else 0.
         self._scored_duration = val, (start, end)
         return val
 
