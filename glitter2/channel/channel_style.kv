@@ -49,7 +49,7 @@
                 do_scroll_x: False
                 BoxLayout:
                     id: event_container
-                    on_kv_post: app.event_container_widget = self.__self__
+                    on_kv_post: app.image_display_manager.event_container_widget = self.__self__
                     orientation: 'vertical'
                     size_hint_y: None
                     height: self.minimum_height
@@ -94,7 +94,7 @@
                 do_scroll_x: False
                 BoxLayout:
                     id: pos_container
-                    on_kv_post: app.pos_container_widget = self.__self__
+                    on_kv_post: app.image_display_manager.pos_container_widget = self.__self__
                     orientation: 'vertical'
                     size_hint_y: None
                     height: self.minimum_height
@@ -109,6 +109,57 @@
             Rectangle:
                 pos: self.pos
                 size: self.size
+        BoxLayout:
+            size_hint_y: None
+            height: '34dp'
+            size_hint_x: None
+            width: self.minimum_width
+            FlatImageToggleButton:
+                id: edit_zones
+                disabled: hide_shapes.state == 'normal'
+                scale_down_color: True
+                source: 'pencil-off.png' if self.state == 'normal' else 'pencil.png'
+                flat_color: app.theme.accent
+                on_state: app.interactive_player_mode = app.image_display_manager.zone_painter.locked = self.state == 'normal'
+            FlatDivider:
+                color: app.theme.divider
+            FlatImageToggleButton:
+                group: 'paint'
+                scale_down_color: True
+                source: 'flat_circle.png'
+                flat_color: app.theme.accent
+                on_state: app.image_display_manager.zone_painter.draw_mode = 'circle' if self.state == 'down' else 'none'
+            FlatImageToggleButton:
+                group: 'paint'
+                scale_down_color: True
+                source: 'flat_ellipse.png'
+                flat_color: app.theme.accent
+                on_state: app.image_display_manager.zone_painter.draw_mode = 'ellipse' if self.state == 'down' else 'none'
+            FlatImageToggleButton:
+                group: 'paint'
+                scale_down_color: True
+                source: 'flat_polyline.png'
+                flat_color: app.theme.accent
+                state: 'down'
+                on_state: app.image_display_manager.zone_painter.draw_mode = 'freeform' if self.state == 'down' else 'none'
+            FlatImageToggleButton:
+                group: 'paint'
+                scale_down_color: True
+                source: 'flat_polygon.png'
+                flat_color: app.theme.accent
+                on_state: app.image_display_manager.zone_painter.draw_mode = 'polygon' if self.state == 'down' else 'none'
+            FlatDivider:
+                color: app.theme.divider
+            FlatImageToggleButton:
+                id: hide_shapes
+                scale_down_color: True
+                state: 'down'
+                source: 'eye-off.png' if self.state == 'normal' else 'eye.png'
+                flat_color: app.theme.accent
+                on_state:
+                    app.channel_controller.show_zone_drawing = self.state == 'down'
+                    if self.state == 'normal': edit_zones.state = 'normal'
+                    if self.state == 'normal': app.image_display_manager.zone_painter.clear_selected_shapes()
         BoxLayout:
             size_hint_y: None
             height: self.minimum_height
@@ -135,7 +186,8 @@
                 do_scroll_x: False
                 BoxLayout:
                     id: zone_container
-                    on_kv_post: app.zone_container_widget = self.__self__
+                    disabled: hide_shapes.state == 'normal'
+                    on_kv_post: app.image_display_manager.zone_container_widget = self.__self__
                     orientation: 'vertical'
                     size_hint_y: None
                     height: self.minimum_height
@@ -207,6 +259,12 @@
             Rectangle:
                 pos: self.pos
                 size: self.size
+    FlatImageToggleButton:
+        scale_down_color: True
+        source: 'transit-connection-variant.png'
+        flat_color: app.theme.accent
+        state: 'down' if root.channel.display_line else 'normal'
+        on_state: root.channel.display_line = self.state == 'down'
     FlatLabel:
         center_texture: True
         padding: ('5dp', '5dp')
@@ -340,6 +398,17 @@
                 background_color: app.theme.primary_light
                 text: root.channel.channel_group
                 on_focus: if not self.focus: root.channel.channel_group = self.text
+        FlatButton:
+            text: 'Clear data'
+            size_hint_y: None
+            height: self.texture_size[1]
+            size_hint_min_x: self.texture_size[0]
+            padding: '5dp', '5dp'
+            bold: True
+            scale_down_color: True
+            flat_color: app.theme.primary_text
+            flat_background_color: app.theme.accent
+            on_release: root.channel.reset_data_to_default()
 
 
 <PosSettingsDropDown@ChannelSettingsDropDown>:
@@ -369,6 +438,34 @@
                 on_release:
                     root.dismiss()
                     app.delete_channel(root.channel)
+        GridLayout:
+            size_hint: None, None
+            size: self.minimum_size
+            padding: '5dp'
+            spacing: '5dp'
+            cols: 2
+            FlatLabel:
+                text: 'Select key-stroke:'
+                size_hint: None, None
+                size: self.texture_size
+                center_texture: True
+                flat_color: app.theme.text_primary
+            FlatSizedTextInput:
+                size_hint_min_x: '100dp'
+                background_color: app.theme.primary_light
+                text: root.channel.keyboard_key
+                on_focus: if not self.focus: root.channel.keyboard_key = self.text
+        FlatButton:
+            text: 'Clear data'
+            size_hint_y: None
+            height: self.texture_size[1]
+            size_hint_min_x: self.texture_size[0]
+            padding: '5dp', '5dp'
+            bold: True
+            scale_down_color: True
+            flat_color: app.theme.primary_text
+            flat_background_color: app.theme.accent
+            on_release: root.channel.reset_data_to_default()
 
 
 <ZoneSettingsDropDown@ChannelSettingsDropDown>:

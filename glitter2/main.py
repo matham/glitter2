@@ -95,12 +95,6 @@ class Glitter2App(BaseKivyApp):
 
     image_display: BufferImage = ObjectProperty(None)
 
-    event_container_widget: Widget = None
-
-    pos_container_widget: Widget = None
-
-    zone_container_widget: Widget = None
-
     image_display_manager: ImageDisplayWidgetManager = None
 
     zone_painter: ZonePainter = None
@@ -148,21 +142,7 @@ class Glitter2App(BaseKivyApp):
             channel_type, data_channel, **kwargs)
 
     def create_channel_widget(self, channel: ChannelBase):
-        if isinstance(channel, EventChannel):
-            channel.widget = widget = EventChannelWidget(
-                channel=channel,
-                image_display_manager=self.image_display_manager)
-            self.event_container_widget.add_widget(widget)
-        elif isinstance(channel, PosChannel):
-            channel.widget = widget = PosChannelWidget(
-                channel=channel,
-                image_display_manager=self.image_display_manager)
-            self.pos_container_widget.add_widget(widget)
-        else:
-            channel.widget = widget = ZoneChannelWidget(
-                channel=channel,
-                image_display_manager=self.image_display_manager)
-            self.zone_container_widget.add_widget(widget)
+        self.image_display_manager.create_channel_widget(channel)
 
     def delete_channel(self, channel: ChannelBase):
         self.channel_controller.delete_channel(channel)
@@ -178,18 +158,7 @@ class Glitter2App(BaseKivyApp):
             channel.data_channel.num)
 
     def delete_channel_widget(self, channel: ChannelBase):
-        if isinstance(channel, EventChannel):
-            container = self.event_container_widget
-        elif isinstance(channel, PosChannel):
-            container = self.pos_container_widget
-        else:
-            container = self.zone_container_widget
-
-        for widget in container.children:
-            if widget.channel is channel:
-                container.remove_widget(widget)
-                return
-        assert False
+        self.image_display_manager.delete_channel_widget(channel)
 
     def notify_video_change(self, item, value=None):
         if item == 'opened':

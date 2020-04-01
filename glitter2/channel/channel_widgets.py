@@ -12,6 +12,7 @@ from kivy.lang import Builder
 from kivy.factory import Factory
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.widget import Widget
+from kivy.app import App
 
 from kivy_garden.painter import PaintCanvasBehavior, PaintCircle,\
     PaintEllipse, PaintPolygon, PaintFreeformPolygon
@@ -78,7 +79,7 @@ class ShowMoreBehavior(object):
 
 
 class ImageDisplayWidgetManager(RelativeLayout):
-    """Manages all the channels in the GUI.
+    """Manages all the channels in the GUI and the display of the images.
     """
 
     zone_painter: 'ZonePainter' = None
@@ -88,6 +89,12 @@ class ImageDisplayWidgetManager(RelativeLayout):
     channel_controller: ChannelController = None
     """Set from kv automatically.
     """
+
+    event_container_widget: Widget = None
+
+    pos_container_widget: Widget = None
+
+    zone_container_widget: Widget = None
 
     def clear_delete(self):
         self.channel_controller.delete_key_pressed = False
@@ -100,9 +107,9 @@ class ImageDisplayWidgetManager(RelativeLayout):
             if channel is not None and isinstance(channel, TemporalChannel):
                 channel.reset_current_value()
             return True
-        elif item in self.channel_controller.event_channels_keys:
+        elif item in self.channel_controller.channels_keys:
             channel: EventChannel = \
-                self.channel_controller.event_channels_keys[item]
+                self.channel_controller.channels_keys[item]
             assert channel.keyboard_key == item
             channel.key_press(True)
             return True
@@ -119,9 +126,9 @@ class ImageDisplayWidgetManager(RelativeLayout):
         if item == 'delete':
             self.channel_controller.delete_key_pressed = False
             return True
-        elif item in self.channel_controller.event_channels_keys:
+        elif item in self.channel_controller.channels_keys:
             channel: EventChannel = \
-                self.channel_controller.event_channels_keys[item]
+                self.channel_controller.channels_keys[item]
             assert channel.keyboard_key == item
             channel.key_press(False)
             return True
@@ -129,6 +136,39 @@ class ImageDisplayWidgetManager(RelativeLayout):
             return True
 
         return False
+
+    def create_channel_widget(self, channel: ChannelBase):
+        """Called after the channel is ready.
+
+        :param channel:
+        :return:
+        """
+        if isinstance(channel, EventChannel):
+            channel.widget = widget = EventChannelWidget(
+                channel=channel, image_display_manager=self)
+            self.event_container_widget.add_widget(widget)
+        elif isinstance(channel, PosChannel):
+            channel.widget = widget = PosChannelWidget(
+                channel=channel, image_display_manager=self)
+            self.pos_container_widget.add_widget(widget)
+        else:
+            channel.widget = widget = ZoneChannelWidget(
+                channel=channel, image_display_manager=self)
+            self.zone_container_widget.add_widget(widget)
+
+    def delete_channel_widget(self, channel: ChannelBase):
+        if isinstance(channel, EventChannel):
+            container = self.event_container_widget
+        elif isinstance(channel, PosChannel):
+            container = self.pos_container_widget
+        else:
+            container = self.zone_container_widget
+
+        for widget in container.children:
+            if widget.channel is channel:
+                container.remove_widget(widget)
+                return
+        assert False
 
 
 class ZonePainter(PaintCanvasBehavior, Widget):
@@ -177,7 +217,30 @@ class PosChannelPainter(Widget):
     """Widget that draws the time based position for
     :class:`~glitter2.channel.PosChannel`.
     """
-    pass
+
+    def on_touch_down(self, touch):
+        if super().on_touch_down(touch):
+            return True
+        if self.collide_point(*touch.pos):
+            controller = App.get_running_app().channel_controller
+            controller.pos_painter_touch_down(touch.pos)
+        return False
+
+    def on_touch_move(self, touch):
+        if super().on_touch_move(touch):
+            return True
+        if self.collide_point(*touch.pos):
+            controller = App.get_running_app().channel_controller
+            controller.pos_painter_touch_move(touch.pos)
+        return False
+
+    def on_touch_up(self, touch):
+        if super().on_touch_up(touch):
+            return True
+        if self.collide_point(*touch.pos):
+            controller = App.get_running_app().channel_controller
+            controller.pos_painter_touch_up(touch.pos)
+        return False
 
 
 class ChannelWidget(BoxLayout):
@@ -226,15 +289,6 @@ class ZoneChannelWidget(ChannelWidget):
     """
 
     channel: ZoneChannel = ObjectProperty(None)
-
-    def _set_selection(self, *args):
-        super(ZoneChannelWidget, self)._set_selection()
-        if self.selected:
-            self.image_display_manager.zone_painter.select_shape(
-                self.channel.shape)
-        else:
-            self.image_display_manager.zone_painter.deselect_shape(
-                self.channel.shape)
 
 
 class ChannelSettingsDropDown(Factory.FlatDropDown):

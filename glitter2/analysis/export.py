@@ -64,7 +64,9 @@ class SourceFile(object):
 
     def process_file(
             self, legacy_upgrade_path: str = None,
-            root_raw_data_export_path: str = None, **kwargs):
+            root_raw_data_export_path: str = None,
+            raw_dump_zone_collider: bool = False,
+            **kwargs):
         self.exception = None
         self.accumulated_stats = None
 
@@ -75,7 +77,8 @@ class SourceFile(object):
 
             self._export_file(
                 source_file,
-                root_raw_data_export_path=root_raw_data_export_path, **kwargs)
+                root_raw_data_export_path=root_raw_data_export_path,
+                raw_dump_zone_collider=raw_dump_zone_collider, **kwargs)
         except BaseException as e:
             tb = ''.join(traceback.format_exception(*sys.exc_info()))
             self.result = 'Error: {}\n\n'.format(e)
@@ -89,6 +92,7 @@ class SourceFile(object):
     def _export_file(
             self, filename: pathlib.Path,
             root_raw_data_export_path: str = None,
+            raw_dump_zone_collider: bool = False,
             **kwargs):
         analysis = FileDataAnalysis(filename=str(filename))
 
@@ -100,7 +104,9 @@ class SourceFile(object):
                 raw_filename = root.joinpath(
                     self.filename.relative_to(
                         self.source_root)).with_suffix('.xlsx')
-                analysis.export_raw_data_to_excel(str(raw_filename))
+                analysis.export_raw_data_to_excel(
+                    str(raw_filename),
+                    dump_zone_collider=raw_dump_zone_collider)
 
             self.accumulated_stats = analysis.get_named_statistics(**kwargs)
         finally:
@@ -193,6 +199,8 @@ class ExportManager(EventDispatcher):
     export_raw_data = BooleanProperty(False)
 
     root_raw_data_export_path = StringProperty('')
+
+    raw_dump_zone_collider = BooleanProperty(True)
 
     export_stats_data = BooleanProperty(False)
 
@@ -452,6 +460,7 @@ class ExportManager(EventDispatcher):
         queue_put = self.kivy_thread_queue.put
         trigger = self.trigger_run_in_kivy
 
+        raw_dump_zone_collider = self.raw_dump_zone_collider
         if self.export_raw_data:
             root_raw_data_export_path = self.root_raw_data_export_path
             if not root_raw_data_export_path:
@@ -493,6 +502,7 @@ class ExportManager(EventDispatcher):
             item.process_file(
                 legacy_upgrade_path,
                 root_raw_data_export_path=root_raw_data_export_path,
+                raw_dump_zone_collider=raw_dump_zone_collider,
                 **stats_kwargs)
             if item.accumulated_stats is not None:
                 accumulated_stats.append(item.accumulated_stats)
@@ -538,6 +548,20 @@ class ExportManager(EventDispatcher):
                     self.stats_export_path += '.xlsx'
 
         return set_path
+
+    def gui_set_start_time(self, t):
+        t = t or None
+        for d in self.events_stats.values():
+            d['start'] = t
+        for d in self.pos_stats.values():
+            d['start'] = t
+
+    def gui_set_end_time(self, t):
+        t = t or None
+        for d in self.events_stats.values():
+            d['end'] = t
+        for d in self.pos_stats.values():
+            d['end'] = t
 
 
 Builder.load_file(join(dirname(__file__), 'export_style.kv'))

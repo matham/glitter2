@@ -642,6 +642,10 @@ class TemporalDataChannelBase(DataChannelBase):
     def get_timestamp_value(self, t):
         raise NotImplementedError
 
+    def reset_data_to_default(self):
+        for arr in self.data_arrays.values():
+            arr[:] = self.default_data_value
+
 
 class EventChannelData(TemporalDataChannelBase):
 
@@ -679,7 +683,6 @@ class EventChannelData(TemporalDataChannelBase):
         data_file.unsaved_callback()
         n, i = data_file.timestamp_data_map[t]
         self.data_arrays[n][i] = value
-        return bool(value)
 
     def get_timestamp_value(self, t):
         n, i = self.data_file.timestamp_data_map[t]
@@ -724,7 +727,6 @@ class PosChannelData(TemporalDataChannelBase):
         data_file.unsaved_callback()
         n, i = data_file.timestamp_data_map[t]
         self.data_arrays[n][i, :] = value
-        return value[0] != -1
 
     def get_timestamp_value(self, t):
         n, i = self.data_file.timestamp_data_map[t]
@@ -732,6 +734,13 @@ class PosChannelData(TemporalDataChannelBase):
             return -1, -1
         x, y = self.data_arrays[n][i, :]
         return float(x), float(y)
+
+    def get_previous_timestamp_data(self, t):
+        n, i = self.data_file.timestamp_data_map[t]
+        if len(self.data_arrays[n]) < i:
+            return None, None, None
+
+        return self.data_file.timestamps_arrays[n], self.data_arrays[n], i - 1
 
 
 class ZoneChannelData(DataChannelBase):

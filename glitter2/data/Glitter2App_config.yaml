@@ -1,4 +1,6 @@
 app: {inspect: false}
-channels: {n_pixels_per_channel: 5, n_sep_pixels_per_channel: 3}
+channels: {n_pixels_per_channel: 5, n_sep_pixels_per_channel: 3, pos_channels_time_tail: 2}
+export: {legacy_upgrade_path: '', root_raw_data_export_path: '', source: '', source_match_suffix: '*.h5',
+  stats_export_path: ''}
 player: {seek_duration: 10}
 storage: {backup_interval: 5.0, compression: Auto, root_path: ''}

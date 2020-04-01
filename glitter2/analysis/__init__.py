@@ -4,6 +4,8 @@ import numpy as np
 from typing import Dict, List, Optional, Tuple
 import pandas as pd
 
+from kivy_garden.collider import Collide2DPoly, CollideEllipse
+
 from glitter2.storage.data_file import DataFile, EventChannelData, \
     PosChannelData, ZoneChannelData, DataChannelBase, TemporalDataChannelBase
 
@@ -112,6 +114,7 @@ class FileDataAnalysis(object):
             zones: Dict[str, dict] = None) -> List:
         video_head = self.metadata['filename_head']
         video_tail = self.metadata['filename_tail']
+        filename = self.filename
         missed_timestamps = self.missed_timestamps
 
         results = []
@@ -123,13 +126,15 @@ class FileDataAnalysis(object):
                 results.append(([], []))
                 continue
 
-            header = ['video path', 'video filename', 'missed timestamps',
-                      'channel']
+            header = [
+                'data file', 'video path', 'video filename',
+                'missed timestamps', 'channel']
             header.extend(stat_names)
 
             rows = []
             for channel in channels:
-                row = [video_head, video_tail, missed_timestamps, channel.name]
+                row = [filename, video_head, video_tail, missed_timestamps,
+                       channel.name]
                 row.extend(channel.compute_named_statistics(stat_names))
                 rows.append(row)
 
@@ -176,7 +181,7 @@ class FileDataAnalysis(object):
 
         excel_writer.save()
 
-    def export_raw_data_to_excel(self, filename):
+    def export_raw_data_to_excel(self, filename, dump_zone_collider=False):
         if exists(filename):
             raise ValueError('"{}" already exists'.format(filename))
         excel_writer = pd.ExcelWriter(filename, engine='xlsxwriter')
@@ -227,10 +232,25 @@ class FileDataAnalysis(object):
         columns_header = []
         columns = []
         for channel in self.pos_channels:
-            columns_header.append(channel.metadata['name'] + ':x')
-            columns_header.append(channel.metadata['name'] + ':y')
-            columns.append(channel.data[:, 0])
-            columns.append(channel.data[:, 1])
+            name = channel.metadata['name']
+            data = channel.data
+
+            columns_header.append(f'{name}:x')
+            columns_header.append(f'{name}:y')
+            columns.append(data[:, 0])
+            columns.append(data[:, 1])
+
+            if dump_zone_collider:
+                for zone in self.zone_channels:
+                    valid_points = data[:, 0] != -1
+                    zone_name = zone.metadata['name']
+                    columns_header.append(f'{name}:{zone_name}')
+
+                    collider = zone.collider
+                    valid_points[valid_points] = collider.collide_points(
+                        data[valid_points, :].tolist())
+                    columns.append(valid_points)
+
         df = pd.DataFrame(columns).T
         df.columns = columns_header
         df.to_excel(excel_writer, sheet_name='pos_channels', index=False)
@@ -296,30 +316,11 @@ class TemporalAnalysisChannel(AnalysisChannel):
         else:
             self.data = np.array(data_channel.data_array)
 
-
-class EventAnalysisChannel(TemporalAnalysisChannel):
-
-    data_channel: EventChannelData = None
-
-    _active_duration: Tuple[float, Tuple] = None
-
-    _delay_to_first: Tuple[float, Tuple] = None
-
-    _scored_duration: Tuple[float, Tuple] = None
-
-    _event_count: Tuple[int, Tuple] = None
-
-    _active_interval: Tuple[Tuple[np.ndarray, np.ndarray], Tuple] = None
-
-    def get_active_intervals(
-            self, start=None, end=None) -> Tuple[np.ndarray, np.ndarray]:
-        interval = self._active_interval
-        if interval is not None and interval[1] == (start, end):
-            return interval[0]
-
-        data = self.data
-        timestamps = self.analysis_file.timestamps
-
+    @staticmethod
+    def _get_active_intervals(
+            data: np.ndarray, timestamps: np.ndarray,
+            start: float = None,
+            end: float = None) -> Tuple[np.ndarray, np.ndarray]:
         s = 0
         if start is not None:
             s = np.searchsorted(timestamps, start, side='left')
@@ -331,7 +332,6 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
         timestamps = timestamps[s:e]
         if data.shape[0] <= 1:
             intervals = np.empty((0, 2))
-            self._active_interval = (intervals, timestamps), (start, end)
             return intervals, timestamps
 
         signed_data = data.astype(np.int8)
@@ -357,6 +357,48 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
         else:
             intervals[:, 1] = ends
 
+        return intervals, timestamps
+
+    @staticmethod
+    def _compute_active_duration(intervals: np.ndarray) -> float:
+        return np.sum(
+            intervals[:, 1] - intervals[:, 0]) if intervals.shape[0] else 0.
+
+    @staticmethod
+    def _compute_delay_to_first(intervals: np.ndarray) -> float:
+        return intervals[0, 0] if intervals.shape[0] else -1.
+
+    @staticmethod
+    def _compute_scored_duration(timestamps: np.ndarray) -> float:
+        return timestamps[-1] - timestamps[0] if timestamps.shape[0] else 0.
+
+    @staticmethod
+    def _compute_event_count(intervals: np.ndarray) -> int:
+        return intervals.shape[0]
+
+
+class EventAnalysisChannel(TemporalAnalysisChannel):
+
+    data_channel: EventChannelData = None
+
+    _active_duration: Tuple[float, Tuple] = None
+
+    _delay_to_first: Tuple[float, Tuple] = None
+
+    _scored_duration: Tuple[float, Tuple] = None
+
+    _event_count: Tuple[int, Tuple] = None
+
+    _active_interval: Tuple[Tuple[np.ndarray, np.ndarray], Tuple] = None
+
+    def get_active_intervals(
+            self, start=None, end=None) -> Tuple[np.ndarray, np.ndarray]:
+        interval = self._active_interval
+        if interval is not None and interval[1] == (start, end):
+            return interval[0]
+
+        intervals, timestamps = self._get_active_intervals(
+            self.data, self.analysis_file.timestamps, start=start, end=end)
         self._active_interval = (intervals, timestamps), (start, end)
         return intervals, timestamps
 
@@ -365,9 +407,8 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
         if duration is not None and duration[1] == (start, end):
             return duration[0]
 
-        intervals, timestamps = self.get_active_intervals(start, end)
-        val = np.sum(
-            intervals[:, 1] - intervals[:, 0]) if intervals.shape[0] else 0.
+        intervals, _ = self.get_active_intervals(start, end)
+        val = self._compute_active_duration(intervals)
         self._active_duration = val, (start, end)
         return val
 
@@ -376,8 +417,8 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
         if delay is not None and delay[1] == (start, end):
             return delay[0]
 
-        intervals, timestamps = self.get_active_intervals(start, end)
-        val = intervals[0, 0] if intervals.shape[0] else -1.
+        intervals, _ = self.get_active_intervals(start, end)
+        val = self._compute_delay_to_first(intervals)
         self._delay_to_first = val, (start, end)
         return val
 
@@ -386,8 +427,8 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
         if duration is not None and duration[1] == (start, end):
             return duration[0]
 
-        intervals, timestamps = self.get_active_intervals(start, end)
-        val = timestamps[-1] - timestamps[0] if timestamps.shape[0] else 0.
+        _, timestamps = self.get_active_intervals(start, end)
+        val = self._compute_scored_duration(timestamps)
         self._scored_duration = val, (start, end)
         return val
 
@@ -396,9 +437,10 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
         if count is not None and count[1] == (start, end):
             return count[0]
 
-        intervals, timestamps = self.get_active_intervals(start, end)
-        self._event_count = intervals.shape[0], (start, end)
-        return intervals.shape[0]
+        intervals, _ = self.get_active_intervals(start, end)
+        val = self._compute_event_count(intervals)
+        self._event_count = val, (start, end)
+        return val
 
 
 class PosAnalysisChannel(TemporalAnalysisChannel):
@@ -409,3 +451,31 @@ class PosAnalysisChannel(TemporalAnalysisChannel):
 class ZoneAnalysisChannel(AnalysisChannel):
 
     data_channel: ZoneChannelData = None
+
+    _collider = None
+
+    @property
+    def collider(self):
+        collider = self._collider
+        if collider is not None:
+            return collider
+
+        shape_metadata = self.metadata['shape_config']
+        cls_name = shape_metadata['cls']
+        if cls_name in ('PaintPolygon', 'PaintFreeformPolygon'):
+            collider = Collide2DPoly(
+                points=shape_metadata['points'], cache=True)
+        elif cls_name == 'PaintCircle':
+            x, y = shape_metadata['center']
+            r = shape_metadata['radius']
+            collider = CollideEllipse(x=x, y=y, rx=r, ry=r)
+        elif cls_name == 'PaintEllipse':
+            x, y = shape_metadata['center']
+            rx, ry = shape_metadata['radius_x'], shape_metadata['radius_y']
+            collider = CollideEllipse(
+                x=x, y=y, rx=rx, ry=ry, angle=shape_metadata['angle'])
+        else:
+            assert False
+
+        self._collider = collider
+        return collider

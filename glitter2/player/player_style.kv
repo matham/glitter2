@@ -178,13 +178,13 @@
                             do_scale: False
                             do_translation: False, False
                             do_rotation: False
+                        PosChannelPainter:
+                            id: pos_channel_painter
+                            size_hint: None, None
+                            size: image_display.size
                         ZonePainter:
                             id: zone_painter
                             app: app.__self__
                             size_hint: None, None
                             size: image_display.size
                             locked: True
-                        PosChannelPainter:
-                            id: pos_channel_painter
-                            size_hint: None, None
-                            size: image_display.size
