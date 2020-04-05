@@ -123,31 +123,37 @@
                 on_state: app.interactive_player_mode = app.image_display_manager.zone_painter.locked = self.state == 'normal'
             FlatDivider:
                 color: app.theme.divider
-            FlatImageToggleButton:
-                group: 'paint'
-                scale_down_color: True
-                source: 'flat_circle.png'
-                flat_color: app.theme.accent
-                on_state: app.image_display_manager.zone_painter.draw_mode = 'circle' if self.state == 'down' else 'none'
-            FlatImageToggleButton:
-                group: 'paint'
-                scale_down_color: True
-                source: 'flat_ellipse.png'
-                flat_color: app.theme.accent
-                on_state: app.image_display_manager.zone_painter.draw_mode = 'ellipse' if self.state == 'down' else 'none'
-            FlatImageToggleButton:
-                group: 'paint'
-                scale_down_color: True
-                source: 'flat_polyline.png'
-                flat_color: app.theme.accent
-                state: 'down'
-                on_state: app.image_display_manager.zone_painter.draw_mode = 'freeform' if self.state == 'down' else 'none'
-            FlatImageToggleButton:
-                group: 'paint'
-                scale_down_color: True
-                source: 'flat_polygon.png'
-                flat_color: app.theme.accent
-                on_state: app.image_display_manager.zone_painter.draw_mode = 'polygon' if self.state == 'down' else 'none'
+            BoxLayout:
+                disabled: hide_shapes.state == 'normal' or edit_zones.state == 'normal'
+                size_hint_y: None
+                height: '34dp'
+                size_hint_x: None
+                width: self.minimum_width
+                FlatImageToggleButton:
+                    group: 'paint'
+                    scale_down_color: True
+                    source: 'flat_circle.png'
+                    flat_color: app.theme.accent
+                    on_state: app.image_display_manager.zone_painter.draw_mode = 'circle' if self.state == 'down' else 'none'
+                FlatImageToggleButton:
+                    group: 'paint'
+                    scale_down_color: True
+                    source: 'flat_ellipse.png'
+                    flat_color: app.theme.accent
+                    on_state: app.image_display_manager.zone_painter.draw_mode = 'ellipse' if self.state == 'down' else 'none'
+                FlatImageToggleButton:
+                    group: 'paint'
+                    scale_down_color: True
+                    source: 'flat_polyline.png'
+                    flat_color: app.theme.accent
+                    state: 'down'
+                    on_state: app.image_display_manager.zone_painter.draw_mode = 'freeform' if self.state == 'down' else 'none'
+                FlatImageToggleButton:
+                    group: 'paint'
+                    scale_down_color: True
+                    source: 'flat_polygon.png'
+                    flat_color: app.theme.accent
+                    on_state: app.image_display_manager.zone_painter.draw_mode = 'polygon' if self.state == 'down' else 'none'
             FlatDivider:
                 color: app.theme.divider
             FlatImageToggleButton:
@@ -198,7 +204,9 @@
     size_hint_y: None
     height: '34dp'
     spacing: '2dp'
+    selection_button: selection_button
     FlatImageToggleButton:
+        id: selection_button
         source: 'reorder-horizontal.png'
         flat_color: list(root.channel.color_gl) + [1]
         state: 'down' if root.selected else 'normal'
@@ -247,7 +255,9 @@
     size_hint_y: None
     height: '34dp'
     spacing: '2dp'
+    selection_button: selection_button
     FlatImageToggleButton:
+        id: selection_button
         source: 'reorder-horizontal.png'
         flat_color: list(root.channel.color_gl) + [1]
         state: 'down' if root.selected else 'normal'
@@ -295,7 +305,9 @@
     size_hint_y: None
     height: '34dp'
     spacing: '2dp'
+    selection_button: selection_button
     FlatImageToggleButton:
+        id: selection_button
         source: 'reorder-horizontal.png'
         flat_color: list(root.channel.color_gl) + [1]
         state: 'down' if root.selected else 'normal'
@@ -386,6 +398,7 @@
                 size_hint_min_x: '100dp'
                 background_color: app.theme.primary_light
                 text: root.channel.keyboard_key
+                on_text: if self.text in app.channel_controller.channels_keys and app.channel_controller.channels_keys[self.text] is not root.channel: self.text = ''
                 on_focus: if not self.focus: root.channel.keyboard_key = self.text
             FlatLabel:
                 text: 'Channel group:'
@@ -454,6 +467,7 @@
                 size_hint_min_x: '100dp'
                 background_color: app.theme.primary_light
                 text: root.channel.keyboard_key
+                on_text: if self.text in app.channel_controller.channels_keys and app.channel_controller.channels_keys[self.text] is not root.channel: self.text = ''
                 on_focus: if not self.focus: root.channel.keyboard_key = self.text
         FlatButton:
             text: 'Clear data'

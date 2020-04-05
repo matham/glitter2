@@ -18,7 +18,7 @@ from kivy.clock import Clock
 import kivy_garden.graph
 import kivy_garden.tickmarker
 
-from base_kivy_app.app import BaseKivyApp, run_app as run_cpl_app
+from base_kivy_app.app import BaseKivyApp, app_error, run_app as run_cpl_app
 from base_kivy_app.graphics import BufferImage
 from base_kivy_app.config import get_class_config_props_names
 
@@ -172,6 +172,41 @@ class Glitter2App(BaseKivyApp):
 
     def clear_video(self):
         self.image_display.clear_image()
+
+    @app_error
+    def set_export_stats_opts(self, channel_groups):
+        self.export_manager.events_stats = {
+            'active_duration': {}, 'delay_to_first': {}, 'scored_duration': {},
+            'event_count': {}
+        }
+
+        stats = ('active_duration', 'delay_to_first', 'scored_duration',
+                 'event_count', 'distance_traveled', 'mean_speed')
+        self.export_manager.pos_stats = pos_stats = {s: {} for s in stats}
+
+        for group in channel_groups:
+            active_channels = [
+                name for name, selected in group.channels.items() if selected]
+            channel_name = ';'.join(active_channels)
+            if not active_channels:
+                raise ValueError(
+                    'No zone/event was selected to export position stats. At '
+                    'least one zone/event channel must be selected')
+
+            for stat in stats:
+                pos_stats[f'{stat}:{channel_name}'] = {
+                    'mask_channels': active_channels}
+
+        for zone in self.channel_controller.zone_channels:
+            for stat in stats:
+                pos_stats[f'{stat}:{zone.name}'] = {
+                    'mask_channels': [zone.name]}
+
+        for zone in self.channel_controller.zone_channels:
+            pos_stats[f'mean_center_distance:{zone.name}'] = {
+                'zone': zone.name}
+
+        self.export_manager.zones_stats = {'area': {}}
 
     def build(self):
         base = dirname(glitter2.__file__)

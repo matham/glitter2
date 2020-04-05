@@ -187,10 +187,7 @@ class ExportManager(EventDispatcher):
 
     upgrade_legacy_files = BooleanProperty(False)
 
-    events_stats: Dict[str, dict] = {
-        'active_duration': {}, 'delay_to_first': {}, 'scored_duration': {},
-        'event_count': {}
-    }
+    events_stats: Dict[str, dict] = {}
 
     pos_stats: Dict[str, dict] = {}
 
@@ -505,7 +502,7 @@ class ExportManager(EventDispatcher):
                 raw_dump_zone_collider=raw_dump_zone_collider,
                 **stats_kwargs)
             if item.accumulated_stats is not None:
-                accumulated_stats.append(item.accumulated_stats)
+                accumulated_stats.extend(item.accumulated_stats)
 
             queue_put(
                 ('update_source_item', (item.item_index, item.get_data())))

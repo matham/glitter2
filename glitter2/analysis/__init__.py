@@ -1,6 +1,7 @@
 from os.path import exists
 import nixio as nix
 import numpy as np
+import numpy.linalg
 from typing import Dict, List, Optional, Tuple
 import pandas as pd
 
@@ -56,6 +57,7 @@ class FileDataAnalysis(object):
         metadata['saw_all_timestamps'] = data_file.saw_all_timestamps
         metadata['glitter2_version'] = data_file.glitter2_version
         metadata['ffpyplayer_version'] = data_file.ffpyplayer_version
+        metadata['pixels_per_meter'] = data_file.pixels_per_meter
 
         self.missed_timestamps = not data_file.saw_all_timestamps
         if self.missed_timestamps:
@@ -112,34 +114,33 @@ class FileDataAnalysis(object):
     def get_named_statistics(
             self, events: Dict[str, dict] = None, pos: Dict[str, dict] = None,
             zones: Dict[str, dict] = None) -> List:
+        # export_accumulated_named_statistics provides the header
         video_head = self.metadata['filename_head']
         video_tail = self.metadata['filename_tail']
         filename = self.filename
         missed_timestamps = self.missed_timestamps
+        rows = []
 
-        results = []
         for stat_names, channels in [
                 (events or {}, self.event_channels),
                 (pos or {}, self.pos_channels),
                 (zones or {}, self.zone_channels)]:
             if not stat_names:
-                results.append(([], []))
                 continue
 
-            header = [
-                'data file', 'video path', 'video filename',
-                'missed timestamps', 'channel']
-            header.extend(stat_names)
-
-            rows = []
             for channel in channels:
-                row = [filename, video_head, video_tail, missed_timestamps,
-                       channel.name]
-                row.extend(channel.compute_named_statistics(stat_names))
-                rows.append(row)
+                row_ = [
+                    filename, video_head, video_tail, missed_timestamps,
+                    channel.__class__.__name__[:-15], channel.name]
 
-            results.append((header, rows))
-        return results
+                stats = channel.compute_named_statistics(stat_names)
+                for stat, stat_name in zip(stats, stat_names):
+                    measure, *key = stat_name.split(':')
+                    row = row_[:]
+                    row.extend((measure, key[0] if key else '', stat))
+                    rows.append(row)
+
+        return rows
 
     @staticmethod
     def export_accumulated_named_statistics(filename: str, data: List):
@@ -156,28 +157,11 @@ class FileDataAnalysis(object):
 
         excel_writer = pd.ExcelWriter(filename, engine='xlsxwriter')
 
-        event_header = None
-        event_rows = []
-        pos_header = None
-        pos_rows = []
-        zone_header = None
-        zone_rows = []
-
-        for (event_header, events), (pos_header, pos), \
-                (zone_header, zones) in data:
-            event_rows.extend(events)
-            pos_rows.extend(pos)
-            zone_rows.extend(zones)
-
-        if event_header:
-            df = pd.DataFrame(event_rows, columns=event_header)
-            df.to_excel(excel_writer, sheet_name='event_channels', index=False)
-        if pos_header:
-            df = pd.DataFrame(pos_rows, columns=pos_header)
-            df.to_excel(excel_writer, sheet_name='pos_channels', index=False)
-        if zone_header:
-            df = pd.DataFrame(zone_rows, columns=zone_header)
-            df.to_excel(excel_writer, sheet_name='zone_channels', index=False)
+        header = [
+            'data file', 'video path', 'video filename', 'missed timestamps',
+            'channel_type', 'channel', 'measure', 'measure_key', 'value']
+        df = pd.DataFrame(data, columns=header)
+        df.to_excel(excel_writer, sheet_name='data', index=False)
 
         excel_writer.save()
 
@@ -319,8 +303,7 @@ class TemporalAnalysisChannel(AnalysisChannel):
     @staticmethod
     def _get_active_intervals(
             data: np.ndarray, timestamps: np.ndarray,
-            start: float = None,
-            end: float = None) -> Tuple[np.ndarray, np.ndarray]:
+            start: float = None, end: float = None) -> Dict[str, np.ndarray]:
         s = 0
         if start is not None:
             s = np.searchsorted(timestamps, start, side='left')
@@ -332,32 +315,53 @@ class TemporalAnalysisChannel(AnalysisChannel):
         timestamps = timestamps[s:e]
         if data.shape[0] <= 1:
             intervals = np.empty((0, 2))
-            return intervals, timestamps
+            indices = np.arange(0)
+            return {'intervals': intervals, 'timestamps': timestamps,
+                    'mask': data, 'indices': indices, 'start': s, 'end': e}
 
+        arange = np.arange(data.shape[0])
         signed_data = data.astype(np.int8)
         diff = signed_data[1:] - signed_data[:-1]
-        starts = timestamps[1:][diff == 1]
-        ends = timestamps[1:][diff == -1]
+
+        pos_diff = diff == 1
+        starts = timestamps[1:][pos_diff]
+        starts_indices = arange[1:][pos_diff]
+
+        neg_diff = diff == -1
+        ends = timestamps[1:][neg_diff]
+        ends_indices = arange[1:][neg_diff]
 
         # de we need the first index as the start (if array starts with 1)
+        # # of intervals is same as number of start positions
         n = starts.shape[0]
         if data[0] == 1:
             n += 1
         intervals = np.empty((n, 2))
+        indices = np.empty((n, 2), dtype=arange.dtype)
 
+        # interval starts at zero
         if data[0] == 1:
             intervals[1:, 0] = starts
             intervals[0, 0] = timestamps[0]
+
+            indices[1:, 0] = starts_indices
+            indices[0, 0] = 0
         else:
             intervals[:, 0] = starts
+            indices[:, 0] = starts_indices
 
         if data[-1] == 1:
             intervals[:-1, 1] = ends
             intervals[-1, 1] = timestamps[-1]
+
+            indices[:-1, 1] = ends_indices
+            indices[-1, 1] = arange[-1]
         else:
             intervals[:, 1] = ends
+            indices[:, 1] = ends_indices
 
-        return intervals, timestamps
+        return {'intervals': intervals, 'timestamps': timestamps,
+                'mask': data, 'indices': indices, 'start': s, 'end': e}
 
     @staticmethod
     def _compute_active_duration(intervals: np.ndarray) -> float:
@@ -389,25 +393,25 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
 
     _event_count: Tuple[int, Tuple] = None
 
-    _active_interval: Tuple[Tuple[np.ndarray, np.ndarray], Tuple] = None
+    _active_interval: Tuple[Dict[str, np.ndarray], Tuple] = None
 
     def get_active_intervals(
-            self, start=None, end=None) -> Tuple[np.ndarray, np.ndarray]:
+            self, start=None, end=None) -> Dict[str, np.ndarray]:
         interval = self._active_interval
         if interval is not None and interval[1] == (start, end):
             return interval[0]
 
-        intervals, timestamps = self._get_active_intervals(
+        intervals = self._get_active_intervals(
             self.data, self.analysis_file.timestamps, start=start, end=end)
-        self._active_interval = (intervals, timestamps), (start, end)
-        return intervals, timestamps
+        self._active_interval = intervals, (start, end)
+        return intervals
 
     def compute_active_duration(self, start=None, end=None) -> float:
         duration = self._active_duration
         if duration is not None and duration[1] == (start, end):
             return duration[0]
 
-        intervals, _ = self.get_active_intervals(start, end)
+        intervals = self.get_active_intervals(start, end)['intervals']
         val = self._compute_active_duration(intervals)
         self._active_duration = val, (start, end)
         return val
@@ -417,7 +421,7 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
         if delay is not None and delay[1] == (start, end):
             return delay[0]
 
-        intervals, _ = self.get_active_intervals(start, end)
+        intervals = self.get_active_intervals(start, end)['intervals']
         val = self._compute_delay_to_first(intervals)
         self._delay_to_first = val, (start, end)
         return val
@@ -427,7 +431,7 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
         if duration is not None and duration[1] == (start, end):
             return duration[0]
 
-        _, timestamps = self.get_active_intervals(start, end)
+        timestamps = self.get_active_intervals(start, end)['timestamps']
         val = self._compute_scored_duration(timestamps)
         self._scored_duration = val, (start, end)
         return val
@@ -437,7 +441,7 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
         if count is not None and count[1] == (start, end):
             return count[0]
 
-        intervals, _ = self.get_active_intervals(start, end)
+        intervals = self.get_active_intervals(start, end)['intervals']
         val = self._compute_event_count(intervals)
         self._event_count = val, (start, end)
         return val
@@ -446,6 +450,183 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
 class PosAnalysisChannel(TemporalAnalysisChannel):
 
     data_channel: PosChannelData = None
+
+    _active_duration: Dict[str, Tuple[float, Tuple]] = None
+
+    _delay_to_first: Dict[str, Tuple[float, Tuple]] = None
+
+    _scored_duration: Dict[str, Tuple[float, Tuple]] = None
+
+    _event_count: Dict[str, Tuple[int, Tuple]] = None
+
+    _mean_center_distance: Dict[str, Tuple[float, Tuple]] = None
+
+    _mean_distance_traveled: Dict[str, Tuple[float, Tuple]] = None
+
+    _mean_mean_speed: Dict[str, Tuple[float, Tuple]] = None
+
+    _active_interval: Dict[str, Tuple[Dict[str, np.ndarray], Tuple]] = None
+
+    def __init__(self, **kwargs):
+        super(PosAnalysisChannel, self).__init__(**kwargs)
+        self._active_duration = {}
+        self._delay_to_first = {}
+        self._scored_duration = {}
+        self._event_count = {}
+        self._mean_center_distance = {}
+        self._mean_distance_traveled = {}
+        self._mean_mean_speed = {}
+        self._active_interval = {}
+
+    def get_active_intervals(
+            self, mask_channels: List[str] = (), mask_key: str = '',
+            start=None, end=None) -> Dict[str, np.ndarray]:
+        interval = self._active_interval
+        if mask_key in interval and interval[mask_key][1] == (start, end):
+            return interval[mask_key][0]
+
+        data = self.data
+        if not mask_channels:
+            data = data[:, 0] != -1
+        else:
+            zone_channels = self.analysis_file.zone_channel_names
+            event_channels = self.analysis_file.event_channel_names
+            arr = [data[:, 0] != -1]
+            for name in mask_channels:
+                if name in zone_channels:
+                    d = zone_channels[name].collider.collide_points(data)
+                else:
+                    d = event_channels[name].data
+                arr.append(d)
+
+            data = np.logical_and.reduce(arr, axis=0)
+
+        intervals = self._get_active_intervals(
+            data, self.analysis_file.timestamps, start=start, end=end)
+        self._active_interval[mask_key] = intervals, (start, end)
+        return intervals
+
+    def compute_active_duration(
+            self, mask_channels: List[str] = (), start=None,
+            end=None) -> float:
+        mask_key = '\0'.join(mask_channels)
+        duration = self._active_duration
+        if mask_key in duration and duration[mask_key][1] == (start, end):
+            return duration[mask_key][0]
+
+        intervals = self.get_active_intervals(
+            mask_channels, mask_key, start, end)['intervals']
+        val = self._compute_active_duration(intervals)
+        self._active_duration[mask_key] = val, (start, end)
+        return val
+
+    def compute_delay_to_first(
+            self, mask_channels: List[str] = (), start=None,
+            end=None) -> float:
+        mask_key = '\0'.join(mask_channels)
+        delay = self._delay_to_first
+        if mask_key in delay and delay[mask_key][1] == (start, end):
+            return delay[mask_key][0]
+
+        intervals = self.get_active_intervals(
+            mask_channels, mask_key, start, end)['intervals']
+        val = self._compute_delay_to_first(intervals)
+        self._delay_to_first[mask_key] = val, (start, end)
+        return val
+
+    def compute_scored_duration(
+            self, mask_channels: List[str] = (), start=None,
+            end=None) -> float:
+        mask_key = '\0'.join(mask_channels)
+        duration = self._scored_duration
+        if mask_key in duration and duration[mask_key][1] == (start, end):
+            return duration[mask_key][0]
+
+        timestamps = self.get_active_intervals(
+            mask_channels, mask_key, start, end)['timestamps']
+        val = self._compute_scored_duration(timestamps)
+        self._scored_duration[mask_key] = val, (start, end)
+        return val
+
+    def compute_event_count(
+            self, mask_channels: List[str] = (), start=None, end=None) -> int:
+        mask_key = '\0'.join(mask_channels)
+        count = self._event_count
+        if mask_key in count and count[mask_key][1] == (start, end):
+            return count[mask_key][0]
+
+        intervals = self.get_active_intervals(
+            mask_channels, mask_key, start, end)['intervals']
+        val = self._compute_event_count(intervals)
+        self._event_count[mask_key] = val, (start, end)
+        return val
+
+    def compute_mean_center_distance(
+            self, zone: str, start=None, end=None) -> float:
+        dist = self._mean_center_distance
+        if zone in dist and dist[zone][1] == (start, end):
+            return dist[zone][0]
+
+        data = self.data - \
+            self.analysis_file.zone_channel_names[zone].collider.get_centroid()
+        val = float(np.mean(numpy.linalg.norm(data, axis=1)))
+
+        self._mean_center_distance[zone] = val, (start, end)
+        return val
+
+    def compute_distance_traveled(
+            self, mask_channels: List[str] = (), start=None,
+            end=None) -> float:
+        mask_key = '\0'.join(mask_channels)
+        dist = self._mean_distance_traveled
+        if mask_key in dist and dist[mask_key][1] == (start, end):
+            return dist[mask_key][0]
+
+        pixels_per_meter = self.analysis_file.metadata['pixels_per_meter']
+        intervals_dict = self.get_active_intervals(
+            mask_channels, mask_key, start, end)
+        indices = intervals_dict['indices']
+        data = self.data[intervals_dict['start']:intervals_dict['end'], :]
+
+        val = 0
+        for s, e in indices:
+            val += np.sum(
+                np.linalg.norm(data[s + 1:e + 1, :] - data[s:e, :], axis=1))
+        if pixels_per_meter:
+            val /= pixels_per_meter
+
+        self._mean_distance_traveled[mask_key] = val, (start, end)
+        return val
+
+    def compute_mean_speed(
+            self, mask_channels: List[str] = (), start=None,
+            end=None) -> float:
+        mask_key = '\0'.join(mask_channels)
+        speed = self._mean_mean_speed
+        if mask_key in speed and speed[mask_key][1] == (start, end):
+            return speed[mask_key][0]
+
+        pixels_per_meter = self.analysis_file.metadata['pixels_per_meter']
+        intervals_dict = self.get_active_intervals(
+            mask_channels, mask_key, start, end)
+        intervals = intervals_dict['intervals']
+        indices = intervals_dict['indices']
+        data = self.data[intervals_dict['start']:intervals_dict['end'], :]
+
+        dist = 0
+        for s, e in indices:
+            dist += np.sum(
+                np.linalg.norm(data[s + 1:e + 1, :] - data[s:e, :], axis=1))
+        if pixels_per_meter:
+            dist /= pixels_per_meter
+
+        dt = np.sum(intervals[:, 1] - intervals[:, 0])
+        val = 0.
+        if dt:
+            val = dist / dt
+
+        self._mean_mean_speed[mask_key] = val, (start, end)
+        return val
 
 
 class ZoneAnalysisChannel(AnalysisChannel):
@@ -479,3 +660,6 @@ class ZoneAnalysisChannel(AnalysisChannel):
 
         self._collider = collider
         return collider
+
+    def compute_area(self) -> float:
+        return self.collider.get_area()

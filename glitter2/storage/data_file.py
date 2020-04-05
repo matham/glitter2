@@ -74,6 +74,8 @@ class DataFile(object):
 
     ffpyplayer_version: str = ''
 
+    pixels_per_meter: float = 0.
+
     def __init__(self, nix_file: nix.File, unsaved_callback=_unsaved_callback):
         self.nix_file = nix_file
         self.unsaved_callback = unsaved_callback
@@ -96,6 +98,7 @@ class DataFile(object):
         sec = f.create_section('data_config', 'configuration')
         sec['glitter2_version'] = yaml_dumps(glitter2.__version__)
         sec['ffpyplayer_version'] = yaml_dumps(ffpyplayer.__version__)
+        sec['pixels_per_meter'] = yaml_dumps(0.)
 
         sec['saw_all_timestamps'] = yaml_dumps(False)
         sec['saw_first_timestamp'] = yaml_dumps(False)
@@ -126,6 +129,7 @@ class DataFile(object):
             data_config['saw_last_timestamp'])
         self.glitter2_version = yaml_loads(data_config['glitter2_version'])
         self.ffpyplayer_version = yaml_loads(data_config['ffpyplayer_version'])
+        self.pixels_per_meter = yaml_loads(data_config['pixels_per_meter'])
 
         self.read_timestamps_from_file()
         self.create_channels_from_file()
@@ -209,6 +213,10 @@ class DataFile(object):
         """
         self.unsaved_callback()
 
+        sec = self.nix_file.sections['data_config']
+        if 'pixels_per_meter' not in sec:
+            sec['pixels_per_meter'] = yaml_dumps(0.)
+
     @property
     def has_content(self):
         return bool(len(self.timestamps))
@@ -267,6 +275,11 @@ class DataFile(object):
         config = self.video_metadata_config
         for k, v in metadata.items():
             config[k] = yaml_dumps(v)
+
+    def set_pixels_per_meter(self, value):
+        self.nix_file.sections['data_config']['pixels_per_meter'] = \
+            yaml_dumps(value)
+        self.pixels_per_meter = value
 
     def write_app_config(self, data):
         self.unsaved_callback()

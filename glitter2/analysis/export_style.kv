@@ -1,4 +1,5 @@
 #:import pretty_space base_kivy_app.utils.pretty_space
+#:import Factory kivy.factory.Factory
 
 <ExportWidget@BoxLayout>:
     size_hint_min_x: self.minimum_width
@@ -120,6 +121,7 @@
                 state: 'down' if app.export_manager.currently_processing else 'normal'
                 on_state: if self.state == 'normal': root.export_options.upgrade_legacy_files.state = 'normal'
                 on_release:
+                    if self.state == 'down': app.set_export_stats_opts(root.export_options.ids.zone_event_groups.children)
                     if self.state == 'down': app.export_manager.request_export_files()
                     if self.state == 'normal': app.export_manager.stop_op = True
             FlatImageButton:
@@ -244,29 +246,33 @@
             size_hint_y: None
             height: self.minimum_height
             size_hint_min_x: self.minimum_width
-            padding: '5dp', '5dp'
-            spacing: '5dp'
+            padding: '2dp', '2dp'
+            spacing: '3dp'
+            canvas:
+                Color:
+                    rgba: app.theme.accent
+                Rectangle:
+                    pos: self.pos
+                    size: self.size
             BoxLayout:
                 size_hint_y: None
                 height: self.minimum_height
                 size_hint_min_x: self.minimum_width
                 orientation: 'vertical'
-                FlatLabel:
-                    size_hint_y: None
-                    height: self.texture_size[1]
-                    text: "Legacy files"
-                    flat_color: app.theme.text_primary
-                    bold: True
+                padding: '5dp'
+                spacing: '2dp'
+                canvas:
+                    Color:
+                        rgba: app.theme.primary_text
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
                 BoxLayout:
                     size_hint_y: None
-                    height: self.minimum_height
+                    height: '26dp'
                     size_hint_min_x: self.minimum_width
-                    FlatLabel:
-                        size: self.texture_size
-                        size_hint: None, None
-                        text: "Upgrade legacy files:"
-                        padding_x: '1dp'
-                        flat_color: app.theme.text_primary
+                    spacing: '10dp'
+                    padding: '4dp'
                     CheckBox:
                         id: upgrade_legacy_files
                         state: 'down' if app.export_manager.upgrade_legacy_files else 'normal'
@@ -274,6 +280,16 @@
                         size_hint_x: None
                         width: self.height
                         color: app.theme.accent
+                    FlatLabel:
+                        size_hint: None, None
+                        size: self.texture_size
+                        text: "Upgrade legacy files"
+                        flat_color: app.theme.text_primary
+                        bold: True
+                BoxLayout:
+                    size_hint_y: None
+                    height: '26dp'
+                    size_hint_min_x: self.minimum_width
                     FlatImageButton:
                         scale_down_color: True
                         source: 'flat_folder.png'
@@ -285,43 +301,41 @@
                         hint_text: 'Legacy output directory'
                         on_focus: if not self.focus: app.export_manager.legacy_upgrade_path = self.text
                         size_hint_min_x: '200dp'
-            Widget:
-                size_hint_y: None
-                height: '2dp'
-                canvas:
-                    Color:
-                        rgba: app.theme.accent
-                    Rectangle:
-                        pos: self.pos
-                        size: self.size
             BoxLayout:
                 size_hint_y: None
                 height: self.minimum_height
                 size_hint_min_x: self.minimum_width
                 orientation: 'vertical'
                 spacing: '2dp'
-                FlatLabel:
-                    size_hint_y: None
-                    height: self.texture_size[1]
-                    text: "Raw data"
-                    flat_color: app.theme.text_primary
-                    bold: True
+                padding: '5dp'
+                canvas:
+                    Color:
+                        rgba: app.theme.primary_text
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
                 BoxLayout:
                     size_hint_y: None
-                    height: self.minimum_height
+                    height: '26dp'
                     size_hint_min_x: self.minimum_width
-                    FlatLabel:
-                        size: self.texture_size
-                        size_hint: None, None
-                        text: "Export raw data:"
-                        padding_x: '1dp'
-                        flat_color: app.theme.text_primary
+                    spacing: '10dp'
+                    padding: '4dp'
                     CheckBox:
                         state: 'down' if app.export_manager.export_raw_data else 'normal'
                         on_state: app.export_manager.export_raw_data = self.state == 'down'
                         size_hint_x: None
                         width: self.height
                         color: app.theme.accent
+                    FlatLabel:
+                        size_hint: None, None
+                        size: self.texture_size
+                        text: "Export raw data"
+                        flat_color: app.theme.text_primary
+                        bold: True
+                BoxLayout:
+                    size_hint_y: None
+                    height: '26dp'
+                    size_hint_min_x: self.minimum_width
                     FlatImageButton:
                         scale_down_color: True
                         source: 'flat_folder.png'
@@ -335,7 +349,7 @@
                         size_hint_min_x: '200dp'
                 BoxLayout:
                     size_hint: None, None
-                    size: self.minimum_size
+                    size: self.minimum_width, '26dp'
                     FlatLabel:
                         size: self.texture_size
                         size_hint: None, None
@@ -349,42 +363,41 @@
                         height: '30dp'
                         width: self.height
                         color: app.theme.accent
-            Widget:
-                size_hint_y: None
-                height: '2dp'
-                canvas:
-                    Color:
-                        rgba: app.theme.accent
-                    Rectangle:
-                        pos: self.pos
-                        size: self.size
             BoxLayout:
                 size_hint_y: None
                 height: self.minimum_height
                 size_hint_min_x: self.minimum_width
                 orientation: 'vertical'
-                FlatLabel:
-                    size_hint_y: None
-                    height: self.texture_size[1]
-                    text: "Data statistics"
-                    flat_color: app.theme.text_primary
-                    bold: True
+                padding: '5dp'
+                spacing: '2dp'
+                canvas:
+                    Color:
+                        rgba: app.theme.primary_text
+                    Rectangle:
+                        pos: self.pos
+                        size: self.size
                 BoxLayout:
                     size_hint_y: None
-                    height: self.minimum_height
+                    height: '26dp'
                     size_hint_min_x: self.minimum_width
-                    FlatLabel:
-                        size: self.texture_size
-                        size_hint: None, None
-                        text: "Export stats file:"
-                        padding_x: '1dp'
-                        flat_color: app.theme.text_primary
+                    spacing: '10dp'
+                    padding: '4dp'
                     CheckBox:
                         state: 'down' if app.export_manager.export_stats_data else 'normal'
                         on_state: app.export_manager.export_stats_data = self.state == 'down'
                         size_hint_x: None
                         width: self.height
                         color: app.theme.accent
+                    FlatLabel:
+                        size_hint: None, None
+                        size: self.texture_size
+                        text: "Export data statistics"
+                        flat_color: app.theme.text_primary
+                        bold: True
+                BoxLayout:
+                    size_hint_y: None
+                    height: '26dp'
+                    size_hint_min_x: self.minimum_width
                     FlatImageButton:
                         scale_down_color: True
                         source: 'flat_folder.png'
@@ -398,7 +411,7 @@
                         size_hint_min_x: '200dp'
                 BoxLayout:
                     size_hint_y: None
-                    height: self.minimum_height
+                    height: '26dp'
                     size_hint_min_x: self.minimum_width
                     spacing: '5dp'
                     FlatLabel:
@@ -408,11 +421,11 @@
                         padding_x: '1dp'
                         flat_color: app.theme.text_primary
                     FlatSizedTextInput:
-                        text: '0'
                         input_filter: 'float'
                         background_color: app.theme.primary_light
                         hint_text: 'Start time'
-                        size_hint_min_x: '200dp'
+                        size_hint_min_x: '50dp'
+                        size_hint_max_x: '150dp'
                         on_focus: if not self.focus: app.export_manager.gui_set_start_time(int(self.text) if self.text else None)
                     FlatLabel:
                         size: self.texture_size
@@ -421,12 +434,46 @@
                         padding_x: '1dp'
                         flat_color: app.theme.text_primary
                     FlatSizedTextInput:
-                        text: '0'
                         input_filter: 'float'
                         background_color: app.theme.primary_light
                         hint_text: 'End time'
-                        size_hint_min_x: '200dp'
+                        size_hint_min_x: '50dp'
+                        size_hint_max_x: '150dp'
                         on_focus: if not self.focus: app.export_manager.gui_set_end_time(int(self.text) if self.text else None)
+                BoxLayout:
+                    size_hint_y: None
+                    height: '30dp'
+                    size_hint_min_x: self.minimum_width
+                    spacing: '5dp'
+                    FlatImageButton:
+                        scale_down_color: True
+                        source: 'flat_plus.png'
+                        flat_color: app.theme.accent
+                        on_release: zone_event_groups.add_widget(Factory.ZoneEventGroup())
+                    FlatLabel:
+                        size_hint: None, None
+                        size: self.texture_size
+                        text: "Additional zone/event groups for pos channel interaction analysis:"
+                        flat_color: app.theme.text_primary
+                        bold: True
+                        padding: '5dp', '5dp'
+                ScrollView:
+                    size_hint_min_y: min(zone_event_groups.height, dp(150))
+                    size_hint_max_x: zone_event_groups.width
+                    bar_width: '10dp'
+                    scroll_type: ['bars']
+                    BoxLayout:
+                        id: zone_event_groups
+                        orientation: 'vertical'
+                        size_hint: None, None
+                        size: self.minimum_size
+                        spacing: '2dp'
+                        canvas:
+                            Color:
+                                rgba: app.theme.accent
+                            Rectangle:
+                                pos: self.pos
+                                size: self.size
 
 
 <ExportSourceItemLog@FlatDropDown>:
@@ -454,3 +501,67 @@
                     size_hint: None, None
                     size: self.texture_size
                     flat_color: app.theme.text_primary
+
+
+<ZoneEventGroupChannelName@FlatToggleButton>:
+    padding: '5dp', '5dp'
+    flat_color: app.theme.text_primary
+    flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary
+    size_hint: None, None
+    size: self.texture_size
+    on_state: self.parent.parent.parent.channels[self.text] = self.state == 'down'
+
+
+<ZoneEventGroup@BoxLayout>:
+    size_hint: None, None
+    size: self.minimum_size
+    on_kv_post:
+        for channel in app.channel_controller.zone_channels: zones.add_widget(Factory.ZoneEventGroupChannelName(text=channel.name))
+        for channel in app.channel_controller.event_channels: events.add_widget(Factory.ZoneEventGroupChannelName(text=channel.name))
+    spacing: '5dp'
+    padding: '5dp'
+    channels: {}
+    canvas:
+        Color:
+            rgba: app.theme.primary_text
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    FlatImageButton:
+        size_hint_y: None
+        height: '26dp'
+        scale_down_color: True
+        source: 'flat_delete.png'
+        flat_color: app.theme.accent
+        on_release: root.parent.remove_widget(root)
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint: None, None
+        size: self.minimum_size
+        FlatLabel:
+            size_hint: None, None
+            size: self.texture_size
+            text: "Zone channels: "
+            flat_color: app.theme.text_primary
+            padding: '5dp', '5dp'
+        FlatLabel:
+            size_hint: None, None
+            size: self.texture_size
+            text: "Event channels: "
+            flat_color: app.theme.text_primary
+            padding: '5dp', '5dp'
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint: None, None
+        size: self.minimum_size
+        spacing: '5dp'
+        BoxLayout:
+            id: zones
+            size_hint: None, None
+            size: self.minimum_size
+            spacing: '5dp'
+        BoxLayout:
+            id: events
+            size_hint: None, None
+            size: self.minimum_size
+            spacing: '5dp'

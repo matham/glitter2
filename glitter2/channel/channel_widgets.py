@@ -108,10 +108,13 @@ class ImageDisplayWidgetManager(RelativeLayout):
                 channel.reset_current_value()
             return True
         elif item in self.channel_controller.channels_keys:
-            channel: EventChannel = \
-                self.channel_controller.channels_keys[item]
+            channel = self.channel_controller.channels_keys[item]
             assert channel.keyboard_key == item
-            channel.key_press(True)
+
+            if isinstance(channel, EventChannel):
+                channel.key_press(True)
+            else:
+                channel.widget.selection_button.trigger_action(0)
             return True
         elif item == 'escape':
             channel = self.channel_controller.selected_channel
@@ -127,10 +130,11 @@ class ImageDisplayWidgetManager(RelativeLayout):
             self.channel_controller.delete_key_pressed = False
             return True
         elif item in self.channel_controller.channels_keys:
-            channel: EventChannel = \
-                self.channel_controller.channels_keys[item]
+            channel = self.channel_controller.channels_keys[item]
             assert channel.keyboard_key == item
-            channel.key_press(False)
+
+            if isinstance(channel, EventChannel):
+                channel.key_press(False)
             return True
         elif item == 'escape':
             return True
@@ -252,6 +256,8 @@ class ChannelWidget(BoxLayout):
     image_display_manager: ImageDisplayWidgetManager = None
 
     channel: ChannelBase = None
+
+    selection_button = None
 
     def __init__(self, channel, image_display_manager, **kwargs):
         self.channel = channel

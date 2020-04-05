@@ -3,7 +3,7 @@
 API for a channel controller as well as the channel types that the user can
 create. E.g. an event channel, a position based channel, etc.
 """
-from typing import Iterable, List, Dict, Iterator, Tuple, Optional, Any
+from typing import Iterable, List, Dict, Iterator, Optional, Any, Union
 from itertools import cycle, chain
 import numpy as np
 from collections import defaultdict
@@ -23,7 +23,7 @@ from base_kivy_app.config import read_config_from_object, apply_config, \
 
 from glitter2.storage.data_file import DataChannelBase, EventChannelData, \
     TemporalDataChannelBase, PosChannelData, ZoneChannelData
-from glitter2.utils import fix_name
+from glitter2.utils import fix_name as fix_name_original
 
 __all__ = ('ChannelController', 'ChannelBase', 'TemporalChannel',
            'EventChannel', 'PosChannel', 'ZoneChannel')
@@ -40,6 +40,11 @@ _color_theme_tab10 = (
     (0.7372549019607844, 0.7411764705882353, 0.13333333333333333),
     (0.09019607843137255, 0.7450980392156863, 0.8117647058823529)
 )
+
+
+def fix_name(name, *names):
+    name = fix_name_original(name, *names)
+    return name.replace(';', '').replace(':', '')
 
 
 class ChannelController(EventDispatcher):
@@ -86,7 +91,7 @@ class ChannelController(EventDispatcher):
 
     zone_painter: PaintCanvasBehaviorBase = None
 
-    channels_keys: Dict[str, 'EventChannel'] = {}
+    channels_keys: Dict[str, Union['EventChannel', 'PosChannel']] = {}
 
     channel_temporal_back_selection_color = .45, .45, .45, 1
 
@@ -108,6 +113,7 @@ class ChannelController(EventDispatcher):
         self.zone_channels = []
         self.overview_timestamps_index = {}
         self.app = app
+        self.channels_keys = {}
         self.channels = {}
 
         from kivy.metrics import dp
