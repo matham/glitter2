@@ -870,9 +870,9 @@ class PosChannel(TemporalChannel):
             canvas = self.channel_controller.zone_painter.canvas
 
             canvas.add(Color(*self.color_gl, 1, group=name))
-            line = self._tail_line_graphics = Line(width=2,  group=name)
+            line = self._tail_line_graphics = Line(width=2, group=name)
             canvas.add(line)
-            line = self._tail_line_end_graphics = Line(width=2,  group=name)
+            line = self._tail_line_end_graphics = Line(width=2, group=name)
             canvas.add(line)
 
             self.update_line_graphics()
