@@ -276,6 +276,16 @@ class GlitterPlayer(EventDispatcher):
         else:
             self.player_state = 'playing'
 
+    @classmethod
+    def _get_video_metadata(cls, ffplayer, filename):
+        metadata = ffplayer.get_metadata()
+        filename = os.path.abspath(os.path.expanduser(filename))
+        head, tail = os.path.split(filename)
+        metadata['filename_head'] = head
+        metadata['filename_tail'] = tail
+        metadata['file_size'] = os.stat(filename).st_size
+        return metadata
+
     def callback_opening(self):
         """Handles the player callback (:attr:`_frame_trigger`) when the player
         is in "opening" mode.
@@ -316,12 +326,7 @@ class GlitterPlayer(EventDispatcher):
             self.video_size = src_vid_size
             self.duration = duration
 
-            metadata = ffplayer.get_metadata()
-            filename = os.path.abspath(os.path.expanduser(self.filename))
-            head, tail = os.path.split(filename)
-            metadata['filename_head'] = head
-            metadata['filename_tail'] = tail
-            metadata['file_size'] = os.stat(filename).st_size
+            metadata = self._get_video_metadata(ffplayer, self.filename)
 
             fmt = {
                 'gray': 'gray', 'rgb24': 'rgb24', 'bgr24': 'rgb24',
@@ -466,6 +471,40 @@ class GlitterPlayer(EventDispatcher):
         if item in ('up', 'down', 'right', 'left', 'spacebar'):
             return True
         return False
+
+    @classmethod
+    def get_file_data(cls, filename):
+        filename = os.path.abspath(filename)
+        ff_opts = {
+            'sync': 'video', 'an': True, 'sn': True, 'paused': False, 'x': 4,
+            'y': 4, 'out_fmt': 'gray'}
+        ffplayer = MediaPlayer(filename, ff_opts=ff_opts)
+
+        # get metadata
+        while True:
+            src_vid_size = ffplayer.get_metadata().get('src_vid_size')
+            duration = ffplayer.get_metadata().get('duration')
+            src_fmt = ffplayer.get_metadata().get('src_pix_fmt')
+
+            # only get out of opening when we have the metadata
+            if duration and src_vid_size[0] and src_vid_size[1] and src_fmt:
+                metadata = cls._get_video_metadata(ffplayer, filename)
+                break
+
+        # read video frames
+        timestamps = []
+        while True:
+            frame, val = ffplayer.get_frame()
+
+            assert val != 'paused'
+            if val == 'eof':
+                break
+            if frame is None:
+                time.sleep(.1)
+                continue
+            timestamps.append(frame[1])
+        ffplayer.close_player()
+        return timestamps, metadata
 
 
 class SeekSlider(Slider):

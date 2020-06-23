@@ -57,7 +57,8 @@ Whenever we open a new file, the GUI must be cleared and old file closed.
 """
 from typing import Optional
 import nixio as nix
-from os.path import exists, basename, splitext, split, join, isdir, dirname
+from os.path import exists, basename, splitext, split, join, isdir, dirname, \
+    abspath
 from os import remove
 import os
 from tempfile import NamedTemporaryFile

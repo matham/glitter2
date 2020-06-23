@@ -9,6 +9,8 @@ import time
 from queue import Queue, Empty
 import pathlib
 import nixio as nix
+import re
+import numpy as np
 
 from kivy.event import EventDispatcher
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty
@@ -17,9 +19,13 @@ from kivy.lang import Builder
 from kivy.logger import Logger
 
 from base_kivy_app.app import app_error, report_exception_in_app
+from base_kivy_app.utils import pretty_space
 
 from glitter2.storage.legacy import LegacyFileReader
 from glitter2.analysis import FileDataAnalysis
+from glitter2.utils import fix_name
+from glitter2.storage.data_file import DataFile
+from glitter2.player import GlitterPlayer
 
 
 class SourceFile(object):
@@ -46,6 +52,22 @@ class SourceFile(object):
 
     accumulated_stats = None
 
+    _clever_sys_regex = [
+        re.compile(r'^Video\s+File\s*:\s*(?P<video_file>.+?)\s*$'),
+        re.compile(r'^Background\s*:\s*(?P<background_file>.+?)\s*$'),
+        re.compile(r'^Video\s+Width\s*:\s*(?P<width>\d+)\s*$'),
+        re.compile(r'^Video\s+Height\s*:\s*(?P<height>\d+)\s*$'),
+        re.compile(r'^Frame\s+From\s*:\s*(?P<from>\d+)\s*$'),
+        re.compile(r'^Frame\s+To\s*:\s*(?P<to>\d+)\s*$'),
+        re.compile(r'^Begin\s+Time\s*:\s*(?P<begin>[\d.]+)\(s\)\s*$'),
+        re.compile(r'^End\s+Time\s*:\s*(?P<end>[\d.]+)\(s\)\s*$'),
+        re.compile(
+            r'^Format\s*:\s*FrameNum\s*CenterX\(mm\)\s*CenterY\(mm\)\s*'
+            r'NoseX\(mm\)\s*NoseY\(mm\).+$'),
+    ]
+
+    _clever_sys_data_line_regex = re.compile(r'')
+
     def __init__(self, filename: pathlib.Path, source_root: pathlib.Path):
         super(SourceFile, self).__init__()
         self.filename = filename
@@ -62,32 +84,38 @@ class SourceFile(object):
             'source_obj': self,
         }
 
-    def process_file(
-            self, legacy_upgrade_path: str = None,
-            root_raw_data_export_path: str = None,
-            raw_dump_zone_collider: bool = False,
-            **kwargs):
+    def prepare_process_file(self):
         self.exception = None
         self.accumulated_stats = None
 
+    def process_file(
+            self, source_file: pathlib.Path = None,
+            root_raw_data_export_path: str = None,
+            raw_dump_zone_collider: bool = False,
+            **kwargs):
         try:
-            source_file = self.filename
-            if legacy_upgrade_path:
-                source_file = self._upgrade_file(legacy_upgrade_path)
+            if source_file is None:
+                source_file = self.filename
 
             self._export_file(
                 source_file,
                 root_raw_data_export_path=root_raw_data_export_path,
                 raw_dump_zone_collider=raw_dump_zone_collider, **kwargs)
         except BaseException as e:
+            self._post_process(e)
+        else:
+            self._post_process()
+
+    def _post_process(self, e=None):
+        if e is None:
+            self.result = ''
+            self.status = 'done'
+        else:
             tb = ''.join(traceback.format_exception(*sys.exc_info()))
             self.result = 'Error: {}\n\n'.format(e)
             self.result += tb
             self.status = 'failed'
             self.exception = str(e), tb
-        else:
-            self.result = ''
-            self.status = 'done'
 
     def _export_file(
             self, filename: pathlib.Path,
@@ -112,29 +140,196 @@ class SourceFile(object):
         finally:
             analysis.close()
 
-    def _upgrade_file(self, legacy_upgrade_path):
-        legacy_upgrade_path = pathlib.Path(legacy_upgrade_path)
-        target_filename = legacy_upgrade_path.joinpath(
-            self.filename.relative_to(self.source_root))
-
-        if not target_filename.parent.exists():
-            os.makedirs(str(target_filename.parent))
-        if target_filename.exists():
-            raise ValueError('"{}" already exists'.format(target_filename))
-
-        legacy_reader = LegacyFileReader()
-        nix_file = nix.File.open(str(target_filename), nix.FileMode.Overwrite)
+    def upgrade_legacy_file(self, legacy_upgrade_path: str):
         try:
-            legacy_reader.upgrade_legacy_file(str(self.filename), nix_file)
-        finally:
+            legacy_upgrade_path = pathlib.Path(legacy_upgrade_path)
+            target_filename = legacy_upgrade_path.joinpath(
+                self.filename.relative_to(self.source_root))
+
+            if not target_filename.parent.exists():
+                os.makedirs(str(target_filename.parent))
+            if target_filename.exists():
+                raise ValueError('"{}" already exists'.format(target_filename))
+
+            legacy_reader = LegacyFileReader()
+            nix_file = nix.File.open(
+                str(target_filename), nix.FileMode.Overwrite)
+            try:
+                legacy_reader.upgrade_legacy_file(str(self.filename), nix_file)
+            finally:
+                nix_file.close()
+        except BaseException as e:
+            self._post_process(e)
+        else:
+            self._post_process()
+            return target_filename
+
+    def _parse_clever_sys_file(self, fh):
+        metadata = {}
+        data = []
+        match = re.match
+        re_split = re.split
+
+        regex = self._clever_sys_regex[::-1]
+        current_re = regex.pop()
+
+        # read metadata
+        while True:
+            line = fh.readline()
+            if not line:
+                break
+
+            m = match(current_re, line)
+            if m is not None:
+                metadata.update(m.groupdict())
+                if not regex:
+                    break
+                current_re = regex.pop()
+
+        start_frame = int(metadata['from'])
+        end_frame = int(metadata['to'])
+        h = int(metadata['height'])
+
+        # now read data
+        while True:
+            line = fh.readline()
+            if not line:
+                break
+            line = line.strip()
+            if not line:
+                continue
+
+            item = re_split(r'\s+', line, maxsplit=11)
+            if len(item) < 12:
+                raise ValueError(f'Could not parse line "{line}"')
+            frame, center_x, center_y, nose_x, nose_y, *_ = item
+            data.append((
+                int(frame), float(center_x), h - float(center_y),
+                float(nose_x), h - float(nose_y)
+            ))
+
+        if not data:
+            raise ValueError('No frame data in the file')
+        if start_frame != data[0][0]:
+            raise ValueError(
+                f'Expected first frame to be "{start_frame}", but '
+                f'got "{data[0][0]}" instead')
+        if end_frame != data[-1][0]:
+            raise ValueError(
+                f'Expected last frame to be "{end_frame}", but ' 
+                f'got "{data[-1][0]}" instead')
+
+        return data, metadata
+
+    def _create_or_open_data_file(
+            self, target_filename, video_file, width, height):
+        existed = target_filename.exists()
+        nix_file = nix.File.open(str(target_filename), nix.FileMode.ReadWrite)
+
+        try:
+            if existed:
+                data_file = DataFile(nix_file=nix_file)
+                data_file.open_file()
+                if not data_file.saw_all_timestamps:
+                    raise ValueError(
+                        f'Did not watch all video frames for '
+                        f'"{self.filename}" so we add import data')
+
+                metadata = data_file.get_video_metadata()
+                if tuple(metadata['src_vid_size']) != (width, height):
+                    raise ValueError(
+                        f'CleverSys data file\'s ({self.filename}) video size '
+                        f'does not match the original video file that created '
+                        f'the h5 data file ({target_filename}). '
+                        f'Please make sure to open the correct video file')
+
+                return nix_file, data_file
+
+            data_file = DataFile(nix_file=nix_file)
+            data_file.init_new_file()
+            timestamps, metadata = GlitterPlayer.get_file_data(str(video_file))
+            data_file.set_file_data(
+                file_metadata=metadata, saw_all_timestamps=True,
+                timestamps=[timestamps], event_channels=[], pos_channels=[],
+                zone_channels=[])
+        except BaseException:
             nix_file.close()
-        return target_filename
+            raise
+
+        return nix_file, data_file
+
+    def import_clever_sys_file(self, output_path: str):
+        try:
+            with open(str(self.filename), 'r') as fh:
+                data, metadata = self._parse_clever_sys_file(fh)
+
+            video_file = pathlib.Path(metadata['video_file'])
+            target_filename = pathlib.Path(output_path).joinpath(
+                video_file.relative_to(video_file.parts[0])).with_suffix('.h5')
+            background_file = metadata['background_file']
+            w = int(metadata['width'])
+            h = int(metadata['height'])
+            start_time = float(metadata['begin'])
+            end_time = float(metadata['end'])
+
+            if not target_filename.parent.exists():
+                os.makedirs(str(target_filename.parent))
+
+            nix_file, data_file = self._create_or_open_data_file(
+                target_filename, video_file, w, h)
+            timestamps = np.array(data_file.timestamps)
+
+            try:
+                names = set()
+                for channels in (
+                        data_file.event_channels, data_file.pos_channels,
+                        data_file.zone_channels):
+                    for channel in channels.values():
+                        names.add(channel.read_channel_config()['name'])
+
+                center_name = fix_name('center', names)
+                nose_name = fix_name('nose', names, [center_name])
+
+                center_channel = data_file.create_channel('pos')
+                center_channel.write_channel_config({'name': center_name})
+                nose_channel = data_file.create_channel('pos')
+                nose_channel.write_channel_config({'name': nose_name})
+
+                for t_index, center_x, center_y, nose_x, nose_y in data:
+                    center_channel.set_timestamp_value(
+                        timestamps[t_index], [center_x, center_y])
+                    nose_channel.set_timestamp_value(
+                        timestamps[t_index], [nose_x, nose_y])
+            finally:
+                nix_file.close()
+
+        except BaseException as e:
+            self._post_process(e)
+        else:
+            self._post_process()
+            return target_filename
+
+    def import_tracking_csv_file(self, output_path: str):
+        try:
+            output_path = pathlib.Path(output_path)
+            target_filename = output_path.joinpath(
+                self.filename.relative_to(self.source_root))
+
+            if not target_filename.parent.exists():
+                os.makedirs(str(target_filename.parent))
+            if target_filename.exists():
+                pass
+        except BaseException as e:
+            self._post_process(e)
+        else:
+            self._post_process()
+            return target_filename
 
 
 class ExportManager(EventDispatcher):
 
     __config_props__ = (
-        'source', 'source_match_suffix', 'legacy_upgrade_path',
+        'source', 'source_match_suffix', 'generated_file_output_path',
         'root_raw_data_export_path', 'stats_export_path')
 
     num_files = NumericProperty(0)
@@ -183,9 +378,13 @@ class ExportManager(EventDispatcher):
 
     source_match_suffix = StringProperty('*.h5')
 
-    legacy_upgrade_path = StringProperty('')
+    generated_file_output_path = StringProperty('')
 
     upgrade_legacy_files = BooleanProperty(False)
+
+    import_clever_sys_files = BooleanProperty(False)
+
+    import_tracking_csv_files = BooleanProperty(False)
 
     events_stats: Dict[str, dict] = {}
 
@@ -456,6 +655,10 @@ class ExportManager(EventDispatcher):
     def export_files(self):
         queue_put = self.kivy_thread_queue.put
         trigger = self.trigger_run_in_kivy
+        upgrade_legacy_files = self.upgrade_legacy_files
+        import_clever_sys_files = self.import_clever_sys_files
+        import_tracking_csv_files = self.import_tracking_csv_files
+        generated_file_output_path = self.generated_file_output_path
 
         raw_dump_zone_collider = self.raw_dump_zone_collider
         if self.export_raw_data:
@@ -490,17 +693,25 @@ class ExportManager(EventDispatcher):
                 trigger()
                 continue
 
-            legacy_upgrade_path = self.legacy_upgrade_path
-            if legacy_upgrade_path and self.upgrade_legacy_files:
-                legacy_upgrade_path = pathlib.Path(legacy_upgrade_path)
-            else:
-                legacy_upgrade_path = None
+            item.prepare_process_file()
 
-            item.process_file(
-                legacy_upgrade_path,
-                root_raw_data_export_path=root_raw_data_export_path,
-                raw_dump_zone_collider=raw_dump_zone_collider,
-                **stats_kwargs)
+            source_file = None
+            if generated_file_output_path and upgrade_legacy_files:
+                source_file = item.upgrade_legacy_file(
+                    generated_file_output_path)
+            elif generated_file_output_path and import_clever_sys_files:
+                source_file = item.import_clever_sys_file(
+                    generated_file_output_path)
+            elif generated_file_output_path and import_tracking_csv_files:
+                source_file = item.import_tracking_csv_file(
+                    generated_file_output_path)
+
+            if item.exception is None:
+                item.process_file(
+                    source_file,
+                    root_raw_data_export_path=root_raw_data_export_path,
+                    raw_dump_zone_collider=raw_dump_zone_collider,
+                    **stats_kwargs)
             if item.accumulated_stats is not None:
                 accumulated_stats.extend(item.accumulated_stats)
 
@@ -535,8 +746,10 @@ class ExportManager(EventDispatcher):
 
             if item == 'source':
                 self.set_source(paths[0])
-            elif item == 'legacy_upgrade_path':
-                self.legacy_upgrade_path = paths[0]
+            elif item == 'generated_file_output_path':
+                self.generated_file_output_path = paths[0]
+            elif item == 'clever_sys_path':
+                self.clever_sys_path = paths[0]
             elif item == 'root_raw_data_export_path':
                 self.root_raw_data_export_path = paths[0]
             elif item == 'stats_export_path':
