@@ -463,7 +463,7 @@ class PosAnalysisChannel(TemporalAnalysisChannel):
 
     _mean_distance_traveled: Dict[str, Tuple[float, Tuple]] = None
 
-    _mean_mean_speed: Dict[str, Tuple[float, Tuple]] = None
+    _mean_speed: Dict[str, Tuple[float, Tuple]] = None
 
     _active_interval: Dict[str, Tuple[Dict[str, np.ndarray], Tuple]] = None
 
@@ -475,7 +475,7 @@ class PosAnalysisChannel(TemporalAnalysisChannel):
         self._event_count = {}
         self._mean_center_distance = {}
         self._mean_distance_traveled = {}
-        self._mean_mean_speed = {}
+        self._mean_speed = {}
         self._active_interval = {}
 
     def get_active_intervals(
@@ -602,7 +602,7 @@ class PosAnalysisChannel(TemporalAnalysisChannel):
             self, mask_channels: List[str] = (), start=None,
             end=None) -> float:
         mask_key = '\0'.join(mask_channels)
-        speed = self._mean_mean_speed
+        speed = self._mean_speed
         if mask_key in speed and speed[mask_key][1] == (start, end):
             return speed[mask_key][0]
 
@@ -625,7 +625,7 @@ class PosAnalysisChannel(TemporalAnalysisChannel):
         if dt:
             val = dist / dt
 
-        self._mean_mean_speed[mask_key] = val, (start, end)
+        self._mean_speed[mask_key] = val, (start, end)
         return val
 
 
