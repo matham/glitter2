@@ -128,6 +128,10 @@ class StorageController(EventDispatcher):
 
     player: GlitterPlayer = None
 
+    last_filename = StringProperty('')
+
+    last_filename_summary = StringProperty('')
+
     def __init__(self, app, channel_controller, player, **kwargs):
         super(StorageController, self).__init__(**kwargs)
         self.app = app
@@ -138,6 +142,17 @@ class StorageController(EventDispatcher):
             self.backup_event = Clock.schedule_interval(
                 partial(self.write_changes_to_autosave, scheduled=True),
                 self.backup_interval)
+
+    def update_last_filename(self, filename):
+        if not filename:
+            return
+
+        filename = abspath(filename)
+        if self.last_filename == filename:
+            return
+
+        self.last_filename = filename
+        self.last_filename_summary = basename(filename)
 
     @property
     def nix_compression(self):
@@ -336,6 +351,7 @@ class StorageController(EventDispatcher):
         Logger.debug(
             'Glitter2: Closed tempfile {}, with '
             '"{}"'.format(self.backup_filename, self.filename))
+
         self.filename = self.backup_filename = ''
         self.read_only_file = False
 
@@ -440,6 +456,7 @@ class StorageController(EventDispatcher):
         data = yaml_dumps(data)
         with open(filename, 'w') as fh:
             fh.write(data)
+        self.update_last_filename(filename)
 
     @app_error
     def import_yaml_config(self, filename, exclude_app_settings=False):
@@ -453,6 +470,18 @@ class StorageController(EventDispatcher):
             self.app.set_app_config_data(data['app_config'])
         self.create_gui_channels(*(item.values() for item in data['channels']))
         self.write_changes_to_autosave()
+        self.update_last_filename(filename)
+
+    @app_error
+    def import_last_file(self):
+        filename = self.last_filename
+        if not filename:
+            return
+
+        if filename.endswith('.h5'):
+            self.import_file(filename, exclude_app_settings=True)
+        else:
+            self.import_yaml_config(filename, exclude_app_settings=True)
 
     def set_data_unsaved(self):
         self.has_unsaved = True
