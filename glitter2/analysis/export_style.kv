@@ -160,16 +160,12 @@
                         size: self.size
 
 
-<SourceItemView@BoxLayout>:
+<SourceItemView@RecycleKVIDsDataViewBehavior+BoxLayout>:
     spacing: '5dp'
     size_hint_y: None
     height: self.minimum_height
-    filename: ''
-    file_size: 0
     result: ''
-    status: ''
     source_obj: None
-    skip: False
     padding: '10dp', '2dp'
     canvas:
         Color:
@@ -185,7 +181,7 @@
         bold: True
         center_texture: False
     FlatLabel:
-        text: root.filename
+        id: filename
         flat_color: app.theme.text_primary
         text_size: self.width, None
         shorten: True
@@ -193,34 +189,34 @@
         size_hint_min_x: '100dp'
         padding_y: '2dp'
     FlatLabel:
-        text: '{}'.format(pretty_space(root.file_size))
+        id: file_size
         size: max(self.texture_size[0], self.width), self.texture_size[1]
         size_hint: None, None
         flat_color: app.theme.text_primary
         bold: True
         center_texture: False
     FlatToggleButton:
+        id: skip
         disabled: bool(app.export_manager.thread_has_job)
         text: "Don't skip" if self.state == 'normal' else 'Skip'
         size_hint: None, None
         size: max(self.texture_size[0], self.width), self.texture_size[1]
         padding_x: '1dp'
         bold: True
-        state: 'down' if root.skip else 'normal'
         on_release: app.export_manager.request_set_skip(root.source_obj, self.state == 'down')
         scale_down_color: True
         flat_color: app.theme.text_primary
         flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary_dark
     FlatLabel:
-        text: root.status if root.status else '(no status)'
+        id: status
         size: '100dp', self.texture_size[1]
         size_hint: None, None
-        flat_color: [1, 0, 0, 1] if root.status == 'failed' else app.theme.text_primary
+        flat_color: [1, 0, 0, 1] if self.text == 'failed' else app.theme.text_primary
         center_texture: False
     AnimatedButton:
-        disabled: root.status == 'processing'
-        anim_active: root.status == 'processing'
-        source: 'flat_refresh.png' if root.status == 'processing' else 'flat_dots_vertical.png'
+        disabled: status.text == 'processing'
+        anim_active: status.text == 'processing'
+        source: 'flat_refresh.png' if status.text == 'processing' else 'flat_dots_vertical.png'
         flat_color: app.theme.accent
         on_release:
             app.source_item_log.result = root.result

@@ -74,12 +74,12 @@ class SourceFile(object):
         self.source_root = source_root
         self.file_size = filename.stat().st_size
 
-    def get_data(self):
+    def get_gui_data(self):
         return {
-            'filename': str(self.filename),
-            'file_size': self.file_size,
-            'skip': self.skip,
-            'status': self.status,
+            'filename.text': str(self.filename),
+            'file_size.text': pretty_space(self.file_size),
+            'skip.state': 'down' if self.skip else 'normal',
+            'status.text': self.status or '(no status)',
             'result': self.result,
             'source_obj': self,
         }
@@ -550,7 +550,8 @@ class ExportManager(EventDispatcher):
                     obj, skip = value
                     obj.skip = skip
                     kivy_queue_put(
-                        ('update_source_item', (obj.item_index, obj.get_data()))
+                        ('update_source_item',
+                         (obj.item_index, obj.get_gui_data()))
                     )
                     self.compute_to_be_processed_size()
                 elif msg == 'refresh_source_contents':
@@ -621,7 +622,7 @@ class ExportManager(EventDispatcher):
 
     def flatten_files(
             self, source_contents=None, set_index=False) -> List[dict]:
-        items = [item.get_data()
+        items = [item.get_gui_data()
                  for item in source_contents or self.source_contents]
 
         if set_index:
@@ -716,7 +717,7 @@ class ExportManager(EventDispatcher):
                 accumulated_stats.extend(item.accumulated_stats)
 
             queue_put(
-                ('update_source_item', (item.item_index, item.get_data())))
+                ('update_source_item', (item.item_index, item.get_gui_data())))
             if item.status != 'done':
                 queue_put(('increment', (self, 'num_failed_files', 1)))
             queue_put(('increment', (self, 'num_processed_files', 1)))
