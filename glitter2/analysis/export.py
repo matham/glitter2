@@ -216,7 +216,7 @@ class SourceFile(object):
                 f'got "{data[0][0]}" instead')
         if end_frame != data[-1][0]:
             raise ValueError(
-                f'Expected last frame to be "{end_frame}", but ' 
+                f'Expected last frame to be "{end_frame}", but '
                 f'got "{data[-1][0]}" instead')
 
         return data, metadata
@@ -328,7 +328,7 @@ class SourceFile(object):
 
 class ExportManager(EventDispatcher):
 
-    __config_props__ = (
+    _config_props_ = (
         'source', 'source_match_suffix', 'generated_file_output_path',
         'root_raw_data_export_path', 'stats_export_path')
 
@@ -443,21 +443,23 @@ class ExportManager(EventDispatcher):
     def _update_elapsed_time(self, *largs):
         self.elapsed_time = time.perf_counter() - self._start_processing_time
 
-    def get_config_properties(self):
+    def get_config_property(self, name):
         """(internal) used by the config system to get the list of config
         sources.
         """
-        return {'source': str(self.source)}
+        if name == 'source':
+            return str(self.source)
+        return getattr(self, name)
 
-    def apply_config_properties(self, settings):
+    def apply_config_property(self, name, value):
         """(internal) used by the config system to set the sources.
         """
-        if 'source' in settings:
-            source = pathlib.Path(settings['source'])
+        if name == 'source':
+            source = pathlib.Path(value)
             self.source = source = source.expanduser().absolute()
             self.source_viz = str(source)
-            return {'source', }
-        return set()
+        else:
+            setattr(self, name, value)
 
     @app_error
     def set_source(self, source):

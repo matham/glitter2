@@ -18,8 +18,8 @@ from kivy_garden.painter import PaintShape, PaintCanvasBehaviorBase, \
     PaintCircle, PaintEllipse, PaintPolygon
 from kivy_garden.collider import Collide2DPoly, CollideEllipse
 
-from base_kivy_app.config import read_config_from_object, apply_config, \
-    get_class_config_props_names
+from tree_config import get_config_prop_names
+from base_kivy_app.config import read_config_from_object, apply_config
 
 from glitter2.storage.data_file import DataChannelBase, EventChannelData, \
     TemporalDataChannelBase, PosChannelData, ZoneChannelData
@@ -51,7 +51,7 @@ class ChannelController(EventDispatcher):
     """Manages all the channels shown to the user.
     """
 
-    __config_props__ = (
+    _config_props_ = (
         'n_sep_pixels_per_channel', 'n_pixels_per_channel',
         'pos_channels_time_tail')
 
@@ -432,7 +432,7 @@ class ChannelBase(EventDispatcher):
     """Base class for all the channels.
     """
 
-    __config_props__ = ('color', 'color_gl', 'name', 'locked', 'hidden')
+    _config_props_ = ('color', 'color_gl', 'name', 'locked', 'hidden')
 
     color: List[int] = ObjectProperty(None)
 
@@ -459,7 +459,7 @@ class ChannelBase(EventDispatcher):
 
     def track_config_props_changes(self):
         f = self.channel_controller.app.trigger_config_updated
-        for prop in get_class_config_props_names(self.__class__):
+        for prop in get_config_prop_names(self):
             self.fbind(prop, f)
 
     def select_channel(self):
@@ -472,8 +472,6 @@ class ChannelBase(EventDispatcher):
 class TemporalChannel(ChannelBase):
     """Channels the have a time component.
     """
-
-    __config_props__ = ()
 
     overview_num_timestamps_modified_per_pixel = []
 
@@ -724,7 +722,7 @@ class EventChannel(TemporalChannel):
     """Channel that can be set to either True or False for each time step.
     """
 
-    __config_props__ = ('keyboard_key', 'channel_group', 'is_toggle_button')
+    _config_props_ = ('keyboard_key', 'channel_group', 'is_toggle_button')
 
     keyboard_key: str = StringProperty('')
 
@@ -823,7 +821,7 @@ class EventChannel(TemporalChannel):
 class PosChannel(TemporalChannel):
     """Channel that has an (x, y) position for each time step.
     """
-    __config_props__ = ('keyboard_key', )
+    _config_props_ = ('keyboard_key', )
 
     keyboard_key: str = StringProperty('')
 
@@ -1040,6 +1038,8 @@ class ZoneChannel(ChannelBase):
     parameter.
     """
 
+    _config_props_ = ('shape_config', )
+
     data_channel: ZoneChannelData = None
 
     shape: PaintShape = ObjectProperty(None, allownone=True)
@@ -1060,18 +1060,20 @@ class ZoneChannel(ChannelBase):
     def _update_shape_highlighted(self, *args):
         self.shape_highlighted = bool(self.pos_channels_highlighted)
 
-    def get_config_properties(self):
-        return {'shape_config': self.shape.get_state()}
+    def get_config_property(self, name):
+        if name == 'shape_config':
+            return self.shape.get_state()
+        return getattr(self, name)
 
-    def apply_config_properties(self, settings):
-        if 'shape_config' in settings:
+    def apply_config_property(self, name, value):
+        if name == 'shape_config':
             painter = self.channel_controller.zone_painter
             self.shape = shape = painter.create_shape_from_state(
-                settings['shape_config'], add=False)
+                value, add=False)
             shape.channel = self
             painter.add_shape(shape)
-            return {'shape_config'}
-        return set()
+        else:
+            setattr(self, name, value)
 
     def track_config_props_changes(self):
         super(ZoneChannel, self).track_config_props_changes()

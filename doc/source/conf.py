@@ -16,7 +16,7 @@ import sphinx_rtd_theme
 import kivy  # this adds KIVY_DOC_INCLUDE to env
 import glitter2
 from glitter2.main import Glitter2App
-from base_kivy_app.config import create_doc_listener, write_config_attrs_rst
+from base_kivy_app.config import create_doc_listener, write_config_props_rst
 
 
 # -- Project information -----------------------------------------------------
@@ -70,10 +70,13 @@ html_logo = 'images/glitter2_logo.png'
 
 
 def setup(app):
-    fname = os.environ.get('BASEKIVYAPP_CONFIG_DOC_PATH', 'config_attrs.json')
-    create_doc_listener(app, glitter2, fname)
+    yaml_filename = os.environ.get(
+        'TREE_CONFIG_DOC_YAML_PATH', 'config_prop_docs.yaml')
+    rst_filename = os.environ.get('TREE_CONFIG_DOC_RST_PATH', 'config.rst')
+    create_doc_listener(app, 'glitter2', yaml_filename)
 
     app.connect(
         'build-finished', partial(
-            write_config_attrs_rst, Glitter2App, glitter2, filename=fname)
+            write_config_props_rst, Glitter2App, 'Glitter2',
+            filename=yaml_filename, rst_filename=rst_filename)
     )

@@ -8,8 +8,6 @@ import numpy as np
 import tables as tb
 from distutils.version import LooseVersion
 
-from base_kivy_app.utils import yaml_dumps, yaml_loads
-
 from glitter2.utils import fix_name
 from glitter2.storage.data_file import DataFile
 

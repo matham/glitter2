@@ -28,7 +28,7 @@ class GlitterPlayer(EventDispatcher):
     be displayed.
     """
 
-    __config_props__ = ('seek_duration', )
+    _config_props_ = ('seek_duration', )
 
     seek_duration = NumericProperty(10)
 

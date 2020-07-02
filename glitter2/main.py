@@ -18,9 +18,11 @@ from kivy.clock import Clock
 import kivy_garden.graph
 import kivy_garden.tickmarker
 
+from tree_config import get_config_children_names
+
 from base_kivy_app.app import BaseKivyApp, app_error, run_app as run_cpl_app
 from base_kivy_app.graphics import BufferImage
-from base_kivy_app.config import get_class_config_props_names
+from tree_config import get_config_prop_names
 
 import glitter2
 from glitter2.storage import StorageController
@@ -80,7 +82,10 @@ class Glitter2App(BaseKivyApp):
     """The app which runs the GUI.
     """
 
-    __config_props__ = ()
+    _config_children_ = {
+        'storage': 'storage_controller', 'player': 'player',
+        'channels': 'channel_controller', 'export': 'export_manager',
+    }
 
     yesno_prompt = ObjectProperty(None, allownone=True)
     '''Stores a instance of :class:`YesNoPrompt` that is automatically created
@@ -107,23 +112,6 @@ class Glitter2App(BaseKivyApp):
 
     current_view = 'scoring'
 
-    @classmethod
-    def get_config_classes(cls):
-        d = super(Glitter2App, cls).get_config_classes()
-        d['storage'] = StorageController
-        d['player'] = GlitterPlayer
-        d['channels'] = ChannelController
-        d['export'] = ExportManager
-        return d
-
-    def get_config_instances(self):
-        d = super(Glitter2App, self).get_config_instances()
-        d['storage'] = self.storage_controller
-        d['player'] = self.player
-        d['channels'] = self.channel_controller
-        d['export'] = self.export_manager
-        return d
-
     def get_app_config_data(self):
         self.dump_app_settings_to_file()
         self.load_app_settings_from_file()
@@ -131,7 +119,7 @@ class Glitter2App(BaseKivyApp):
 
     def set_app_config_data(self, data):
         # filter classes that are not of this app
-        classes = self.get_config_instances()
+        classes = get_config_children_names(self)
         self.app_settings = {cls: data[cls] for cls in classes}
         self.apply_app_settings()
 
@@ -240,7 +228,7 @@ class Glitter2App(BaseKivyApp):
 
         for obj in (self.player, self.channel_controller,
                     self.storage_controller):
-            for prop in get_class_config_props_names(obj.__class__):
+            for prop in get_config_prop_names(obj):
                 obj.fbind(prop, self.trigger_config_updated)
 
         Clock.schedule_interval(self._set_window_focus, 0)
