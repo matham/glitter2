@@ -181,6 +181,9 @@ class SourceFile(object):
                 file_metadata=metadata, saw_all_timestamps=True,
                 timestamps=[timestamps], event_channels=[], pos_channels=[],
                 zone_channels=[])
+
+            data_file = DataFile(nix_file=nix_file)
+            data_file.open_file()
         except BaseException:
             nix_file.close()
             raise
