@@ -3,3 +3,4 @@
 
    storage.rst
    data_file.rst
+   legacy.rst

@@ -1,4 +1,7 @@
+"""Data Export
+===============
 
+"""
 from typing import Dict, List
 from os.path import dirname, join
 import os
@@ -28,6 +31,8 @@ from glitter2.player import GlitterPlayer
 from glitter2.analysis.clever_sys import read_clever_sys_file, \
     map_frames_to_timestamps
 from glitter2.channel import PosChannel, ZoneChannel
+
+__all__ = ('SourceFile', 'ExportManager')
 
 
 class SourceFile(object):

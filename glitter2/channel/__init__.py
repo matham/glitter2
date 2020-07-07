@@ -1,5 +1,6 @@
-"""Channels
-===========
+"""Data Channels
+================
+
 API for a channel controller as well as the channel types that the user can
 create. E.g. an event channel, a position based channel, etc.
 """

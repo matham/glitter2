@@ -8,6 +8,7 @@
    :maxdepth: 2
 
    glitter2.rst
+   analysis/api.rst
    channel/api.rst
    storage/api.rst
    player.rst

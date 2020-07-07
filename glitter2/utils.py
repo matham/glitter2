@@ -11,7 +11,7 @@ from kivy.properties import NumericProperty, BooleanProperty
 from kivy.factory import Factory
 from kivy.clock import Clock
 
-__all__ = ('fix_name', )
+__all__ = ('fix_name', 'LoadingAnim')
 
 _name_pat = re.compile('^(.+)-([0-9]+)$')
 

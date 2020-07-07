@@ -1,6 +1,13 @@
+"""CleverSys Import
+===================
+
+"""
+
 import re
 import os
 from collections import defaultdict
+
+__all__ = ('read_clever_sys_file', 'map_frames_to_timestamps')
 
 _clever_sys_regex = [
     re.compile(r'^Video\s+File\s*:\s*(?P<video_file>.+?)\s*$'),

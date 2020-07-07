@@ -1,3 +1,7 @@
+"""Data Analysis
+================
+
+"""
 from os.path import exists
 import nixio as nix
 import numpy as np
@@ -9,6 +13,10 @@ from kivy_garden.collider import Collide2DPoly, CollideEllipse
 
 from glitter2.storage.data_file import DataFile, EventChannelData, \
     PosChannelData, ZoneChannelData, DataChannelBase, TemporalDataChannelBase
+
+__all__ = (
+    'FileDataAnalysis', 'AnalysisChannel', 'TemporalAnalysisChannel',
+    'EventAnalysisChannel', 'PosAnalysisChannel', 'ZoneAnalysisChannel')
 
 
 def _sort_dict(d: dict) -> List[tuple]:
