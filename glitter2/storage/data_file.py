@@ -163,6 +163,7 @@ class DataFile(object):
         timestamps_arrays = self.timestamps_arrays
         idx_map = {}
         for idx, array in enumerate(timestamps):
+            array = np.asarray(array)
             if not idx:
                 timestamps_arrays[0].append(array)
                 idx_map[idx] = 0
@@ -177,7 +178,7 @@ class DataFile(object):
                 channel.write_channel_config(metadata)
                 for idx, array in enumerate(arrays):
                     nix_array = channel.data_arrays[idx_map[idx]]
-                    nix_array[:] = array
+                    nix_array[:] = np.asarray(array)
 
         for metadata in zone_channels:
             channel = self.create_channel('zone')

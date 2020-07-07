@@ -9,7 +9,6 @@ import time
 from queue import Queue, Empty
 import pathlib
 import nixio as nix
-import re
 import numpy as np
 
 from kivy.event import EventDispatcher
@@ -26,6 +25,9 @@ from glitter2.analysis import FileDataAnalysis
 from glitter2.utils import fix_name
 from glitter2.storage.data_file import DataFile
 from glitter2.player import GlitterPlayer
+from glitter2.analysis.clever_sys import read_clever_sys_file, \
+    map_frames_to_timestamps
+from glitter2.channel import PosChannel, ZoneChannel
 
 
 class SourceFile(object):
@@ -51,22 +53,6 @@ class SourceFile(object):
     exception = None
 
     accumulated_stats = None
-
-    _clever_sys_regex = [
-        re.compile(r'^Video\s+File\s*:\s*(?P<video_file>.+?)\s*$'),
-        re.compile(r'^Background\s*:\s*(?P<background_file>.+?)\s*$'),
-        re.compile(r'^Video\s+Width\s*:\s*(?P<width>\d+)\s*$'),
-        re.compile(r'^Video\s+Height\s*:\s*(?P<height>\d+)\s*$'),
-        re.compile(r'^Frame\s+From\s*:\s*(?P<from>\d+)\s*$'),
-        re.compile(r'^Frame\s+To\s*:\s*(?P<to>\d+)\s*$'),
-        re.compile(r'^Begin\s+Time\s*:\s*(?P<begin>[\d.]+)\(s\)\s*$'),
-        re.compile(r'^End\s+Time\s*:\s*(?P<end>[\d.]+)\(s\)\s*$'),
-        re.compile(
-            r'^Format\s*:\s*FrameNum\s*CenterX\(mm\)\s*CenterY\(mm\)\s*'
-            r'NoseX\(mm\)\s*NoseY\(mm\).+$'),
-    ]
-
-    _clever_sys_data_line_regex = re.compile(r'')
 
     def __init__(self, filename: pathlib.Path, source_root: pathlib.Path):
         super(SourceFile, self).__init__()
@@ -164,63 +150,6 @@ class SourceFile(object):
             self._post_process()
             return target_filename
 
-    def _parse_clever_sys_file(self, fh):
-        metadata = {}
-        data = []
-        match = re.match
-        re_split = re.split
-
-        regex = self._clever_sys_regex[::-1]
-        current_re = regex.pop()
-
-        # read metadata
-        while True:
-            line = fh.readline()
-            if not line:
-                break
-
-            m = match(current_re, line)
-            if m is not None:
-                metadata.update(m.groupdict())
-                if not regex:
-                    break
-                current_re = regex.pop()
-
-        start_frame = int(metadata['from'])
-        end_frame = int(metadata['to'])
-        h = int(metadata['height'])
-
-        # now read data
-        while True:
-            line = fh.readline()
-            if not line:
-                break
-            line = line.strip()
-            if not line:
-                continue
-
-            item = re_split(r'\s+', line, maxsplit=11)
-            if len(item) < 12:
-                raise ValueError(f'Could not parse line "{line}"')
-            frame, center_x, center_y, nose_x, nose_y, *_ = item
-            data.append((
-                int(frame), float(center_x), h - float(center_y),
-                float(nose_x), h - float(nose_y)
-            ))
-
-        if not data:
-            raise ValueError('No frame data in the file')
-        if start_frame != data[0][0]:
-            raise ValueError(
-                f'Expected first frame to be "{start_frame}", but '
-                f'got "{data[0][0]}" instead')
-        if end_frame != data[-1][0]:
-            raise ValueError(
-                f'Expected last frame to be "{end_frame}", but '
-                f'got "{data[-1][0]}" instead')
-
-        return data, metadata
-
     def _create_or_open_data_file(
             self, target_filename, video_file, width, height):
         existed = target_filename.exists()
@@ -260,24 +189,32 @@ class SourceFile(object):
 
     def import_clever_sys_file(self, output_path: str):
         try:
-            with open(str(self.filename), 'r') as fh:
-                data, metadata = self._parse_clever_sys_file(fh)
+            data, video_metadata, zones, calibration = read_clever_sys_file(
+                self.filename)
 
-            video_file = pathlib.Path(metadata['video_file'])
+            video_file = pathlib.Path(video_metadata['video_file'])
             target_filename = pathlib.Path(output_path).joinpath(
                 video_file.relative_to(video_file.parts[0])).with_suffix('.h5')
-            background_file = metadata['background_file']
-            w = int(metadata['width'])
-            h = int(metadata['height'])
-            start_time = float(metadata['begin'])
-            end_time = float(metadata['end'])
+            background_file = video_metadata['background_file']
+            w = video_metadata['width']
+            h = video_metadata['height']
+            rate = video_metadata['rate']
+
+            estimated_start = video_metadata['from'] / rate
+            assert estimated_start - 1 <= video_metadata['begin'] \
+                <= estimated_start + 1
+            estimated_end = video_metadata['to'] / rate
+            assert estimated_end - 1 <= video_metadata['end'] \
+                <= estimated_end + 1
 
             if not target_filename.parent.exists():
                 os.makedirs(str(target_filename.parent))
 
             nix_file, data_file = self._create_or_open_data_file(
                 target_filename, video_file, w, h)
-            timestamps = np.array(data_file.timestamps)
+            timestamps_mapping = map_frames_to_timestamps(
+                data_file.timestamps, rate, video_metadata['from'],
+                video_metadata['to'])
 
             try:
                 names = set()
@@ -287,19 +224,34 @@ class SourceFile(object):
                     for channel in channels.values():
                         names.add(channel.read_channel_config()['name'])
 
-                center_name = fix_name('center', names)
-                nose_name = fix_name('nose', names, [center_name])
-
                 center_channel = data_file.create_channel('pos')
-                center_channel.write_channel_config({'name': center_name})
-                nose_channel = data_file.create_channel('pos')
-                nose_channel.write_channel_config({'name': nose_name})
+                metadata = PosChannel.make_channel_metadata(
+                    name='animal_center', existing_names=names)
+                center_channel.write_channel_config(metadata)
+                names.add(metadata['name'])
 
-                for t_index, center_x, center_y, nose_x, nose_y in data:
-                    center_channel.set_timestamp_value(
-                        timestamps[t_index], [center_x, center_y])
-                    nose_channel.set_timestamp_value(
-                        timestamps[t_index], [nose_x, nose_y])
+                nose_channel = data_file.create_channel('pos')
+                metadata = PosChannel.make_channel_metadata(
+                    name='animal_nose', existing_names=names)
+                nose_channel.write_channel_config(metadata)
+                names.add(metadata['name'])
+
+                for frame, center_x, center_y, nose_x, nose_y in data:
+                    if frame not in timestamps_mapping:
+                        continue
+
+                    for t in timestamps_mapping[frame]:
+                        center_channel.set_timestamp_value(
+                            t, [center_x, center_y])
+                        nose_channel.set_timestamp_value(t, [nose_x, nose_y])
+
+                for zone in zones:
+                    metadata = ZoneChannel.make_channel_metadata(
+                        existing_names=names, **zone)
+                    names.add(metadata['name'])
+
+                    channel = data_file.create_channel('zone')
+                    channel.write_channel_config(metadata)
             finally:
                 nix_file.close()
 
