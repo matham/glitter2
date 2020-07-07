@@ -18,7 +18,7 @@ from kivy.properties import BooleanProperty, NumericProperty, StringProperty
 from kivy.lang import Builder
 from kivy.uix.slider import Slider
 
-from base_kivy_app.app import app_error
+from more_kivy_app.app import app_error
 
 __all__ = ('GlitterPlayer', 'SeekSlider')
 

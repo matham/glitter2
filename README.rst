@@ -3,7 +3,7 @@ Glitter2
 
 Video scoring for behavioral experiments.
 
-For more information: http://matham.github.io/glitter2/index.html
+For more information: https://matham.github.io/glitter2/index.html
 
 To install https://matham.github.io/glitter2/installation.html
 

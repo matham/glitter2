@@ -17,7 +17,7 @@ from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.logger import Logger
 
-from base_kivy_app.app import app_error, report_exception_in_app
+from more_kivy_app.app import app_error, report_exception_in_app
 from base_kivy_app.utils import pretty_space
 
 from glitter2.storage.legacy import LegacyFileReader

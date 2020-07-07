@@ -19,7 +19,7 @@ from kivy_garden.painter import PaintShape, PaintCanvasBehaviorBase, \
 from kivy_garden.collider import Collide2DPoly, CollideEllipse
 
 from tree_config import get_config_prop_names
-from base_kivy_app.config import read_config_from_object, apply_config
+from more_kivy_app.config import read_config_from_object, apply_config
 
 from glitter2.storage.data_file import DataChannelBase, EventChannelData, \
     TemporalDataChannelBase, PosChannelData, ZoneChannelData

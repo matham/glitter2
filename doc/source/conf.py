@@ -16,7 +16,7 @@ import sphinx_rtd_theme
 import kivy  # this adds KIVY_DOC_INCLUDE to env
 import glitter2
 from glitter2.main import Glitter2App
-from base_kivy_app.config import create_doc_listener, write_config_props_rst
+from more_kivy_app.config import create_doc_listener, write_config_props_rst
 
 
 # -- Project information -----------------------------------------------------

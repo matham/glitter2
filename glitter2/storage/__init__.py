@@ -74,8 +74,8 @@ from kivy.clock import Clock
 from kivy.logger import Logger
 from kivy.lang import Builder
 
-from base_kivy_app.app import app_error
-from base_kivy_app.utils import yaml_dumps, yaml_loads
+from more_kivy_app.app import app_error
+from more_kivy_app.utils import yaml_dumps, yaml_loads
 
 from glitter2.storage.data_file import DataFile, read_nix_prop
 from glitter2.player import GlitterPlayer
