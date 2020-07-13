@@ -27,11 +27,12 @@ from tree_config import get_config_prop_names
 import glitter2
 from glitter2.storage import StorageController
 from glitter2.channel import ChannelController, ChannelBase, EventChannel, \
-    PosChannel, ZoneChannel
+    PosChannel, ZoneChannel, Ruler
 from glitter2.player import GlitterPlayer
 from glitter2.analysis.export import ExportManager
 from glitter2.channel.channel_widgets import EventChannelWidget, \
-    PosChannelWidget, ZoneChannelWidget, ImageDisplayWidgetManager, ZonePainter
+    PosChannelWidget, ZoneChannelWidget, ImageDisplayWidgetManager, \
+    ZonePainter, RulerWidget
 
 __all__ = ('Glitter2App', 'run_app', 'MainView')
 
@@ -106,11 +107,17 @@ class Glitter2App(BaseKivyApp):
 
     export_manager: ExportManager = None
 
+    ruler: Ruler = None
+
+    ruler_widget: RulerWidget = None
+
     source_item_log = None
 
     interactive_player_mode = BooleanProperty(True)
 
     current_view = 'scoring'
+
+    ruler_active = BooleanProperty(False)
 
     def get_app_config_data(self):
         self.dump_app_settings_to_file()
@@ -161,6 +168,9 @@ class Glitter2App(BaseKivyApp):
     def clear_video(self):
         self.image_display.clear_image()
 
+    def opened_file(self):
+        self.ruler_active = False
+
     @app_error
     def set_export_stats_opts(self, channel_groups):
         self.export_manager.events_stats = {
@@ -200,11 +210,12 @@ class Glitter2App(BaseKivyApp):
         base = dirname(glitter2.__file__)
         Builder.load_file(join(base, 'glitter2_style.kv'))
 
+        self.ruler = Ruler()
         self.channel_controller = ChannelController(app=self)
         self.player = GlitterPlayer(app=self)
         self.storage_controller = StorageController(
             app=self, channel_controller=self.channel_controller,
-            player=self.player)
+            player=self.player, ruler=self.ruler)
         self.export_manager = ExportManager()
 
         self.yesno_prompt = Factory.FlatYesNoPrompt()
@@ -230,6 +241,8 @@ class Glitter2App(BaseKivyApp):
                     self.storage_controller):
             for prop in get_config_prop_names(obj):
                 obj.fbind(prop, self.trigger_config_updated)
+        self.ruler.fbind(
+            'pixels_per_meter', self.trigger_config_updated)
 
         Clock.schedule_interval(self._set_window_focus, 0)
         self._set_window_focus()

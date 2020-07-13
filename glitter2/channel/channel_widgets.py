@@ -5,6 +5,7 @@ API for all the GUI components that display channels and channel related
 objects.
 """
 from os.path import join, dirname
+from math import sqrt
 
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import ObjectProperty, BooleanProperty
@@ -13,12 +14,13 @@ from kivy.factory import Factory
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.widget import Widget
 from kivy.app import App
+from kivy.metrics import dp
 
 from kivy_garden.painter import PaintCanvasBehavior, PaintCircle,\
     PaintEllipse, PaintPolygon, PaintFreeformPolygon
 
 from glitter2.channel import ChannelController, ChannelBase, EventChannel, \
-    PosChannel, ZoneChannel, TemporalChannel
+    PosChannel, ZoneChannel, TemporalChannel, Ruler
 
 __all__ = (
     'ImageDisplayWidgetManager', 'ZonePainter', 'PosChannelPainter',
@@ -215,6 +217,65 @@ class ZonePainter(PaintCanvasBehavior, Widget):
             shape.channel.widget.selected = False
             return True
         return False
+
+
+class RulerWidget(Widget):
+
+    ruler: Ruler = None
+
+    ruler_active = BooleanProperty(False)
+
+    def on_touch_down(self, touch):
+        if not self.ruler_active:
+            return super(RulerWidget, self).on_touch_down(touch)
+
+        x, y = touch.pos
+        if not self.collide_point(x, y):
+            return False
+
+        x1, y1 = self.ruler.point_1
+        x2, y2 = self.ruler.point_2
+        dist1 = sqrt(pow(x1 - x, 2) + pow(y1 - y, 2))
+        dist2 = sqrt(pow(x2 - x, 2) + pow(y2 - y, 2))
+        name = f'ruler.{self.uid}'
+
+        if dist1 <= dist2 and dist1 <= dp(10):
+            touch.ud[name] = 1
+        elif dist2 < dist1 and dist2 <= dp(10):
+            touch.ud[name] = 2
+        else:
+            touch.ud[name] = False
+        return True
+
+    def on_touch_move(self, touch):
+        name = f'ruler.{self.uid}'
+        if name not in touch.ud:
+            return super(RulerWidget, self).on_touch_move(touch)
+
+        point = touch.ud[name]
+        if not point:
+            return True
+
+        if point == 1:
+            self.ruler.point_1 = touch.pos
+        else:
+            self.ruler.point_2 = touch.pos
+        return True
+
+    def on_touch_up(self, touch):
+        name = f'ruler.{self.uid}'
+        if name not in touch.ud:
+            return super(RulerWidget, self).on_touch_up(touch)
+
+        point = touch.ud[name]
+        if not point:
+            return True
+
+        if point == 1:
+            self.ruler.point_1 = touch.pos
+        else:
+            self.ruler.point_2 = touch.pos
+        return True
 
 
 class PosChannelPainter(Widget):

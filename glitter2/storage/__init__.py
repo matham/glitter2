@@ -128,15 +128,18 @@ class StorageController(EventDispatcher):
 
     player: GlitterPlayer = None
 
+    ruler = None
+
     last_filename = StringProperty('')
 
     last_filename_summary = StringProperty('')
 
-    def __init__(self, app, channel_controller, player, **kwargs):
+    def __init__(self, app, channel_controller, player, ruler, **kwargs):
         super(StorageController, self).__init__(**kwargs)
         self.app = app
         self.channel_controller = channel_controller
         self.player = player
+        self.ruler = ruler
         if (not os.environ.get('KIVY_DOC_INCLUDE', None) and
                 self.backup_interval):
             self.backup_event = Clock.schedule_interval(
@@ -272,6 +275,7 @@ class StorageController(EventDispatcher):
         :param filename:
         :param read_only:
         """
+        self.app.opened_file()
         # did we open a h5 file? try opening its video
         if h5py.h5f.is_hdf5(filename.encode()):
             self.open_file(filename, read_only=read_only)
@@ -332,6 +336,7 @@ class StorageController(EventDispatcher):
         self.channel_controller.populate_timestamps(
             self.data_file.timestamp_data_map)
         self.create_gui_channels_from_storage()
+        self.ruler.pixels_per_meter = self.data_file.pixels_per_meter
         self.write_changes_to_autosave()
         self.saw_all_timestamps = self.data_file.saw_all_timestamps
 
@@ -370,6 +375,7 @@ class StorageController(EventDispatcher):
             self.create_gui_channels(
                 *(item.values()
                   for item in data_file_src.read_channels_config()))
+            self.ruler.pixels_per_meter = data_file_src.pixels_per_meter
             if not exclude_app_settings:
                 self.app.set_app_config_data(data_file_src.read_app_config())
         finally:
@@ -433,6 +439,7 @@ class StorageController(EventDispatcher):
             self.data_file.write_app_config(self.app.get_app_config_data())
             self.data_file.write_channels_config(
                 *self.channel_controller.get_channels_metadata())
+            self.data_file.set_pixels_per_meter(self.ruler.pixels_per_meter)
             self.config_changed = False
 
         try:
@@ -448,7 +455,10 @@ class StorageController(EventDispatcher):
 
         data = {
             'channels': self.channel_controller.get_channels_metadata(),
-            'app_config': None
+            'app_config': None,
+            'data_config': {
+                'pixels_per_meter': self.ruler.pixels_per_meter
+            }
         }
         if not exclude_app_settings:
             data['app_config'] = self.app.get_app_config_data()
@@ -469,6 +479,11 @@ class StorageController(EventDispatcher):
         if not exclude_app_settings and data['app_config'] is not None:
             self.app.set_app_config_data(data['app_config'])
         self.create_gui_channels(*(item.values() for item in data['channels']))
+
+        pixels_per_meter = data.get(
+            'data_config', {}).get('pixels_per_meter', None)
+        if pixels_per_meter is not None:
+            self.ruler.pixels_per_meter = pixels_per_meter
         self.write_changes_to_autosave()
         self.update_last_filename(filename)
 
@@ -582,6 +597,7 @@ class StorageController(EventDispatcher):
         fname = filenames[0]
         self.root_path = dirname(fname)
         self.player.open_file(fname)
+        self.app.opened_file()
 
     def get_h5_filename_from_video(self, filename):
         head, _ = splitext(filename)

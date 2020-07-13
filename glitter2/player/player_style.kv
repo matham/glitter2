@@ -164,6 +164,7 @@
                             app.image_display_manager.zone_painter = zone_painter.__self__
                             app.zone_painter = zone_painter.__self__
                             app.image_display_manager.pos_channel_painter = pos_channel_painter.__self__
+                            app.ruler_widget = ruler_widget.__self__
                         channel_controller: app.channel_controller
                         size: image_display.size
                         BufferImage:
@@ -188,3 +189,10 @@
                             size_hint: None, None
                             size: image_display.size
                             locked: True
+                        RulerWidget:
+                            id: ruler_widget
+                            ruler: app.ruler
+                            size_hint: None, None
+                            size: image_display.size
+                            ruler_active: app.ruler_active
+                            on_ruler_active: app.ruler.show_ruler(self.canvas, self.size) if self.ruler_active else app.ruler.hide_ruler()

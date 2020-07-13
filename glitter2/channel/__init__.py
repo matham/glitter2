@@ -8,6 +8,7 @@ from typing import Iterable, List, Dict, Iterator, Optional, Any, Union
 from itertools import cycle, chain
 import numpy as np
 from collections import defaultdict
+from math import sqrt
 
 from kivy.properties import NumericProperty, ObjectProperty, StringProperty, \
     BooleanProperty, ListProperty, DictProperty
@@ -27,7 +28,7 @@ from glitter2.storage.data_file import DataChannelBase, EventChannelData, \
 from glitter2.utils import fix_name as fix_name_original
 
 __all__ = ('ChannelController', 'ChannelBase', 'TemporalChannel',
-           'EventChannel', 'PosChannel', 'ZoneChannel')
+           'EventChannel', 'PosChannel', 'ZoneChannel', 'Ruler')
 
 # matplotlib tab10 theme
 _color_theme_tab10 = (
@@ -1196,3 +1197,115 @@ class ZoneChannel(ChannelBase):
         shape.set_valid()
         metadata['shape_config'] = shape.get_state()
         return metadata
+
+
+class Ruler(EventDispatcher):
+
+    pixels_per_meter = NumericProperty(0)
+    """The pixels per meter for the video file.
+
+    This can be zero when it's not set. This is set externally when e.g. a file
+    is opened and the UI updates from it. From the UI, it can only be set with
+    :meth:`update_pixels_per_meter`.
+
+    When this changes, the UI is notified of a change (at the app level) and
+    value is saved when data is saved.
+    """
+
+    canvas = None
+    """The last canvas where the ruler was displayed on.
+    """
+
+    point_1 = ListProperty([0, 0])
+
+    point_1_center: Optional[Point] = None
+
+    point_1_circle: Optional[Line] = None
+
+    point_2 = ListProperty([0, 0])
+
+    point_2_center: Optional[Point] = None
+
+    point_2_circle: Optional[Line] = None
+
+    point_distance_mm = NumericProperty(0)
+    """Can be zero.
+    """
+
+    def __init__(self, **kwargs):
+        super(Ruler, self).__init__(**kwargs)
+        self.fbind('point_1', self._update_point_1_graphics)
+        self.fbind('point_2', self._update_point_2_graphics)
+
+    def show_ruler(self, canvas, size):
+        self.hide_ruler()
+        self.canvas = canvas
+
+        w, h = size
+        x1, y1 = w // 2, 3 * h // 4
+        x2, y2 = w // 2, h // 4
+
+        r, g, b = 1, 0, 153 / 255
+        r_back, g_back, b_back = 242 / 255, 1, 0
+        name = 'glitter2_ruler'
+
+        with canvas:
+            Color(r_back, g_back, b_back, 1, group=name)
+            c1 = self.point_1_circle = Line(width=2, group=name)
+            Color(r, g, b, 1, group=name)
+            p1 = self.point_1_center = Point(pointsize=2, group=name)
+
+            Color(r_back, g_back, b_back, 1, group=name)
+            c2 = self.point_2_circle = Line(width=2, group=name)
+            Color(r, g, b, 1, group=name)
+            p2 = self.point_2_center = Point(pointsize=2, group=name)
+
+        p1.points = [x1, y1]
+        c1.circle = x1, y1, 8
+        p2.points = [x2, y2]
+        c2.circle = x2, y2, 8
+
+        # make sure graphics was created first
+        self.point_1 = x1, y1
+        self.point_2 = x2, y2
+
+    def hide_ruler(self):
+        if self.canvas is None:
+            return
+
+        self.canvas.remove_group('glitter2_ruler')
+        self.canvas = None
+        self.point_distance_mm = 0
+        self.point_1_circle = self.point_1_center = None
+        self.point_2_circle = self.point_2_center = None
+        self.point_1 = self.point_2 = 0, 0
+
+    def _update_point_1_graphics(self, *args):
+        if self.point_1_circle is None:
+            return
+
+        x, y = self.point_1
+        self.point_1_center.points = [x, y]
+        self.point_1_circle.circle = x, y, 8
+
+    def _update_point_2_graphics(self, *args):
+        if self.point_2_circle is None:
+            return
+
+        x, y = self.point_2
+        self.point_2_center.points = [x, y]
+        self.point_2_circle.circle = x, y, 8
+
+    def update_pixels_per_meter(self):
+        if not self.point_distance_mm:
+            self.pixels_per_meter = 0
+            return
+
+        x1, y1 = self.point_1
+        x2, y2 = self.point_2
+        pixel_dist = sqrt(pow(x1 - x2, 2) + pow(y1 - y2, 2))
+        if not pixel_dist:
+            self.pixels_per_meter = 0
+            return
+
+        self.pixels_per_meter = pixel_dist / self.point_distance_mm * 1000

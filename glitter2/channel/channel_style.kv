@@ -1,3 +1,5 @@
+#:import Factory kivy.factory.Factory
+
 <BoxShowMore@ShowMoreBehavior+BoxLayout>
 
 <TrackFlatToggleButton@TrackPressingButtonBehavior+FlatToggleButton>
@@ -6,7 +8,7 @@
 <ChannelList@BoxLayout>:
     orientation: 'vertical'
     size_hint_x: None
-    width: '250dp'
+    width: self.minimum_width
     size_hint_min_y: self.minimum_height
     spacing: '2dp'
     BoxLayout:
@@ -36,7 +38,7 @@
                 flat_color: app.theme.accent
                 on_release: app.create_channel('event')
             FlatLabel:
-                text: 'Events'
+                text: 'Event'
                 flat_color: app.theme.text_primary
         BoxShowMore:
             more: more_event.__self__
@@ -81,7 +83,7 @@
                 flat_color: app.theme.accent
                 on_release: app.create_channel('pos')
             FlatLabel:
-                text: 'Pos'
+                text: 'Position'
                 flat_color: app.theme.text_primary
         BoxShowMore:
             more: more_pos.__self__
@@ -100,9 +102,11 @@
                     height: self.minimum_height
                     spacing: '3dp'
     BoxLayout:
+        id: pos_widgets
         orientation: 'vertical'
         spacing: '5dp'
         size_hint_min_y: self.minimum_height
+        size_hint_min_x: self.minimum_width
         canvas:
             Color:
                 rgba: app.theme.primary
@@ -120,7 +124,10 @@
                 scale_down_color: True
                 source: 'pencil-off.png' if self.state == 'normal' else 'pencil.png'
                 flat_color: app.theme.accent
-                on_state: app.interactive_player_mode = app.image_display_manager.zone_painter.locked = self.state == 'normal'
+                on_state:
+                    app.image_display_manager.zone_painter.locked = self.state == 'normal'
+                    app.interactive_player_mode = self.state == 'normal' and ruler.state == 'normal'
+                    if self.state == 'down': ruler.state = 'normal'
             FlatDivider:
                 color: app.theme.divider
             BoxLayout:
@@ -166,6 +173,24 @@
                     app.channel_controller.show_zone_drawing = self.state == 'down'
                     if self.state == 'normal': edit_zones.state = 'normal'
                     if self.state == 'normal': app.image_display_manager.zone_painter.clear_selected_shapes()
+            FlatDivider:
+                color: app.theme.divider
+            FlatImageToggleButton:
+                id: ruler
+                scale_down_color: True
+                state: 'down' if app.ruler_active else 'normal'
+                source: 'ruler.png'
+                flat_color: app.theme.accent
+                on_state:
+                    if self.state == 'down': edit_zones.state = 'normal'
+                    app.ruler_active = self.state == 'down'
+                    app.interactive_player_mode = self.state == 'normal' and edit_zones.state == 'normal'
+            FlatImageButton:
+                settings_widget: Factory.RulerSettings()
+                scale_down_color: True
+                source: 'flat_dots_vertical.png'
+                flat_color: app.theme.accent
+                on_release: self.settings_widget.open(pos_widgets)
         BoxLayout:
             size_hint_y: None
             height: self.minimum_height
@@ -178,7 +203,7 @@
                 flat_color: app.theme.accent
                 source: 'flat_arrow_right.png' if self.state == 'normal' else 'flat_arrow_down.png'
             FlatLabel:
-                text: 'Zones'
+                text: 'Zone'
                 flat_color: app.theme.text_primary
         BoxShowMore:
             more: more_zone.__self__
@@ -509,3 +534,85 @@
                 on_release:
                     root.dismiss()
                     app.delete_channel(root.channel)
+
+
+<RulerSettings@FlatDropDown>:
+    do_scroll: False, False
+    flat_color: app.theme.primary_text
+    flat_border_color: app.theme.divider
+    BoxLayout:
+        disabled: not app.ruler_active
+        size_hint: None, None
+        orientation: 'vertical'
+        spacing: '5dp'
+        padding: '5dp'
+        size: self.minimum_size
+        FlatLabel:
+            text: 'Pixels per meter: {:.10g}'.format(app.ruler.pixels_per_meter)
+            size_hint_y: None
+            height: self.texture_size[1]
+            size_hint_min_x: self.texture_size[0]
+            center_texture: True
+            flat_color: app.theme.text_primary
+        GridLayout:
+            spacing: '5dp'
+            size_hint_y: None
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+            cols: 3
+            FlatLabel:
+                text: 'Point 1:'
+                size_hint: None, None
+                size: self.texture_size
+                center_texture: True
+                flat_color: app.theme.text_primary
+            FlatSizedTextInput:
+                size_hint_min_x: '65dp'
+                background_color: app.theme.primary_light
+                input_filter: 'float'
+                text: '{:0.2f}'.format(app.ruler.point_1[0])
+                on_focus: if not self.focus: app.ruler.point_1[0] = float(self.text or 0)
+            FlatSizedTextInput:
+                size_hint_min_x: '65dp'
+                background_color: app.theme.primary_light
+                input_filter: 'float'
+                text: '{:0.2f}'.format(app.ruler.point_1[1])
+                on_focus: if not self.focus: app.ruler.point_1[1] = float(self.text or 0)
+            FlatLabel:
+                text: 'Point 2:'
+                size_hint: None, None
+                size: self.texture_size
+                center_texture: True
+                flat_color: app.theme.text_primary
+            FlatSizedTextInput:
+                background_color: app.theme.primary_light
+                input_filter: 'float'
+                text: '{:0.2f}'.format(app.ruler.point_2[0])
+                on_focus: if not self.focus: app.ruler.point_2[0] = float(self.text or 0)
+            FlatSizedTextInput:
+                background_color: app.theme.primary_light
+                input_filter: 'float'
+                text: '{:0.2f}'.format(app.ruler.point_2[1])
+                on_focus: if not self.focus: app.ruler.point_2[1] = float(self.text or 0)
+        BoxLayout:
+            spacing: '5dp'
+            size_hint_y: None
+            height: self.minimum_height
+            size_hint_min_x: self.minimum_width
+            FlatLabel:
+                text: 'Point distance (mm):'
+                size_hint: None, None
+                size: self.texture_size
+                center_texture: True
+                flat_color: app.theme.text_primary
+            FlatSizedTextInput:
+                size_hint_min_x: '65dp'
+                background_color: app.theme.primary_light
+                input_filter: 'float'
+                text: '{:0.5f}'.format(app.ruler.point_distance_mm)
+                on_focus: if not self.focus: app.ruler.point_distance_mm = float(self.text or 0)
+            FlatImageButton:
+                scale_down_color: True
+                source: 'flat_save.png'
+                flat_color: app.theme.accent
+                on_release: app.ruler.update_pixels_per_meter()
