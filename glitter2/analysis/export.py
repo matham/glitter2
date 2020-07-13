@@ -200,6 +200,12 @@ class SourceFile(object):
             data, video_metadata, zones, calibration = read_clever_sys_file(
                 self.filename)
 
+            (a, b, c), (d, e, f) = calibration
+            if b or c or d or f or a != e:
+                raise ValueError(f'Cannot parse calibration {calibration}')
+            calibration_set = a != 1
+            pixels_per_meter = 1000 / a
+
             video_file = pathlib.Path(video_metadata['video_file'])
             target_filename = pathlib.Path(output_path).joinpath(
                 video_file.relative_to(video_file.parts[0])).with_suffix('.h5')
@@ -220,6 +226,9 @@ class SourceFile(object):
 
             nix_file, data_file = self._create_or_open_data_file(
                 target_filename, video_file, w, h)
+            if not data_file.pixels_per_meter and calibration_set:
+                data_file.set_pixels_per_meter(pixels_per_meter)
+
             timestamps_mapping = map_frames_to_timestamps(
                 data_file.timestamps, rate, video_metadata['from'],
                 video_metadata['to'])
