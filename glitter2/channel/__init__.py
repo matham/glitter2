@@ -555,11 +555,11 @@ class TemporalChannel(ChannelBase):
             if self.texture_rect is not None:
                 self.texture_rect.texture = texture
 
-            buff2 = np.repeat(
-                self.modified_count_buffer[np.newaxis, ...],
-                self.channel_controller.n_pixels_per_channel, axis=0)
-            texture.blit_buffer(
-                buff2.ravel(order='C'), colorfmt='rgb', bufferfmt='ubyte')
+        buff2 = np.repeat(
+            self.modified_count_buffer[np.newaxis, ...],
+            self.channel_controller.n_pixels_per_channel, axis=0)
+        texture.blit_buffer(
+            buff2.ravel(order='C'), colorfmt='rgb', bufferfmt='ubyte')
 
         # for these instructions we can simply re-adjust the pos/size
         if self.selection_color_instruction is None:
