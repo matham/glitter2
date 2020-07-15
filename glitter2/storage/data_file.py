@@ -5,7 +5,7 @@ Data channel methods, unless specified should not be called directly.
 """
 
 import numpy as np
-from typing import List, Dict, Optional, Tuple, Callable
+from typing import List, Dict, Optional, Tuple, Callable, Set
 import nixio as nix
 from nixio.exceptions.exceptions import InvalidFile
 
@@ -48,6 +48,8 @@ class DataFile(object):
     :attr:`timestamps`) and the value is the data array.
     """
 
+    timestamp_ends: Set[float] = set()
+
     timestamp_data_map: Dict[float, Tuple[int, int]] = {}
     """For each timestamps in the video, it maps to the key in
     :attr:`timestamps_arrays` whose value is the data array storing this
@@ -84,6 +86,7 @@ class DataFile(object):
         self.zone_channels = {}
         self.timestamps_arrays = {}
         self.timestamp_data_map = {}
+        self.timestamp_ends = set()
 
     def init_new_file(self):
         import glitter2
@@ -149,6 +152,12 @@ class DataFile(object):
         for i, timestamps in timestamps_arrays.items():
             for t_index, val in enumerate(timestamps):
                 data_map[val] = i, t_index
+
+        self.populate_timestamp_ends()
+
+    def populate_timestamp_ends(self):
+        self.timestamp_ends = {
+            arr[-1] for arr in self.timestamps_arrays.values() if len(arr)}
 
     def set_file_data(
             self, file_metadata: Dict, saw_all_timestamps: bool,
@@ -509,6 +518,8 @@ class DataFile(object):
                 if self._saw_last_timestamp and self._saw_first_timestamp and \
                         len(self.timestamps_arrays) == 1:
                     self.mark_saw_all_timestamps()
+
+                self.populate_timestamp_ends()
             self._last_timestamps_n = n
             return n
 
@@ -523,6 +534,8 @@ class DataFile(object):
         data_array = self.timestamps_arrays[last_timestamps_n]
         timestamps_map[t] = last_timestamps_n, len(data_array)
         data_array.append(t)
+
+        self.populate_timestamp_ends()
         return last_timestamps_n
 
     def get_channel_from_id(self, i):
@@ -548,6 +561,14 @@ class DataFile(object):
         self.unsaved_callback()
         del self.nix_file.blocks[channel.name]
         del self.nix_file.sections[channel.name + '_metadata']
+
+    def is_end_timestamp(self, t):
+        n, i = self.timestamp_data_map[t]
+        arr = self.timestamps_arrays[n]
+
+        if i < len(arr) - 1:
+            return False
+        return True
 
 
 class DataChannelBase(object):

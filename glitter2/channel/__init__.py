@@ -109,6 +109,8 @@ class ChannelController(EventDispatcher):
 
     show_zone_drawing = BooleanProperty(True)
 
+    _last_timestamp_and_index = None
+
     def __init__(self, app, **kwargs):
         super(ChannelController, self).__init__(**kwargs)
         self.color_theme = cycle(_color_theme_tab10)
@@ -188,6 +190,9 @@ class ChannelController(EventDispatcher):
         channel.fbind('name', self._change_channel_name)
 
         if channel_type != 'zone':
+            last_ts = self._last_timestamp_and_index
+            if last_ts is not None:
+                channel.set_current_timestamp(*last_ts)
             # now display it in the overview
             if self.overview_pixel_per_time:
                 w = int(self.overview_width)
@@ -285,12 +290,13 @@ class ChannelController(EventDispatcher):
         }
         return events, pos, zones
 
-    def populate_timestamps(self, timestamps):
+    def reset_new_file(self, timestamps):
         """Seeds timestamps before any channels are created from file.
 
         :param timestamps:
         :return:
         """
+        self._last_timestamp_and_index = None
         self.overview_timestamps_index = {t: 0 for t in timestamps}
         self._compute_overview()
 
@@ -360,25 +366,33 @@ class ChannelController(EventDispatcher):
         timestamps = self.overview_timestamps_index
         pixels = self.overview_num_timestamps_per_pixel
         w = len(pixels)
+        is_new = False
 
+        # get the pixel index in pixels array that corresponds to t (or None)
         if w:
             if t in timestamps:
                 x = timestamps[t]
             else:
                 pixel_per_time = self.overview_pixel_per_time
+                # we round down because pixel n corresponds to time parallel to
+                # pixel [n, n + 1), since w is max pixel at max time.
                 x = min(w - 1, max(0, int(t * pixel_per_time)))
                 pixels[x] += 1
                 timestamps[t] = x
+                is_new = True
         else:
             x = None
             if t not in timestamps:
                 timestamps[t] = 0
+                is_new = True
 
+        self._last_timestamp_and_index = t, x, is_new
         for channel in self.event_channels:
-            channel.set_current_timestamp(t, x)
+            channel.set_current_timestamp(t, x, is_new)
         for channel in self.pos_channels:
-            channel.set_current_timestamp(t, x)
+            channel.set_current_timestamp(t, x, is_new)
 
+        # if delete is pressed, clear the active channel for the new timestamp
         chan = self.selected_channel
         if chan is not None and self.delete_key_pressed and \
                 isinstance(chan, TemporalChannel):
@@ -584,7 +598,14 @@ class TemporalChannel(ChannelBase):
             self, n, overview_timestamps_index, num_timestamps_per_pixel):
         assert n >= 2
         pixels = self.overview_num_timestamps_modified_per_pixel = [0, ] * n
+        timestamp_ends = self.data_channel.data_file.timestamp_ends
         buff = self.modified_count_buffer = np.zeros((n, 3), dtype=np.uint8)
+
+        pixel_per_time = self.channel_controller.overview_pixel_per_time
+        index_ends = [
+            min(n - 1, max(0, int(t * pixel_per_time)))
+            for t in timestamp_ends
+        ]
 
         for t, v in self.data_channel.get_timestamps_modified_state().items():
             if v:
@@ -607,18 +628,34 @@ class TemporalChannel(ChannelBase):
                 color = partial_color
             buff[i, :] = color
 
+            # if there's a end timestamp (seek start) in this pixel, even if
+            # there's no further timestamps, don't color pixels. We don't have
+            # to worry about a end timestamp later, because by def if there' a
+            # end, num_timestamps_per_pixel will be truthy
+            end_timestamp = i in index_ends
             i += 1
             # fill in until the next non-zero pixel-timestamps
             while i < n and not num_timestamps_per_pixel[i]:
                 assert not pixels[i]
-                buff[i, :] = color
+                if not end_timestamp:
+                    buff[i, :] = color
+
                 i += 1
 
             # now, find the next non-zero pixel to be colored
             while i < n and not pixels[i]:
                 i += 1
 
-    def set_current_timestamp(self, t: float, index: Optional[int]):
+    def set_current_timestamp(
+            self, t: float, index: Optional[int], is_new: bool):
+        # if we see a new timestamp, then there may have been some empty pixels
+        # between the last timestamp and the new one, so fill in the color
+        if is_new:
+            last_t = self.current_timestamp
+            last_i = self.current_timestamp_array_index
+            if last_i is not None:
+                self._update_display_texture(last_t, last_i, index)
+
         self.current_timestamp = t
         self.current_timestamp_array_index = index
 
@@ -645,9 +682,17 @@ class TemporalChannel(ChannelBase):
 
         # now change the display
         i = self.current_timestamp_array_index
-        texture = self.modified_count_texture
-        if i is None or texture is None:  # no display available
+        if i is None:
             return changed
+
+        self.overview_num_timestamps_modified_per_pixel[i] += val
+        self._update_display_texture(t, i)
+        return changed
+
+    def _update_display_texture(self, t, i, next_index=None):
+        texture = self.modified_count_texture
+        if texture is None:  # no display available
+            return
 
         num_timestamps_per_pixel = \
             self.channel_controller.overview_num_timestamps_per_pixel
@@ -655,8 +700,7 @@ class TemporalChannel(ChannelBase):
         buff = self.modified_count_buffer
 
         n = len(pixels)
-        pixels[i] += val
-        assert num_timestamps_per_pixel[i]
+        assert num_timestamps_per_pixel[i], "current ts should make # positive"
         assert 0 <= pixels[i] <= num_timestamps_per_pixel[i]
 
         # set current color
@@ -668,19 +712,24 @@ class TemporalChannel(ChannelBase):
             color = [int(c * .4) for c in self.color]
         buff[i, :] = color
 
-        i += 1
-        # fill in until the next non-zero pixel-timestamps
-        while i < n and not num_timestamps_per_pixel[i]:
-            assert not pixels[i]
-            buff[i, :] = color
+        # only paint pixels after us, if there are further time stamps and
+        # there's blank pixels between us and the next timestamp. If the next
+        # index is known to be the same as current, there's nothing to do
+        if next_index != i \
+                and not self.data_channel.data_file.is_end_timestamp(t):
             i += 1
+            # fill in until the next non-zero pixel-timestamps
+            while i < n and not num_timestamps_per_pixel[i]:
+                assert not pixels[i]
+                buff[i, :] = color
+                i += 1
 
         buff2 = np.repeat(
             buff[np.newaxis, ...],
             self.channel_controller.n_pixels_per_channel, axis=0)
         texture.blit_buffer(
             buff2.ravel(order='C'), colorfmt='rgb', bufferfmt='ubyte')
-        return changed
+        return
 
     def select_channel(self):
         if self.selected:
@@ -752,8 +801,9 @@ class EventChannel(TemporalChannel):
 
     current_value = ObjectProperty(False)
 
-    def set_current_timestamp(self, t: float, index: Optional[int]):
-        super().set_current_timestamp(t, index)
+    def set_current_timestamp(
+            self, t: float, index: Optional[int], is_new: bool):
+        super().set_current_timestamp(t, index, is_new)
         val = self.current_value = self.data_channel.get_timestamp_value(t)
 
         if self.is_toggle_button:
@@ -899,8 +949,9 @@ class PosChannel(TemporalChannel):
         canvas.remove_group(f'pos_graphics_point_{id(self)}')
         canvas.remove_group(f'pos_graphics_line_{id(self)}')
 
-    def set_current_timestamp(self, t: float, index: Optional[int]):
-        super().set_current_timestamp(t, index)
+    def set_current_timestamp(
+            self, t: float, index: Optional[int], is_new: bool):
+        super().set_current_timestamp(t, index, is_new)
         self.current_value = self.data_channel.get_timestamp_value(t)
 
         if self.selected:

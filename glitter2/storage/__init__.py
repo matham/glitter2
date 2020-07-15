@@ -262,7 +262,7 @@ class StorageController(EventDispatcher):
             format(self.backup_filename, self.filename))
 
         self.data_file.init_new_file()
-        self.channel_controller.populate_timestamps(())
+        self.channel_controller.reset_new_file(())
         self.write_changes_to_autosave()
         self.save()
         self.saw_all_timestamps = self.data_file.saw_all_timestamps
@@ -333,7 +333,7 @@ class StorageController(EventDispatcher):
 
         self.data_file.upgrade_file()
         self.data_file.open_file()
-        self.channel_controller.populate_timestamps(
+        self.channel_controller.reset_new_file(
             self.data_file.timestamp_data_map)
         self.create_gui_channels_from_storage()
         self.ruler.pixels_per_meter = self.data_file.pixels_per_meter
