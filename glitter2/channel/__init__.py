@@ -217,6 +217,7 @@ class ChannelController(EventDispatcher):
         return channel
 
     def delete_channel(self, channel: 'ChannelBase', _recompute=True):
+        channel.deselect_channel()
         if isinstance(channel, EventChannel):
             self.event_channels.remove(channel)
             channel.funbind('keyboard_key', self._track_key)
