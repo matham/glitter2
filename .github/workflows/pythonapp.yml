@@ -129,7 +129,7 @@ jobs:
     - name: Get Kivy dependencies
       run: |
         cd ..
-        git clone -b osx https://github.com/kivy/kivy-sdk-packager.git
+        git clone https://github.com/kivy/kivy-sdk-packager.git
         cd kivy-sdk-packager/osx
 
         curl -O -L https://kivy.org/downloads/ci/osx/app/Kivy.dmg
