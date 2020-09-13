@@ -115,6 +115,69 @@ jobs:
       run: |
         python -m pytest --cov=glitter2 --cov-report term --cov-branch glitter2/tests
 
+  osx_app:
+    runs-on: macOS-latest
+    if: github.event_name != 'pull_request'
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.x
+    - name: Get Kivy dependencies
+      run: |
+        cd ..
+        git clone -b osx https://github.com/kivy/kivy-sdk-packager.git
+        cd kivy-sdk-packager/osx
+
+        curl -O -L https://kivy.org/downloads/ci/osx/app/Kivy.dmg
+        hdiutil attach Kivy.dmg -mountroot .
+
+        cp -R Kivy/Kivy.app Glitter2.app
+    - name: Install Glitter pip dependencies
+      run: |
+        cd ../kivy-sdk-packager/osx/Glitter2.app/Contents/Resources/venv/bin
+        source activate
+
+        python -m pip install --upgrade https://github.com/kivy/pyobjus/archive/master.zip
+        python -m pip install --upgrade https://github.com/kivy/plyer/archive/master.zip
+        python -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
+        python -m pip install --upgrade nixio --pre
+        python -m pip install ../../glitter2/
+    - name: Finalize Glitter bundle
+      run: |
+        cd ../kivy-sdk-packager/osx
+
+        pushd Glitter2.app/Contents/Resources/
+        ln -s ./venv/bin/glitter2 yourapp
+        popd
+
+        ./fix-bundle-metadata.sh Glitter2.app -n Glitter2 -v "0.1.1.dev0" -a "Matthew Einhorn, CPL Lab" -o \
+            "org.cpl.glitter2" -i "../../glitter2/doc/source/images/glitter2_icon.png"
+        ./cleanup-app.sh Glitter2.app -g 1
+
+        ./relocate.sh Glitter2.app
+    - name: Create dmg
+      run: |
+        pushd ../kivy-sdk-packager/osx
+        ./create-osx-dmg.sh Glitter2.app Glitter2
+        popd
+
+        mkdir osx_app
+        cp ../kivy-sdk-packager/osx/Glitter2.dmg osx_app/
+    - name: Upload app as artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: osx_app
+        path: osx_app
+    - name: Upload to GitHub Release
+      uses: softprops/action-gh-release@78c309ef59fdb9557cd6574f2e0be552936ed728
+      if: startsWith(github.ref, 'refs/tags/')
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        files: osx_app/*
+
   docs:
     runs-on: ubuntu-18.04
     steps:
