@@ -138,14 +138,15 @@ jobs:
         cp -R Kivy/Kivy.app Glitter2.app
     - name: Install Glitter pip dependencies
       run: |
-        cd ../kivy-sdk-packager/osx/Glitter2.app/Contents/Resources/venv/bin
+        pushd ../kivy-sdk-packager/osx/Glitter2.app/Contents/Resources/venv/bin
         source activate
+        popd
 
         python -m pip install --upgrade https://github.com/kivy/pyobjus/archive/master.zip
         python -m pip install --upgrade https://github.com/kivy/plyer/archive/master.zip
         python -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
         python -m pip install --upgrade nixio --pre
-        python -m pip install ../../glitter2/
+        python -m pip install .
     - name: Finalize Glitter bundle
       run: |
         cd ../kivy-sdk-packager/osx
