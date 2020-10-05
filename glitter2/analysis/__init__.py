@@ -69,7 +69,7 @@ class FileDataAnalysis(object):
 
         self.missed_timestamps = not data_file.saw_all_timestamps
         if self.missed_timestamps:
-            data_arrays_order = data_file.ordered_timestamps_indices
+            data_arrays_order = data_file.timestamp_intervals_ordered_keys
             data = [data_file.timestamps_arrays[i] for i in data_arrays_order]
             missing = [float(item[-1]) for item in data[:-1]]
             if not data_file._saw_first_timestamp:
@@ -83,7 +83,7 @@ class FileDataAnalysis(object):
 
         data_arrays_order = []
         if len(data_file.timestamps_arrays) > 1:
-            data_arrays_order = data_file.ordered_timestamps_indices
+            data_arrays_order = data_file.timestamp_intervals_ordered_keys
             data = [data_file.timestamps_arrays[i] for i in data_arrays_order]
             self.timestamps = np.concatenate(data)
         else:

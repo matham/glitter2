@@ -572,7 +572,7 @@ class StorageController(EventDispatcher):
         self.saw_all_timestamps = self.data_file.saw_all_timestamps
 
     def add_timestamp(self, t: float):
-        self.data_file.add_timestamp(t)
+        self.data_file.notify_add_timestamp(t)
         self.saw_all_timestamps = self.data_file.saw_all_timestamps
 
     @app_error

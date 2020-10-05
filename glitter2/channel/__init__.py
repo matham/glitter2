@@ -599,7 +599,7 @@ class TemporalChannel(ChannelBase):
             self, n, overview_timestamps_index, num_timestamps_per_pixel):
         assert n >= 2
         pixels = self.overview_num_timestamps_modified_per_pixel = [0, ] * n
-        timestamp_ends = self.data_channel.data_file.timestamp_ends
+        timestamp_ends = self.data_channel.data_file.timestamp_intervals_end
         buff = self.modified_count_buffer = np.zeros((n, 3), dtype=np.uint8)
 
         pixel_per_time = self.channel_controller.overview_pixel_per_time

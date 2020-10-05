@@ -183,7 +183,7 @@ class SourceFile(object):
             data_file.init_new_file()
             timestamps, metadata = GlitterPlayer.get_file_data(str(video_file))
             data_file.set_file_data(
-                file_metadata=metadata, saw_all_timestamps=True,
+                video_file_metadata=metadata, saw_all_timestamps=True,
                 timestamps=[timestamps], event_channels=[], pos_channels=[],
                 zone_channels=[])
 

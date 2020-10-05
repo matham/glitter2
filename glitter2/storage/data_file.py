@@ -5,7 +5,7 @@ Data channel methods, unless specified should not be called directly.
 """
 
 import numpy as np
-from typing import List, Dict, Optional, Tuple, Callable, Set
+from typing import List, Dict, Optional, Tuple, Callable, Set, Union, Any, Type
 import nixio as nix
 from nixio.exceptions.exceptions import InvalidFile
 
@@ -17,6 +17,11 @@ __all__ = (
 
 
 def read_nix_prop(prop):
+    """Returns a nox property value across different nix versions.
+
+    :param prop: the nix Property.
+    :return: The value stored in the property.
+    """
     try:
         return prop.values[0].value
     except AttributeError:
@@ -28,10 +33,42 @@ def _unsaved_callback():
 
 
 class DataFile(object):
+    """Data file interface to the NixIO file that stores the video file
+    annotated data.
+
+    Data for the timestamps and all channels are similarly stored in a
+    list of arrays. See :attr:`timestamps_arrays` for details.
+
+    Once a file is opened with :meth:`open_file`, the ``notify_xxx`` form a
+    state machine and must be called as appropriate.
+
+    Specifically, the first timestamp added from the video file with
+    :meth:`notify_add_timestamp` must be the very first frame's timestamp and
+    it must be followed by a call to :meth:`notify_saw_first_timestamp`.
+
+    Then each frame must be read sequentially with no skipping. If a frame is
+    skipped at any time, e.g. by seeking, before we add the new timestamp
+    with :meth:`notify_add_timestamp`, you must call
+    :meth:`notify_interrupt_timestamps` to indicate the seek.
+
+    Whenever we read the last timestamp (even if we skipped some intermediate
+    timestamps, e.g. due to a seek) :meth:`notify_saw_last_timestamp` must
+    called after adding that timestamp with :meth:`notify_add_timestamp`.
+
+    If we have seen the first and last timestamp and each consecutive pair of
+    timestamps were seen with no :meth:`notify_interrupt_timestamps` between
+    them, that's when we consider having seen all frames and
+    :attr:`saw_all_timestamps` is automatically set to the True and
+    :attr:`timestamps` becomes the singular timestamps array.
+    """
 
     unsaved_callback: Callable = None
+    """Callback that is called whenever the data file changes.
+    """
 
     nix_file: nix.File = None
+    """NixIO data file.
+    """
 
     app_config_section: nix.Section = None
     """Stores the overall application configuration that was used with
@@ -43,45 +80,131 @@ class DataFile(object):
     """
 
     timestamps: nix.DataArray = None
-    """The first timestamps data array. If there's only one, this is used.
-    It's created when :meth:`init_new_file` is called.
+    """The first timestamps data array containing the very first timestamps of
+    the video file, created when the data file is created.
+    See :attr:`timestamps_arrays`.
+
+    If there's only one array in :attr:`timestamps_arrays`
+    (e.g. after we saw all the timestamps of the video file), this is referring
+    to it.
     """
 
     timestamps_arrays: Dict[int, nix.DataArray] = {}
-    """Any additional data arrays created for the timestamps when seeking is
-    stored here. The key is the data array number (0 is for
-    :attr:`timestamps`) and the value is the data array.
+    """Map of disjointed timestamps arrays representing known closed
+    intervals of the video file.
+
+    Consider how data is coded. We play frame after frame and the user
+    annotates each frame. And as we see each timestamps in a
+    strictly-increasing order, we could just have a list of timestamps and
+    corresponding state that is continuously increasing by one element as we
+    see a new frame.
+
+    Unfortunately, a user may skip some frames by seeking ahead, thereby
+    breaking continuity, because now we have missing timestamps in the middle
+    and we don't know what they are. Therefore we have a list, or mapping of
+    timestamps arrays, each timestamp array represents a known interval of
+    timestamps during which we didn't seek and we have every timestamp in that
+    interval.
+
+    The keys of :attr:`timestamps_arrays` are not meaningful, except for
+    key ``0`` which is the same array as :attr:`timestamps` and is the array
+    with the first timestamps of the video.
+
+    To get keys of the timestamp arrays ordered temporally, use
+    :attr:`timestamp_intervals_ordered_keys`.
     """
 
-    timestamp_ends: Set[float] = set()
+    timestamp_intervals_start: List[float] = []
+    """List of :attr:`timestamps_arrays` start interval timestamps sorted by
+    value.
+    """
+
+    timestamp_intervals_end: List[float] = []
+    """List of :attr:`timestamps_arrays` end interval timestamps sorted by
+    value.
+    """
+
+    timestamp_intervals_ordered_keys: List[int] = []
+    """The keys of the timestamp arrays form :attr:`timestamps_arrays`
+    sorted temporally such that the first timestamp in each array
+    corresponding to the key is strictly increasing.
+    """
 
     timestamp_data_map: Dict[float, Tuple[int, int]] = {}
-    """For each timestamps in the video, it maps to the key in
-    :attr:`timestamps_arrays` whose value is the data array storing this
-    timestamp.
+    """Maps timestamps to their ``(key, index)`` in :attr:`timestamps_arrays`.
+
+    For each known timestamp, it maps the timestamp to ``(key, index)``,
+    where `key`` is the key in :attr:`timestamps_arrays` and ``index`` is the
+    index in that array. Such that ``k, i = timestamp_data_map[t];
+    timestamps_arrays[k][i] == t``.
     """
 
     event_channels: Dict[int, 'EventChannelData'] = {}
+    """Map of all the :class:`EventChannelData` instances.
+
+    Maps a globally unique ID, associated with the channel to the
+    :class:`EventChannelData` instance.
+    """
 
     pos_channels: Dict[int, 'PosChannelData'] = {}
+    """Map of all the :class:`PosChannelData` instances.
+
+    Maps a globally unique ID, associated with the channel to the
+    :class:`PosChannelData` instance.
+    """
 
     zone_channels: Dict[int, 'ZoneChannelData'] = {}
+    """Map of all the :class:`ZoneChannelData` instances.
+
+    Maps a globally unique ID, associated with the channel to the
+    :class:`ZoneChannelData` instance.
+    """
 
     saw_all_timestamps = False
+    """Whether we have seen all the timestamps of the video.
+
+    If we haven't, it's possible there are holes in the video and
+    :attr:`timestamps_arrays` may have more than one array.
+    """
 
     _saw_first_timestamp = False
+    """If we have seen the first timestamp in the video (but it could be we
+    skipped some timestamps in the middle).
+    """
 
     _saw_last_timestamp = False
+    """If we have seen the last timestamp in the video (but it could be we
+    skipped some timestamps in the middle).
+    """
 
     _last_timestamps_n: Optional[int] = None
-    """When it's none it means there's nothing to pad in channels.
+    """The key in :attr:`timestamps_arrays` of the array containing the last
+    added timestamp, if any.
+
+    If we haven't seen a timestamp yet it's None.
+    """
+
+    _last_timestamps_ordered_index: Optional[int] = None
+    """Similar to :attr:`_last_timestamps_n`, except it's the index in
+    :attr:`timestamp_intervals_ordered_keys` of the last timestamp, if any.
     """
 
     glitter2_version: str = ''
+    """The glitter version used to create the file originally. Read only.
+    """
 
     ffpyplayer_version: str = ''
+    """The ffpyplayer version used to create the file originally. Read only.
+    """
 
     pixels_per_meter: float = 0.
+    """The pixels per meter of the video, if known. Read only.
+    """
+
+    _channel_type_names: Dict[str, Type['ChannelType']] = {}
+    """Map from channel type to channel class. Used by e.g.
+    :meth:`create_channel`.
+    """
 
     def __init__(self, nix_file: nix.File, unsaved_callback=_unsaved_callback):
         self.nix_file = nix_file
@@ -91,9 +214,30 @@ class DataFile(object):
         self.zone_channels = {}
         self.timestamps_arrays = {}
         self.timestamp_data_map = {}
-        self.timestamp_ends = set()
+        self.timestamp_intervals_start = []
+        self.timestamp_intervals_end = []
+        self.timestamp_intervals_ordered_keys = []
+
+        self._channel_type_names = {
+            'event': EventChannelData,
+            'pos': PosChannelData,
+            'zone': ZoneChannelData,
+        }
 
     def init_new_file(self):
+        """Initializes a newly created empty NixIO file with all the required
+        data structures.
+
+        Typically it's used e.g.::
+
+            nix_file = nixio.File.open(filename, nixio.FileMode.Overwrite)
+            data_file = DataFile(nix_file=nix_file)
+            data_file.init_new_file()
+
+        .. note::
+
+            This method automatically class :meth:`open_file`.
+        """
         import glitter2
         import ffpyplayer
         f = self.nix_file
@@ -149,40 +293,95 @@ class DataFile(object):
         self.ffpyplayer_version = yaml_loads(data_config['ffpyplayer_version'])
         self.pixels_per_meter = yaml_loads(data_config['pixels_per_meter'])
 
-        self.read_timestamps_from_file()
-        self.create_channels_from_file()
+        self._read_timestamps_from_file()
+        self._create_channels_from_file()
 
-    def read_timestamps_from_file(self):
+        self._last_timestamps_n = None
+        self._last_timestamps_ordered_index = None
+
+        self.unsaved_callback()
+
+    def _read_timestamps_from_file(self):
+        """Reads the timestamps arrays into the properties.
+        """
         timestamps_block = self.nix_file.blocks['timestamps']
         timestamps = self.timestamps = timestamps_block.data_arrays[0]
 
-        timestamps_arrays = self.timestamps_arrays
+        timestamps_arrays = self.timestamps_arrays = {}
         timestamps_arrays[0] = timestamps
         for i in range(1, len(timestamps_block.data_arrays)):
             data_array = timestamps_block.data_arrays[i]
             n = int(data_array.name.split('_')[-1])
             timestamps_arrays[n] = data_array
 
-        data_map = self.timestamp_data_map
+        data_map = self.timestamp_data_map = {}
         for i, timestamps in timestamps_arrays.items():
             for t_index, val in enumerate(timestamps):
                 data_map[val] = i, t_index
 
-        self.populate_timestamp_ends()
+        self._populate_timestamp_intervals()
 
-    def populate_timestamp_ends(self):
-        self.timestamp_ends = {
-            arr[-1] for arr in self.timestamps_arrays.values() if len(arr)}
+    def _populate_timestamp_intervals(self):
+        """Computes the timestamp interval start/end points and order.
+        """
+        timestamps = self.timestamps_arrays
+        items = sorted(
+            ((key, arr) for key, arr in timestamps.items()
+             if len(arr)), key=lambda item: item[1][0]
+        )
+        keys = self.timestamp_intervals_ordered_keys = [
+            key for key, arr in items]
+        self.timestamp_intervals_start = [timestamps[i][0] for i in keys]
+        self.timestamp_intervals_end = [timestamps[i][-1] for i in keys]
 
     def set_file_data(
-            self, file_metadata: Dict, saw_all_timestamps: bool,
-            timestamps: List[np.ndarray],
-            event_channels: List[Tuple[dict, List[np.ndarray]]],
-            pos_channels: List[Tuple[dict, List[np.ndarray]]],
+            self, video_file_metadata: Dict, saw_all_timestamps: bool,
+            timestamps: List[Union[np.ndarray, List[float]]],
+            event_channels: List[Tuple[
+                dict, List[Union[np.ndarray, List[bool]]]]],
+            pos_channels: List[Tuple[
+                dict, List[Union[np.ndarray, List[Tuple[float, float]]]]]],
             zone_channels: List[dict]):
-        self.set_video_metadata(file_metadata)
+        """Sets the data of the file at once.
+
+        The video metadata and timestamps can be read most easily using
+        :meth:`~glitter2.player.GlitterPlayer.get_file_data`.
+
+        For the channels, the metadata dict should contain a ``name`` keyword
+        whose value is a globally unique name for the channel, unique across
+        all the channels.
+
+        For zone_channels, the metadata should also contain a ``shape_config``
+        keyword whose value is a dict with the shape metadata as given by
+        :meth:`~kivy_garden.painter.PaintShape.get_state`. To create a shape,
+        use :meth:`~kivy_garden.painter.PaintShape.create_shape`. E.g.::
+
+            point = PaintCircle.create_shape([0, 0])
+            circle = PaintCircle.create_shape([0, 0], 5)
+            ellipse = PaintEllipse.create_shape([0, 0], 5, 10, 3.14)
+            polygon = PaintPolygon.create_shape(
+                [0, 0, 300, 0, 300, 800, 0, 800], [0, 0])
+            polygon_metadata = polygon.get_state()
+
+        E.g. to create a new NixIO file with the timestamps of a video file::
+
+            # create file
+            nix_file = nixio.File.open(filename, nixio.FileMode.ReadWrite)
+            data_file = DataFile(nix_file=nix_file)
+            data_file.init_new_file()
+            # read timestamps
+            timestamps, metadata = GlitterPlayer.get_file_data(video_file)
+            # set just the timestamps
+            data_file.set_file_data(
+                video_file_metadata=metadata, saw_all_timestamps=True,
+                timestamps=[timestamps], event_channels=[], pos_channels=[],
+                zone_channels=[])
+            # re-load data
+            data_file.open_file()
+        """
+        self.video_metadata_dict = video_file_metadata
         if saw_all_timestamps:
-            self.mark_saw_all_timestamps()
+            self._mark_saw_all_timestamps()
 
         timestamps_arrays = self.timestamps_arrays
         idx_map = {}
@@ -192,7 +391,7 @@ class DataFile(object):
                 timestamps_arrays[0].append(array)
                 idx_map[idx] = 0
             else:
-                idx_map[idx] = i = self.create_timestamps_channels_array()
+                idx_map[idx] = i = self._create_timestamps_channels_array()
                 timestamps_arrays[i].append(array)
 
         for event_type, channels in [
@@ -210,7 +409,9 @@ class DataFile(object):
 
         self.unsaved_callback()
 
-    def create_channels_from_file(self):
+    def _create_channels_from_file(self):
+        """Reads the channels from the nix file into the instance.
+        """
         for block in self.nix_file.blocks:
             if block.name == 'timestamps':
                 continue
@@ -236,7 +437,10 @@ class DataFile(object):
             items[n] = channel
 
     def upgrade_file(self):
-        """Called before :meth:`open_file`.
+        """Upgrades file to add any missing data structures that may have
+        been added in newer versions of glitter, since the file was created.
+
+        :meth:`open_file` should be called after this.
         """
         self.unsaved_callback()
 
@@ -255,16 +459,16 @@ class DataFile(object):
 
     @property
     def has_content(self):
+        """Returns whether any video timestamps has yet been added to the file.
+        """
         return bool(len(self.timestamps))
 
-    @property
-    def ordered_timestamps_indices(self):
-        arrays = self.timestamps_arrays
-        return list(sorted(arrays, key=lambda i: arrays[i][0]))
-
     @staticmethod
-    def get_file_glitter2_version(filename):
-        # if the file or data is invalid, return None
+    def get_file_glitter2_version(filename) -> Optional[str]:
+        """Gets the glitter version used to create the nixio file.
+
+        If the file or data is invalid, returns None.
+        """
         try:
             f = nix.File.open(filename, nix.FileMode.ReadOnly)
 
@@ -278,7 +482,9 @@ class DataFile(object):
             return None
 
     @staticmethod
-    def get_file_video_metadata(filename):
+    def get_file_video_metadata(filename) -> dict:
+        """Returns the video metadata dictionary of the nixio file.
+        """
         f = nix.File.open(filename, nix.FileMode.ReadOnly)
 
         try:
@@ -327,7 +533,9 @@ class DataFile(object):
             if k not in config:
                 config[k] = yaml_dumps(v)
 
-    def set_pixels_per_meter(self, value):
+    def set_pixels_per_meter(self, value: float):
+        """Sets the pixels per meter of the video file.
+        """
         self.nix_file.sections['data_config']['pixels_per_meter'] = \
             yaml_dumps(value)
         self.pixels_per_meter = value
@@ -363,6 +571,12 @@ class DataFile(object):
             self, event_channels: Dict[int, dict] = None,
             pos_channels: Dict[int, dict] = None,
             zone_channels: Dict[int, dict] = None):
+        """Updates the metadata to the provided values for each channel.
+
+        ``xxx_channels`` is a dictionary whose keys are the channel's unique ID
+        as e.g. in :attr:`event_channels` and whose values is a dict with
+        the channel's new metadata.
+        """
         self.unsaved_callback()
         if event_channels:
             event_channels_ = self.event_channels
@@ -383,7 +597,10 @@ class DataFile(object):
             self) -> Tuple[Dict[int, dict], Dict[int, dict], Dict[int, dict]]:
         """Returns a tuple of the event, pos, and zone channel metadata.
 
-    def read_channels_config(self):
+        Each item is a dictionary whose keys are the channel's unique ID
+        as e.g. in :attr:`event_channels` and whose values is a dict with
+        the channel's metadata.
+        """
         event_channels = {
             i: chan.channel_config_dict
             for (i, chan) in self.event_channels.items()
@@ -398,7 +615,7 @@ class DataFile(object):
         }
         return event_channels, pos_channels, zone_channels
 
-    def increment_channel_count(self):
+    def _increment_channel_count(self) -> int:
         """Gets the channel ID for the next channel to be created and
         increments the internal channel counter
 
@@ -406,34 +623,35 @@ class DataFile(object):
             created.
         """
         self.unsaved_callback()
-        config = self.global_config
+        config = self.nix_file.sections['data_config']
         count = yaml_loads(read_nix_prop(config.props['channel_count']))
         config['channel_count'] = yaml_dumps(count + 1)
         return count
 
-    def increment_timestamps_arrays_counter(self):
+    def _increment_timestamps_arrays_counter(self) -> int:
+        """Gets the number to associate with the next timestamps/data array to
+        be created.
+        """
         self.unsaved_callback()
         config = self.nix_file.sections['data_config']
         count = yaml_loads(config['timestamps_arrays_counter'])
         config['timestamps_arrays_counter'] = yaml_dumps(count + 1)
         return count
 
-    def create_channel(self, channel_type):
-        if channel_type == 'event':
-            cls = EventChannelData
-            items = self.event_channels
-        elif channel_type == 'pos':
-            cls = PosChannelData
-            items = self.pos_channels
-        elif channel_type == 'zone':
-            cls = ZoneChannelData
-            items = self.zone_channels
-        else:
+    def create_channel(self, channel_type: str) -> 'ChannelType':
+        """Creates a channel of the given type.
+
+        Can be one of ``'event'``, ``'pos'``, or ``'zone'``.
+        """
+        if channel_type not in self._channel_type_names:
             raise ValueError(
                 'Did not understand channel type "{}"'.format(channel_type))
 
+        cls = self._channel_type_names[channel_type]
+        items = getattr(self, f'{channel_type}_channels')
+
         self.unsaved_callback()
-        n = self.increment_channel_count()
+        n = self._increment_channel_count()
         name = '{}_channel_{}'.format(channel_type, n)
         block = self.nix_file.create_block(name, 'channel')
         metadata = self.nix_file.create_section(name + '_metadata', 'metadata')
@@ -444,18 +662,55 @@ class DataFile(object):
         channel.create_initial_data()
         return channel
 
-    def mark_saw_all_timestamps(self):
+    def duplicate_channel(self, channel: 'ChannelType') -> 'ChannelType':
+        """Creates a new channel with the same type and with the same data and
+        metadata as the given channel and returns the new channel.
+
+        The ``name`` key's value in each channel's metadata should be unique
+        across all channels, so the name value should be changed afterwards.
+        E.g.::
+
+            new_channel = data_file.duplicate_channel(channel)
+            metadata = new_channel.channel_config_dict
+            metadata['name'] = 'new name'
+            new_channel.channel_config_dict = metadata
+        """
+        types = {cls: name for name, cls in self._channel_type_names.items()}
+        cls = channel.__class__
+        if cls not in types:
+            raise ValueError(f'Unknown class {cls} for channel {channel}')
+
+        new_channel = self.create_channel(types[cls])
+        new_channel.channel_config_dict = channel.channel_config_dict
+        channel.copy_data(new_channel)
+        return new_channel
+
+    def _mark_saw_all_timestamps(self):
+        """Marks the file that we saw all the frames and timestamps of the
+        video.
+        """
+        self.unsaved_callback()
         self.saw_all_timestamps = True
         self.nix_file.sections['data_config']['saw_all_timestamps'] = \
             yaml_dumps(True)
 
     def notify_interrupt_timestamps(self):
+        """Must be called whenever the video is seeked and the next timestamp
+        to :meth:`notify_add_timestamp` may not follow the last timestamp.
+        """
         if self.saw_all_timestamps:
             return
 
-        self.pad_all_channels_to_num_frames()
+        self.pad_all_channels_to_num_frames_interval()
+        # indicate that we seeked
+        self._last_timestamps_n = None
+        self._last_timestamps_ordered_index = None
 
     def notify_saw_first_timestamp(self):
+        """Must be called after we saw and added the timestamp of the first
+        frame of the video file. By first we mean literally the first frame of
+        the video file.
+        """
         if self.saw_all_timestamps:
             return
 
@@ -465,9 +720,12 @@ class DataFile(object):
             yaml_dumps(True)
 
         if self._saw_last_timestamp and len(self.timestamps_arrays) == 1:
-            self.mark_saw_all_timestamps()
+            self._mark_saw_all_timestamps()
 
     def notify_saw_last_timestamp(self):
+        """Must be called after we saw and added the timestamp of the last
+        frame of the video file.
+        """
         if self.saw_all_timestamps:
             return
 
@@ -476,12 +734,18 @@ class DataFile(object):
         self.nix_file.sections['data_config']['saw_last_timestamp'] = \
             yaml_dumps(True)
 
-        self.pad_all_channels_to_num_frames()
+        self.pad_all_channels_to_num_frames_interval()
 
         if self._saw_first_timestamp and len(self.timestamps_arrays) == 1:
-            self.mark_saw_all_timestamps()
+            self._mark_saw_all_timestamps()
 
-    def merge_timestamp_channels_arrays(self, arr_num1: int, arr_num2: int):
+    def _merge_timestamp_channels_arrays(
+            self, arr_num1: int, arr_num2: int) -> int:
+        """Merges the timestamps arrays of the two time intervals, as well
+        as the corresponding data arrays for all the channels.
+
+        Returns the ID of the data array that contains the merged data.
+        """
         timestamps_arrays = self.timestamps_arrays
         timestamp_data_map = self.timestamp_data_map
         arr1 = timestamps_arrays[arr_num1]
@@ -489,10 +753,11 @@ class DataFile(object):
 
         if arr2.name == 'timestamps':
             # currently the first timestamps array must start at the first ts
+            # so we cannot append that array to any other array
             raise NotImplementedError
 
         self.unsaved_callback()
-        self.pad_all_channels_to_num_frames(arr_num1)
+        self.pad_all_channels_to_num_frames_interval(arr_num1)
 
         start_index = len(arr1)
         arr1.append(arr2)
@@ -508,9 +773,15 @@ class DataFile(object):
 
         return arr_num1
 
-    def create_timestamps_channels_array(self) -> int:
+    def _create_timestamps_channels_array(self) -> int:
+        """Creates a new timestamp array for a new interval and creates the
+        corresponding data arrays for all the channels.
+
+        Returns the key of the newly created array in
+        :attr:`timestamps_arrays`.
+        """
         self.unsaved_callback()
-        n = self.increment_timestamps_arrays_counter()
+        n = self._increment_timestamps_arrays_counter()
 
         block = self.nix_file.blocks['timestamps']
         self.timestamps_arrays[n] = block.create_data_array(
@@ -523,7 +794,15 @@ class DataFile(object):
             chan.create_data_array(n)
         return n
 
-    def pad_channel_to_num_frames(self, channel: 'TemporalDataChannelBase'):
+    def pad_channel_to_num_frames_interval(
+            self, channel: 'TemporalDataChannelBase'):
+        """Pads the channel data arrays to the current number of timestamps.
+
+        When adding timestamps, we don't increase all the channels data arrays
+        with each new timestamp, but only do it when the channel data is
+        updated or when the file is saved etc. This increases the data
+        arrays size to the timestamps size.
+        """
         array_num = self._last_timestamps_n
         if array_num is None:
             return
@@ -534,12 +813,17 @@ class DataFile(object):
 
         channel.pad_channel_to_num_frames(array_num, size)
 
-    def pad_all_channels_to_num_frames(self, array_num=None):
+    def pad_all_channels_to_num_frames_interval(self, array_num=None):
+        """Similar to :meth:`pad_channel_to_num_frames_interval`, but for all
+        the channels.
+
+        If ``array_num`` is specified, we pad that array, other wise we use
+        :attr:`_last_timestamps_n` if it's not None.
+        """
         if array_num is None:
             array_num = self._last_timestamps_n
             if array_num is None:
                 return
-            self._last_timestamps_n = None
 
         size = len(self.timestamps_arrays[array_num])
         if not size:
@@ -551,12 +835,20 @@ class DataFile(object):
         for chan in self.pos_channels.values():
             chan.pad_channel_to_num_frames(array_num, size)
 
-    def add_timestamp(self, t: float) -> int:
-        """We assume that this is called frame by frame with no skipping unless
+    def notify_add_timestamp(self, t: float) -> int:
+        """Adds the next timestamp to the file.
+
+        We assume that this is called frame by frame with no skipping unless
         :meth:`notify_interrupt_timestamps` was called.
 
-        :param t:
-        :return:
+        Also, the timestamps ``t`` must be either outside any existing
+        timestamp interval, in which case the timestamp must have been unseen
+        before. Or, if it is within an existing interval, the timestamps must
+        have been seen before. In both cases, the timestamp must be larger or
+        equal than the first timestamp.
+
+        :param t: the next timestamp.
+        :return: The key in :attr:`timestamps_arrays` containing the timestamp.
         """
         if self.saw_all_timestamps:
             return 0
@@ -569,32 +861,60 @@ class DataFile(object):
         if t in timestamps_map:
             n, index = timestamps_map[t]
             # if the last/current timestamps were in different arrays, merge
-            if n != last_timestamps_n and last_timestamps_n is not None:
-                n = self.merge_timestamp_channels_arrays(last_timestamps_n, n)
-                if self._saw_last_timestamp and self._saw_first_timestamp and \
-                        len(self.timestamps_arrays) == 1:
-                    self.mark_saw_all_timestamps()
+            if n != last_timestamps_n:
+                # only merge if this is not the first timestamp and
+                # we didn't jump by seeking to new timestamp
+                if last_timestamps_n is not None:
+                    n = self._merge_timestamp_channels_arrays(
+                        last_timestamps_n, n)
 
-                self.populate_timestamp_ends()
-            self._last_timestamps_n = n
+                    # have we finally seen all timestamps?
+                    if self._saw_last_timestamp and self._saw_first_timestamp \
+                            and len(self.timestamps_arrays) == 1:
+                        self._mark_saw_all_timestamps()
+
+                    self._populate_timestamp_intervals()
+
+                self._last_timestamps_ordered_index = \
+                    self.timestamp_intervals_ordered_keys.index(n)
+                self._last_timestamps_n = n
             return n
 
         # we have NOT seen this time stamp before. Do we have an array to add
+        jumped_array = False
         if last_timestamps_n is None:
+            jumped_array = True
+
             if not self.has_content:
                 n = 0
             else:
-                n = self.create_timestamps_channels_array()
+                n = self._create_timestamps_channels_array()
+
             last_timestamps_n = self._last_timestamps_n = n
 
         data_array = self.timestamps_arrays[last_timestamps_n]
         timestamps_map[t] = last_timestamps_n, len(data_array)
         data_array.append(t)
 
-        self.populate_timestamp_ends()
+        if jumped_array:
+            # we added a new interval so recompute the intervals order
+            self._populate_timestamp_intervals()
+            self._last_timestamps_ordered_index = \
+                self.timestamp_intervals_ordered_keys.index(last_timestamps_n)
+        else:
+            # update the current interval end point
+            self.timestamp_intervals_end[
+                self._last_timestamps_ordered_index] = t
+
         return last_timestamps_n
 
-    def get_channel_from_id(self, i):
+    def get_channel_from_id(self, i: int) -> 'DataChannelBase':
+        """Given the unique channel ID as it's stored in
+        :attr:`event_channels`, :attr:`pos_channels`, or :attr:`zone_channels`
+        it returns the corresponding channel.
+
+        The channel ID is stored in :attr:`DataChannelBase.num`.
+        """
         if i in self.event_channels:
             return self.event_channels[i]
         elif i in self.pos_channels:
@@ -604,7 +924,12 @@ class DataFile(object):
         else:
             raise ValueError(i)
 
-    def delete_channel(self, i):
+    def delete_channel(self, i: int):
+        """Deletes the channel corresponding to the ID as stored in
+        :attr:`event_channels`, :attr:`pos_channels`, or :attr:`zone_channels`.
+
+        The channel ID is stored in :attr:`DataChannelBase.num`.
+        """
         if i in self.event_channels:
             channel = self.event_channels.pop(i)
         elif i in self.pos_channels:
@@ -618,7 +943,9 @@ class DataFile(object):
         del self.nix_file.blocks[channel.name]
         del self.nix_file.sections[channel.name + '_metadata']
 
-    def is_end_timestamp(self, t):
+    def is_end_timestamp(self, t: float) -> bool:
+        """Returns whether the timestamp is the last timestamp of a interval.
+        """
         n, i = self.timestamp_data_map[t]
         arr = self.timestamps_arrays[n]
 
@@ -628,30 +955,52 @@ class DataFile(object):
 
 
 class DataChannelBase(object):
+    """Base class for data channels stored in a :class:`DataFile`.
+    """
 
     data_file: DataFile = None
+    """The :class:`DataFile` this channel belongs to.
+    """
 
     metadata: nix.Section = None
+    """The metadata section that stores the channel metadata.
+    """
 
     name: str = ''
+    """The name of the channel in the file. This is not the user facing name,
+    but rather the internal NixIO name of the :attr:`block` containing the
+    channel.
+    """
 
     num: int = 0
+    """The unique number used to identify the channel as stored in
+    :attr:`DataFile.event_channels`, :attr:`DataFile.pos_channels`, or
+    :attr:`DataFile.zone_channels`.
+    """
 
     block: nix.Block = None
+    """The block containing the channel data.
+    """
 
-    def __init__(self, name, num, block, data_file, **kwargs):
+    def __init__(
+            self, name: str, num: int, block: nix.Block, data_file: DataFile,
+            **kwargs):
         super(DataChannelBase, self).__init__(**kwargs)
         self.name = name
         self.num = num
         self.block = block
-        self.data_arrays = {}
         self.metadata = block.metadata
         self.data_file = data_file
 
     def create_initial_data(self):
+        """Creates whatever initial data structures are needed for storing the
+        channel data.
+        """
         raise NotImplementedError
 
     def read_initial_data(self):
+        """Reads the channel data previously written to the file.
+        """
         raise NotImplementedError
 
     @property
@@ -686,12 +1035,33 @@ class DataChannelBase(object):
 
 
 class TemporalDataChannelBase(DataChannelBase):
+    """Base class for data channels that have some kind of temporal dimension.
+    """
 
     data_array: nix.DataArray = None
+    """The data array storing the channel data, corresponding to
+    :attr:`DataFile.timestamps`. If :attr:`data_arrays` has only one
+    array, e.g. after seeing all frames, this is it.
+
+    See :attr:`data_arrays`.
+    """
 
     data_arrays: Dict[int, nix.DataArray] = {}
+    """The channel data for the disjointed frame intervals.
+
+    This corresponds exactly to :attr:`DatFile.timestamps_arrays` with the
+    arrays of the same keys containing the data for the corresponding
+    intervals.
+    """
 
     default_data_value = None
+    """The per-channel type default data used before the user modifies
+    the data. E.g. for an event channel it may default to False.
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.data_arrays = {}
 
     def create_initial_data(self):
         self.data_file.unsaved_callback()
@@ -703,7 +1073,14 @@ class TemporalDataChannelBase(DataChannelBase):
         self.data_array = data_array = self.data_arrays[0]
         data_array.metadata = self.metadata
 
-    def create_data_array(self, n=0, count=None):
+    def create_data_array(self, n: int = 0, count: Optional[int] = None):
+        """Creates a data array when a new timestamps interval is created.
+
+        :param n: The :attr:`data_arrays` key to use for the array. This
+            corresponds to the interval's :attr:`DatFile.timestamps_arrays`
+            key.
+        :param count: The size of the array to create, or empty if it's None.
+        """
         raise NotImplementedError
 
     def read_initial_data(self):
@@ -719,6 +1096,11 @@ class TemporalDataChannelBase(DataChannelBase):
             data_arrays[n] = item
 
     def merge_arrays(self, arr_num1: int, arr_num2: int):
+        """Merges the data arrays into a single array.
+
+        The same as :attr:`DatFile._merge_timestamp_channels_arrays`, but for
+        data arrays.
+        """
         data_arrays = self.data_arrays
         arr1 = data_arrays[arr_num1]
         arr2 = data_arrays[arr_num2]
@@ -729,7 +1111,11 @@ class TemporalDataChannelBase(DataChannelBase):
         del self.block.data_arrays[arr2.name]
         del data_arrays[arr_num2]
 
-    def pad_channel_to_num_frames(self, array_num, size):
+    def pad_channel_to_num_frames(self, array_num: int, size: int):
+        """Pads the channel data arrays to the given size, if it's smaller.
+
+        See :attr:`DataFile.pad_channel_to_num_frames_interval`.
+        """
         arr = self.data_arrays[array_num]
         n = len(arr)
         diff = size - n
@@ -742,24 +1128,52 @@ class TemporalDataChannelBase(DataChannelBase):
         arr.append(self.default_data_value.repeat(diff, axis=0))
 
     def get_timestamps_modified_state(self) -> Dict[float, bool]:
+        """Returns a dict whose keys are timestamps and values indicate whether
+        the data for the timestamp has been changed from the
+        :attr:`default_data_value` (True means it's not the default).
+        """
         raise NotImplementedError
 
-    def set_timestamp_value(self, t, value):
+    def set_timestamp_value(self, t: float, value: Any):
+        """Changes the value of the data array for the given timestamp ``t``
+        to ``value``.
+        """
         raise NotImplementedError
 
-    def get_timestamp_value(self, t):
+    def get_timestamp_value(self, t: float) -> Any:
+        """Returns the value of the data array for the given timestamp ``t``.
+        """
         raise NotImplementedError
 
     def reset_data_to_default(self):
+        """Resets all the data array values to the :attr:`default_data_value`.
+        """
         for arr in self.data_arrays.values():
             arr[:] = self.default_data_value
 
+    def copy_data(self, channel: 'ChannelType'):
+        src_data_arrays = self.data_arrays
+        for key, target_arr in channel.data_arrays.items():
+            target_arr[:] = src_data_arrays[key]
+
 
 class EventChannelData(TemporalDataChannelBase):
+    """Channel that stores event data.
+
+    For each timestamp we store a bool representing whether the event occurred
+    at this timestamp.
+
+    Metadata: The only required metadata is the name key (unique across all
+    channels).
+    """
 
     default_data_value = np.array([0], dtype=np.uint8)
+    """The default value used before the user modifies the data.
 
-    def create_data_array(self, n=0, count=None):
+    It is False (0) for the event channel.
+    """
+
+    def create_data_array(self, n: int = 0, count: Optional[int] = None):
         self.data_file.unsaved_callback()
         name = self.name if not n else '{}_group_{}'.format(self.name, n)
 
@@ -771,8 +1185,8 @@ class EventChannelData(TemporalDataChannelBase):
                 name, 'event', dtype=np.uint8,
                 data=self.default_data_value.repeat(count, axis=0))
 
-    def get_timestamps_modified_state(self):
-        self.data_file.pad_channel_to_num_frames(self)
+    def get_timestamps_modified_state(self) -> Dict[float, bool]:
+        self.data_file.pad_channel_to_num_frames_interval(self)
         data_arrays = self.data_arrays
         timestamp_arrays = self.data_file.timestamps_arrays
 
@@ -785,14 +1199,19 @@ class EventChannelData(TemporalDataChannelBase):
 
         return results
 
-    def set_timestamp_value(self, t, value):
-        self.data_file.pad_channel_to_num_frames(self)
+    def set_timestamp_value(self, t: float, value: bool):
+        """Changes the value of the data array for the given timestamp ``t``
+        to ``value``.
+        """
+        self.data_file.pad_channel_to_num_frames_interval(self)
         data_file = self.data_file
         data_file.unsaved_callback()
         n, i = data_file.timestamp_data_map[t]
         self.data_arrays[n][i] = value
 
-    def get_timestamp_value(self, t):
+    def get_timestamp_value(self, t: float) -> bool:
+        """Returns the value of the data array for the given timestamp ``t``.
+        """
         n, i = self.data_file.timestamp_data_map[t]
         if len(self.data_arrays[n]) <= i:
             return False
@@ -800,10 +1219,23 @@ class EventChannelData(TemporalDataChannelBase):
 
 
 class PosChannelData(TemporalDataChannelBase):
+    """Channel that stores position data.
+
+    For each timestamp we store a tuple of the ``(x, y)`` position at this
+    timestamp.
+
+    Metadata: The only required metadata is the name key (unique across all
+    channels).
+    """
 
     default_data_value = np.array([[-1, -1]], dtype=np.float64)
+    """The default value used before the user modifies the data.
 
-    def create_data_array(self, n=0, count=None):
+    It is a tuple of ``(-1, -1)`` corresponding to x and y for the position
+    channel.
+    """
+
+    def create_data_array(self, n: int = 0, count: Optional[int] = None):
         self.data_file.unsaved_callback()
         name = self.name if not n else '{}_group_{}'.format(self.name, n)
 
@@ -815,8 +1247,8 @@ class PosChannelData(TemporalDataChannelBase):
                 name, 'pos', dtype=np.float64,
                 data=self.default_data_value.repeat(count, axis=0))
 
-    def get_timestamps_modified_state(self):
-        self.data_file.pad_channel_to_num_frames(self)
+    def get_timestamps_modified_state(self) -> Dict[float, bool]:
+        self.data_file.pad_channel_to_num_frames_interval(self)
         data_arrays = self.data_arrays
         timestamp_arrays = self.data_file.timestamps_arrays
 
@@ -829,14 +1261,19 @@ class PosChannelData(TemporalDataChannelBase):
 
         return results
 
-    def set_timestamp_value(self, t, value):
-        self.data_file.pad_channel_to_num_frames(self)
+    def set_timestamp_value(self, t: float, value: Tuple[float, float]):
+        """Changes the value of the data array for the given timestamp ``t``
+        to ``value``.
+        """
+        self.data_file.pad_channel_to_num_frames_interval(self)
         data_file = self.data_file
         data_file.unsaved_callback()
         n, i = data_file.timestamp_data_map[t]
         self.data_arrays[n][i, :] = value
 
-    def get_timestamp_value(self, t):
+    def get_timestamp_value(self, t: float) -> Tuple[float, float]:
+        """Returns the value of the data array for the given timestamp ``t``.
+        """
         n, i = self.data_file.timestamp_data_map[t]
         if len(self.data_arrays[n]) <= i:
             return -1, -1
@@ -852,9 +1289,25 @@ class PosChannelData(TemporalDataChannelBase):
 
 
 class ZoneChannelData(DataChannelBase):
+    """Channel that stores a static zone.
+
+    Unlike the event and position channels, this contains no data and only
+    metadata. The metadata stores the shape of the drawn zone as e.g.
+    a circle, a polygon, an ellipse, etc.
+
+    Metadata: The required metadata is the name key (unique across all
+    channels) and the shape_config key data. The shape data is the state of a
+    :class:`~kivy_garden.painter.PaintShape` using
+    :meth:`~kivy_garden.painter.PaintShape.get_state`.
+    """
 
     def create_initial_data(self):
         pass
 
     def read_initial_data(self):
         pass
+
+
+ChannelType = Union[
+    DataChannelBase, TemporalDataChannelBase, EventChannelData, PosChannelData,
+    ZoneChannelData]
