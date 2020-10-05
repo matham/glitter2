@@ -4,9 +4,19 @@
 """
 
 import re
+import numpy as np
 import os
+import pathlib
 
-__all__ = ('read_clever_sys_file', '')
+from kivy_garden.painter import PaintShape, PaintCanvasBehaviorBase, \
+    PaintCircle, PaintEllipse, PaintPolygon, PaintPoint
+
+from glitter2.utils import fix_name
+from glitter2.storage.imports import map_frame_rate_to_timestamps
+
+__all__ = (
+    'read_clever_sys_file', 'compute_calibration',
+    'add_clever_sys_data_to_file')
 
 _clever_sys_regex = [
     re.compile(r'^Video\s+File\s*:\s*(?P<video_file>.+?)\s*$'),
@@ -63,10 +73,11 @@ def _parse_clever_sys_zones(zone_items, height):
     for zone in zone_items:
         m = re.match(_clever_sys_zone_circle_3p_regex, zone)
         if m is not None:
+            shape = PaintCircle.create_shape(
+                [float(m.group(2)), height - float(m.group(3))],
+                float(m.group(4)))
             zones[int(m.group(1))] = {
-                'shape_class': 'circle', 'name': 'Channel',
-                'center': [float(m.group(2)), height - float(m.group(3))],
-                'radius': float(m.group(4))}
+                'shape_config': shape.get_state(), 'name': 'Channel'}
             continue
 
         m = re.match(_clever_sys_zone_polygon_regex, zone)
@@ -83,10 +94,11 @@ def _parse_clever_sys_zones(zone_items, height):
                 continue
 
             points = [[p[0], height - p[1]] for p in points]
+            shape = PaintPolygon.create_shape(
+                [coord for point in points for coord in point],
+                points[0])
             zones[int(m.group(1))] = {
-                'shape_class': 'polygon', 'name': 'Channel',
-                'points': [coord for point in points for coord in point],
-                'selection_point': points[0]}
+                'shape_config': shape.get_state(), 'name': 'Channel'}
             continue
 
         raise ValueError(
@@ -233,3 +245,68 @@ def read_clever_sys_file(filename):
                     fh, metadata['height'])
 
     return data, metadata, zones, calibration
+
+
+def compute_calibration(calibration):
+    (a, b, c), (d, e, f) = calibration
+    if b or c or d or f or a != e:
+        raise ValueError(f'Cannot parse calibration {calibration}')
+    calibration_set = a != 1
+    pixels_per_meter = 1000 / a
+
+    return calibration_set, pixels_per_meter
+
+
+def add_clever_sys_data_to_file(
+        data_file, data, video_metadata, zones, calibration):
+    calibration_set, pixels_per_meter = compute_calibration(calibration)
+    background_file = video_metadata['background_file']
+
+    # set pixels_per_meter
+    if not data_file.pixels_per_meter and calibration_set:
+        data_file.set_pixels_per_meter(pixels_per_meter)
+
+    # get the clever sys timing mapping
+    rate = video_metadata['rate']
+    estimated_start = video_metadata['from'] / rate
+    assert estimated_start - 1 <= video_metadata['begin'] \
+        <= estimated_start + 1
+    estimated_end = video_metadata['to'] / rate
+    assert estimated_end - 1 <= video_metadata['end'] \
+        <= estimated_end + 1
+
+    timestamps_mapping = map_frame_rate_to_timestamps(
+        np.asarray(data_file.timestamps), rate, video_metadata['from'],
+        video_metadata['to'])
+
+    # track names to not have duplicates
+    names = set()
+    for channels in (
+            data_file.event_channels, data_file.pos_channels,
+            data_file.zone_channels):
+        for channel in channels.values():
+            names.add(channel.channel_config_dict['name'])
+
+    center_channel = data_file.create_channel('pos')
+    name = fix_name('animal_center', names)
+    center_channel.channel_config_dict = {'name': name}
+    names.add(name)
+
+    nose_channel = data_file.create_channel('pos')
+    name = fix_name('animal_nose', names)
+    nose_channel.channel_config_dict = {'name': name}
+    names.add(name)
+
+    for frame, center_x, center_y, nose_x, nose_y in data:
+        if frame not in timestamps_mapping:
+            continue
+
+        for t in timestamps_mapping[frame]:
+            center_channel.set_timestamp_value(t, [center_x, center_y])
+            nose_channel.set_timestamp_value(t, [nose_x, nose_y])
+
+    for zone in zones:
+        channel = data_file.create_channel('zone')
+        name = zone['name'] = fix_name(zone['name'], names)
+        channel.channel_config_dict = zone
+        names.add(name)

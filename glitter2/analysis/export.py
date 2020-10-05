@@ -28,7 +28,8 @@ from glitter2.analysis import FileDataAnalysis
 from glitter2.utils import fix_name
 from glitter2.storage.data_file import DataFile
 from glitter2.player import GlitterPlayer
-from glitter2.storage.imports.clever_sys import read_clever_sys_file
+from glitter2.storage.imports.clever_sys import read_clever_sys_file, \
+    add_clever_sys_data_to_file
 from glitter2.storage.imports import map_frame_rate_to_timestamps
 from glitter2.channel import PosChannel, ZoneChannel
 
@@ -200,75 +201,21 @@ class SourceFile(object):
             data, video_metadata, zones, calibration = read_clever_sys_file(
                 self.filename)
 
-            (a, b, c), (d, e, f) = calibration
-            if b or c or d or f or a != e:
-                raise ValueError(f'Cannot parse calibration {calibration}')
-            calibration_set = a != 1
-            pixels_per_meter = 1000 / a
-
             video_file = pathlib.Path(video_metadata['video_file'])
             target_filename = pathlib.Path(output_path).joinpath(
                 video_file.relative_to(video_file.parts[0])).with_suffix('.h5')
-            background_file = video_metadata['background_file']
-            w = video_metadata['width']
-            h = video_metadata['height']
-            rate = video_metadata['rate']
-
-            estimated_start = video_metadata['from'] / rate
-            assert estimated_start - 1 <= video_metadata['begin'] \
-                <= estimated_start + 1
-            estimated_end = video_metadata['to'] / rate
-            assert estimated_end - 1 <= video_metadata['end'] \
-                <= estimated_end + 1
 
             if not target_filename.parent.exists():
                 os.makedirs(str(target_filename.parent))
 
+            w = video_metadata['width']
+            h = video_metadata['height']
             nix_file, data_file = self._create_or_open_data_file(
                 target_filename, video_file, w, h)
-            if not data_file.pixels_per_meter and calibration_set:
-                data_file.set_pixels_per_meter(pixels_per_meter)
-
-            timestamps_mapping = map_frame_rate_to_timestamps(
-                np.asarray(data_file.timestamps), rate, video_metadata['from'],
-                video_metadata['to'])
 
             try:
-                names = set()
-                for channels in (
-                        data_file.event_channels, data_file.pos_channels,
-                        data_file.zone_channels):
-                    for channel in channels.values():
-                        names.add(channel.channel_config_dict['name'])
-
-                center_channel = data_file.create_channel('pos')
-                metadata = PosChannel.make_channel_metadata(
-                    name='animal_center', existing_names=names)
-                center_channel.channel_config_dict = metadata
-                names.add(metadata['name'])
-
-                nose_channel = data_file.create_channel('pos')
-                metadata = PosChannel.make_channel_metadata(
-                    name='animal_nose', existing_names=names)
-                nose_channel.channel_config_dict = metadata
-                names.add(metadata['name'])
-
-                for frame, center_x, center_y, nose_x, nose_y in data:
-                    if frame not in timestamps_mapping:
-                        continue
-
-                    for t in timestamps_mapping[frame]:
-                        center_channel.set_timestamp_value(
-                            t, [center_x, center_y])
-                        nose_channel.set_timestamp_value(t, [nose_x, nose_y])
-
-                for zone in zones:
-                    metadata = ZoneChannel.make_channel_metadata(
-                        existing_names=names, **zone)
-                    names.add(metadata['name'])
-
-                    channel = data_file.create_channel('zone')
-                    channel.channel_config_dict = metadata
+                add_clever_sys_data_to_file(
+                    data_file, data, video_metadata, zones, calibration)
             finally:
                 nix_file.close()
 
