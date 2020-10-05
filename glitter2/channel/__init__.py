@@ -17,7 +17,7 @@ from kivy.graphics.texture import Texture
 from kivy.graphics import Rectangle, Color, Line, Point
 
 from kivy_garden.painter import PaintShape, PaintCanvasBehaviorBase, \
-    PaintCircle, PaintEllipse, PaintPolygon
+    PaintCircle, PaintEllipse, PaintPolygon, PaintPoint
 from kivy_garden.collider import Collide2DPoly, CollideEllipse
 
 from tree_config import get_config_prop_names
@@ -1199,6 +1199,9 @@ class ZoneChannel(ChannelBase):
             rx, ry = shape.radius_x, shape.radius_y
             collider = CollideEllipse(
                 x=x, y=y, rx=rx, ry=ry, angle=shape.angle)
+        elif isinstance(shape, PaintPoint):
+            x, y = shape.position
+            collider = CollideEllipse(x=x, y=y, rx=1, ry=1)
         else:
             assert False
 
@@ -1239,10 +1242,12 @@ class ZoneChannel(ChannelBase):
         elif shape_class == 'circle':
             shape = PaintCircle(
                 center=kwargs['center'], radius=kwargs['radius'])
-        elif shape_class == 'circle':
+        elif shape_class == 'ellipse':
             shape = PaintEllipse(
                 center=kwargs['center'], radius_x=kwargs['radius_x'],
                 radius_y=kwargs['radius_y'], angle=kwargs['angle'])
+        elif shape_class == 'point':
+            shape = PaintPoint(position=kwargs['position'])
         else:
             raise ValueError(f'Unrecognized shape class {shape_class}')
 

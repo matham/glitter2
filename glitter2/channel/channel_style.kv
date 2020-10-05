@@ -139,6 +139,12 @@
                 FlatImageToggleButton:
                     group: 'paint'
                     scale_down_color: True
+                    source: 'star-four-points.png'
+                    flat_color: app.theme.accent
+                    on_state: app.image_display_manager.zone_painter.draw_mode = 'point' if self.state == 'down' else 'none'
+                FlatImageToggleButton:
+                    group: 'paint'
+                    scale_down_color: True
                     source: 'flat_circle.png'
                     flat_color: app.theme.accent
                     on_state: app.image_display_manager.zone_painter.draw_mode = 'circle' if self.state == 'down' else 'none'

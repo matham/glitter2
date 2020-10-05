@@ -663,6 +663,9 @@ class ZoneAnalysisChannel(AnalysisChannel):
             rx, ry = shape_metadata['radius_x'], shape_metadata['radius_y']
             collider = CollideEllipse(
                 x=x, y=y, rx=rx, ry=ry, angle=shape_metadata['angle'])
+        elif cls_name == 'PaintPoint':
+            x, y = shape_metadata['position']
+            collider = CollideEllipse(x=x, y=y, rx=1, ry=1)
         else:
             assert False
 
@@ -671,3 +674,6 @@ class ZoneAnalysisChannel(AnalysisChannel):
 
     def compute_area(self) -> float:
         return self.collider.get_area()
+
+    def compute_centroid(self) -> float:
+        return self.collider.get_centroid()

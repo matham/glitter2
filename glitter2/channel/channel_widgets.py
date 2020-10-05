@@ -17,7 +17,7 @@ from kivy.app import App
 from kivy.metrics import dp
 
 from kivy_garden.painter import PaintCanvasBehavior, PaintCircle,\
-    PaintEllipse, PaintPolygon, PaintFreeformPolygon
+    PaintEllipse, PaintPolygon, PaintFreeformPolygon, PaintPoint
 
 from glitter2.channel import ChannelController, ChannelBase, EventChannel, \
     PosChannel, ZoneChannel, TemporalChannel, Ruler
