@@ -9,7 +9,7 @@ from typing import List, Dict, Optional, Tuple, Callable, Set, Union, Any, Type
 import nixio as nix
 from nixio.exceptions.exceptions import InvalidFile
 
-from tree_config.utils import yaml_dumps, yaml_loads
+from more_kivy_app.utils import yaml_dumps, yaml_loads
 
 __all__ = (
     'DataFile', 'DataChannelBase', 'TemporalDataChannelBase',
