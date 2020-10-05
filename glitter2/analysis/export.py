@@ -23,7 +23,7 @@ from kivy.logger import Logger
 from more_kivy_app.app import app_error, report_exception_in_app
 from base_kivy_app.utils import pretty_space
 
-from glitter2.storage.legacy import LegacyFileReader
+from glitter2.storage.imports.legacy import LegacyFileReader
 from glitter2.analysis import FileDataAnalysis
 from glitter2.utils import fix_name
 from glitter2.storage.data_file import DataFile
