@@ -287,7 +287,7 @@ class StorageController(EventDispatcher):
         # is the video's h5 already open, then just open video
         if (self.filename and os.path.abspath(h5_filename) ==
                 os.path.abspath(self.filename)):
-            metadata = self.data_file.get_video_metadata()
+            metadata = self.data_file.video_metadata_dict
             file_size = metadata.get('file_size')
             if not file_size or file_size == os.stat(filename).st_size:
                 self.player.open_file(filename)
@@ -377,7 +377,7 @@ class StorageController(EventDispatcher):
                   for item in data_file_src.read_channels_config()))
             self.ruler.pixels_per_meter = data_file_src.pixels_per_meter
             if not exclude_app_settings:
-                self.app.set_app_config_data(data_file_src.read_app_config())
+                self.app.set_app_config_data(data_file_src.app_config_dict)
         finally:
             f.close()
 
@@ -436,7 +436,7 @@ class StorageController(EventDispatcher):
             return
 
         if self.config_changed:
-            self.data_file.write_app_config(self.app.get_app_config_data())
+            self.data_file.app_config_dict = self.app.get_app_config_data()
             self.data_file.write_channels_config(
                 *self.channel_controller.get_channels_metadata())
             self.data_file.set_pixels_per_meter(self.ruler.pixels_per_meter)
@@ -544,7 +544,7 @@ class StorageController(EventDispatcher):
             return
 
         if item == 'opened':
-            metadata = self.data_file.get_video_metadata()
+            metadata = self.data_file.video_metadata_dict
             if metadata:
                 if 'duration' in metadata and \
                         metadata['duration'] != value['duration'] or \
@@ -558,7 +558,7 @@ class StorageController(EventDispatcher):
                         'open the correct video file')
                 self.data_file.set_default_video_metadata(value)
             else:
-                self.data_file.set_video_metadata(value)
+                self.data_file.video_metadata_dict = value
         elif item == 'seek':
             self.data_file.notify_interrupt_timestamps()
         elif item == 'first_ts':
@@ -573,7 +573,7 @@ class StorageController(EventDispatcher):
 
     @app_error
     def try_open_video_from_h5(self):
-        metadata = self.data_file.get_video_metadata()
+        metadata = self.data_file.video_metadata_dict
         if 'filename_tail' not in metadata:
             return
 

@@ -33,9 +33,14 @@ class DataFile(object):
 
     nix_file: nix.File = None
 
-    global_config: nix.Section = None
+    app_config_section: nix.Section = None
+    """Stores the overall application configuration that was used with
+    this video file.
+    """
 
-    video_metadata_config: nix.Section = None
+    video_metadata_section: nix.Section = None
+    """Stores the metadata of the video file.
+    """
 
     timestamps: nix.DataArray = None
     """The first timestamps data array. If there's only one, this is used.
@@ -95,10 +100,10 @@ class DataFile(object):
 
         self.unsaved_callback()
 
-        sec = f.create_section('app_config', 'configuration')
-        sec['channel_count'] = yaml_dumps(0)
+        f.create_section('app_config', 'configuration')
 
         sec = f.create_section('data_config', 'configuration')
+        sec['channel_count'] = yaml_dumps(0)
         sec['glitter2_version'] = yaml_dumps(glitter2.__version__)
         sec['ffpyplayer_version'] = yaml_dumps(ffpyplayer.__version__)
         sec['pixels_per_meter'] = yaml_dumps(0.)
@@ -120,10 +125,20 @@ class DataFile(object):
         self.open_file()
 
     def open_file(self):
-        self.global_config = self.nix_file.sections['app_config']
+        """Loads the data from the file and initializes the instance. Can
+        be called multiple times.
+
+        Use after updating the file or opening an existing file. E.g.::
+
+            nix_file = nixio.File.open(filename, nixio.FileMode.ReadWrite)
+            data_file = DataFile(nix_file=nix_file)
+            data_file.upgrade_file()
+            data_file.open_file()
+        """
+        self.app_config_section = self.nix_file.sections['app_config']
 
         data_config = self.nix_file.sections['data_config']
-        self.video_metadata_config = data_config.sections['video_metadata']
+        self.video_metadata_section = data_config.sections['video_metadata']
 
         self.saw_all_timestamps = yaml_loads(data_config['saw_all_timestamps'])
         self._saw_first_timestamp = yaml_loads(
@@ -184,14 +199,16 @@ class DataFile(object):
                 ('event', event_channels), ('pos', pos_channels)]:
             for metadata, arrays in channels:
                 channel = self.create_channel(event_type)
-                channel.write_channel_config(metadata)
+                channel.channel_config_dict = metadata
                 for idx, array in enumerate(arrays):
                     nix_array = channel.data_arrays[idx_map[idx]]
                     nix_array[:] = np.asarray(array)
 
         for metadata in zone_channels:
             channel = self.create_channel('zone')
-            channel.write_channel_config(metadata)
+            channel.channel_config_dict = metadata
+
+        self.unsaved_callback()
 
     def create_channels_from_file(self):
         for block in self.nix_file.blocks:
@@ -226,6 +243,15 @@ class DataFile(object):
         sec = self.nix_file.sections['data_config']
         if 'pixels_per_meter' not in sec:
             sec['pixels_per_meter'] = yaml_dumps(0.)
+
+        if 'channel_count' not in sec:
+            # it got moved from app_config to data_config
+            count = yaml_loads(
+                read_nix_prop(
+                    self.nix_file.sections['app_config'].props['channel_count']
+                )
+            )
+            sec['channel_count'] = yaml_dumps(count)
 
     @property
     def has_content(self):
@@ -265,47 +291,73 @@ class DataFile(object):
         finally:
             f.close()
 
-    def get_video_metadata(self) -> dict:
-        config = self.video_metadata_config
+    @property
+    def video_metadata_dict(self) -> dict:
+        """Reads/writes the video metadata from the **current** NixIO file
+        into/from a dict.
+
+        This is the metadata from
+        :meth:`~glitter2.player.GlitterPlayer.get_file_data`.
+
+        .. warning::
+
+            This property reads/writes to the file when accessed.
+        """
+        config = self.video_metadata_section
         data = {}
         for prop in config.props:
             data[prop.name] = yaml_loads(read_nix_prop(prop))
 
         return data
 
-    def set_default_video_metadata(self, metadata: dict):
+    @video_metadata_dict.setter
+    def video_metadata_dict(self, metadata: dict):
         self.unsaved_callback()
-        config = self.video_metadata_config
+        config = self.video_metadata_section
+        for k, v in metadata.items():
+            config[k] = yaml_dumps(v)
+
+    def set_default_video_metadata(self, metadata: dict):
+        """Sets the video file metadata, but only for the metadata that has
+        not yet been set.
+        """
+        self.unsaved_callback()
+        config = self.video_metadata_section
         for k, v in metadata.items():
             if k not in config:
                 config[k] = yaml_dumps(v)
-
-    def set_video_metadata(self, metadata: dict):
-        self.unsaved_callback()
-        config = self.video_metadata_config
-        for k, v in metadata.items():
-            config[k] = yaml_dumps(v)
 
     def set_pixels_per_meter(self, value):
         self.nix_file.sections['data_config']['pixels_per_meter'] = \
             yaml_dumps(value)
         self.pixels_per_meter = value
-
-    def write_app_config(self, data):
         self.unsaved_callback()
-        config = self.global_config
-        for k, v in data.items():
-            config[k] = yaml_dumps(v)
 
-    def read_app_config(self):
-        """Reads the app config data and returns it as a dict. It does not
-        include the channel config data.
+    @property
+    def app_config_dict(self) -> dict:
+        """Reads/writes the app config data into/from a dict.
+
+        It does not include the channel config data, just the application
+        config. The app config can be generated most simply from
+        :meth:`~glitter2.main.Glitter2App.get_app_config_data`.
+
+        .. warning::
+
+            This property reads/writes to the file when accessed.
         """
-        config = self.nix_file.sections['app_config']
         data = {}
-        for prop in config.props:
+        for prop in self.app_config_section.props:
             data[prop.name] = yaml_loads(read_nix_prop(prop))
         return data
+
+    @app_config_dict.setter
+    def app_config_dict(self, data: dict):
+        """Writes the application configuration into the file.
+        """
+        self.unsaved_callback()
+        config = self.app_config_section
+        for k, v in data.items():
+            config[k] = yaml_dumps(v)
 
     def write_channels_config(
             self, event_channels: Dict[int, dict] = None,
@@ -315,29 +367,33 @@ class DataFile(object):
         if event_channels:
             event_channels_ = self.event_channels
             for i, data in event_channels.items():
-                event_channels_[i].write_channel_config(data)
+                event_channels_[i].channel_config_dict = data
 
         if pos_channels:
             pos_channels_ = self.pos_channels
             for i, data in pos_channels.items():
-                pos_channels_[i].write_channel_config(data)
+                pos_channels_[i].channel_config_dict = data
 
         if zone_channels:
             zone_channels_ = self.zone_channels
             for i, data in zone_channels.items():
-                zone_channels_[i].write_channel_config(data)
+                zone_channels_[i].channel_config_dict = data
+
+    def read_channels_config(
+            self) -> Tuple[Dict[int, dict], Dict[int, dict], Dict[int, dict]]:
+        """Returns a tuple of the event, pos, and zone channel metadata.
 
     def read_channels_config(self):
         event_channels = {
-            i: chan.read_channel_config()
+            i: chan.channel_config_dict
             for (i, chan) in self.event_channels.items()
         }
         pos_channels = {
-            i: chan.read_channel_config()
+            i: chan.channel_config_dict
             for (i, chan) in self.pos_channels.items()
         }
         zone_channels = {
-            i: chan.read_channel_config()
+            i: chan.channel_config_dict
             for (i, chan) in self.zone_channels.items()
         }
         return event_channels, pos_channels, zone_channels
@@ -598,18 +654,35 @@ class DataChannelBase(object):
     def read_initial_data(self):
         raise NotImplementedError
 
-    def write_channel_config(self, data: dict):
-        self.data_file.unsaved_callback()
-        config = self.metadata
-        for k, v in data.items():
-            config[k] = yaml_dumps(v)
+    @property
+    def channel_config_dict(self) -> dict:
+        """Reads/writes the channel metadata from the **current** NixIO file
+        into/from a dict.
 
-    def read_channel_config(self):
+        .. warning::
+
+            This property reads/writes to the file when accessed.
+
+        See :meth:`DataFile.set_file_data` for the metadata requirements
+        if setting manually outside the GUI.
+        """
         config = self.metadata
         data = {}
         for prop in config.props:
             data[prop.name] = yaml_loads(read_nix_prop(prop))
         return data
+
+    @channel_config_dict.setter
+    def channel_config_dict(self, data: dict):
+        self.data_file.unsaved_callback()
+        config = self.metadata
+        for k, v in data.items():
+            config[k] = yaml_dumps(v)
+
+    def copy_data(self, channel: 'ChannelType'):
+        """Copies this channel's data, if any, into the given channel.
+        """
+        pass
 
 
 class TemporalDataChannelBase(DataChannelBase):

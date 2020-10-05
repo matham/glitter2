@@ -169,7 +169,7 @@ class SourceFile(object):
                         f'Did not watch all video frames for '
                         f'"{self.filename}" so we add import data')
 
-                metadata = data_file.get_video_metadata()
+                metadata = data_file.video_metadata_dict
                 if tuple(metadata['src_vid_size']) != (width, height):
                     raise ValueError(
                         f'CleverSys data file\'s ({self.filename}) video size '
@@ -239,18 +239,18 @@ class SourceFile(object):
                         data_file.event_channels, data_file.pos_channels,
                         data_file.zone_channels):
                     for channel in channels.values():
-                        names.add(channel.read_channel_config()['name'])
+                        names.add(channel.channel_config_dict['name'])
 
                 center_channel = data_file.create_channel('pos')
                 metadata = PosChannel.make_channel_metadata(
                     name='animal_center', existing_names=names)
-                center_channel.write_channel_config(metadata)
+                center_channel.channel_config_dict = metadata
                 names.add(metadata['name'])
 
                 nose_channel = data_file.create_channel('pos')
                 metadata = PosChannel.make_channel_metadata(
                     name='animal_nose', existing_names=names)
-                nose_channel.write_channel_config(metadata)
+                nose_channel.channel_config_dict = metadata
                 names.add(metadata['name'])
 
                 for frame, center_x, center_y, nose_x, nose_y in data:
@@ -268,7 +268,7 @@ class SourceFile(object):
                     names.add(metadata['name'])
 
                     channel = data_file.create_channel('zone')
-                    channel.write_channel_config(metadata)
+                    channel.channel_config_dict = metadata
             finally:
                 nix_file.close()
 

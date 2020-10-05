@@ -61,7 +61,7 @@ class FileDataAnalysis(object):
         data_file = self.data_file
         data_file.open_file()
 
-        self.metadata = metadata = data_file.get_video_metadata()
+        self.metadata = metadata = data_file.video_metadata_dict
         metadata['saw_all_timestamps'] = data_file.saw_all_timestamps
         metadata['glitter2_version'] = data_file.glitter2_version
         metadata['ffpyplayer_version'] = data_file.ffpyplayer_version
@@ -278,7 +278,7 @@ class AnalysisChannel(object):
         self.analysis_file = analysis_file
 
     def load_data(self, *args, **kwargs):
-        self.metadata = self.data_channel.read_channel_config()
+        self.metadata = self.data_channel.channel_config_dict
         self.name = self.metadata['name']
 
     def compute_named_statistics(self, stat_options: Dict[str, dict]) -> List:
