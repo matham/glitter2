@@ -248,6 +248,9 @@ class Glitter2App(BaseKivyApp):
         Clock.schedule_interval(self._set_window_focus, 0)
         self._set_window_focus()
 
+        self.storage_controller.has_unsaved = False
+        self.storage_controller.config_changed = False
+
     def trigger_config_updated(self, *args):
         self.storage_controller.config_changed = True
 

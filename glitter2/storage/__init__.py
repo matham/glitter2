@@ -211,6 +211,8 @@ class StorageController(EventDispatcher):
                         App.get_running_app().stop()
                     else:
                         self.create_file('')
+                        # there's no data in the empty file
+                        self.config_changed = self.has_unsaved = False
 
             yesno = App.get_running_app().yesno_prompt
             yesno.msg = ('There are unsaved changes.\n'
@@ -225,6 +227,8 @@ class StorageController(EventDispatcher):
 
             if not app_close:
                 self.create_file('')
+                # there's no data in the empty file
+                self.config_changed = self.has_unsaved = False
             return True
 
     def create_file(self, filename, overwrite=False):
