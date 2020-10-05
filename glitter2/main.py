@@ -29,6 +29,7 @@ from glitter2.storage import StorageController
 from glitter2.channel import ChannelController, ChannelBase, EventChannel, \
     PosChannel, ZoneChannel, Ruler
 from glitter2.player import GlitterPlayer
+import glitter2.player.player_widget
 from glitter2.analysis.export import ExportManager
 from glitter2.channel.channel_widgets import EventChannelWidget, \
     PosChannelWidget, ZoneChannelWidget, ImageDisplayWidgetManager, \

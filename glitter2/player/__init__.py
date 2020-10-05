@@ -3,8 +3,7 @@
 
 Plays the video files that are scored by Glitter.
 """
-from os.path import join, dirname
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List, Dict
 import time
 import math
 import os
@@ -15,22 +14,23 @@ from ffpyplayer.pic import Image
 from kivy.event import EventDispatcher
 from kivy.clock import Clock
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty
-from kivy.lang import Builder
-from kivy.uix.slider import Slider
+
 
 from more_kivy_app.app import app_error
 
-__all__ = ('GlitterPlayer', 'SeekSlider')
+__all__ = ('GlitterPlayer', )
 
 
 class GlitterPlayer(EventDispatcher):
-    """Player that reads from the video file and sends frames as they need to
+    """Player that reads the video file and sends frames as they need to
     be displayed.
     """
 
     _config_props_ = ('seek_duration', )
 
-    seek_duration = NumericProperty(10)
+    seek_duration = 10
+    """How many seconds to seek from a right/left arrow button.
+    """
 
     filename = StringProperty('')
     """Full path to the video file. Read only.
@@ -118,6 +118,9 @@ class GlitterPlayer(EventDispatcher):
                 'FFmpeg Player: internal error "{}", "{}"'.format(mode, value))
 
     def set_log_play_rate(self, val: float):
+        """Sets the :attr:`play_rate` from ``val`` when it is given in 10 base
+        log. The ``val`` is forced between -1 to 1 first.
+        """
         val = max(min(val, 1), -1)
         if val == 1:
             self.play_rate = float('inf')
@@ -127,6 +130,9 @@ class GlitterPlayer(EventDispatcher):
             self.play_rate = math.pow(10, val)
 
     def set_play_rate(self, val: float):
+        """Sets the :attr:`play_rate` to ``val``. The ``val`` is forced
+        between 0.1 to 10 first.
+        """
         val = max(min(val, 10), .1)
         if val == 10:
             self.play_rate = float('inf')
@@ -135,14 +141,20 @@ class GlitterPlayer(EventDispatcher):
         else:
             self.play_rate = val
 
-    def get_slider_log_play_rate(self, rate):
+    def get_slider_log_play_rate(self, rate: float) -> float:
+        """Converts the given rate to 10 base log, forcing the value between
+        -1 and 1.
+        """
         if rate < .1:
             return -1
         if rate > 10:
             return 1
         return math.log10(rate)
 
-    def get_play_rate_text(self, rate):
+    def get_play_rate_text(self, rate: float) -> str:
+        """Converts the given play rate to a string, forcing the value between
+        0.1 and 10.
+        """
         if rate < .1:
             return '0.1'
         if rate > 10:
@@ -278,6 +290,9 @@ class GlitterPlayer(EventDispatcher):
 
     @classmethod
     def _get_video_metadata(cls, ffplayer, filename):
+        """Returns the metadata from the given media player, adding any
+        additional required metadata.
+        """
         metadata = ffplayer.get_metadata()
         filename = os.path.abspath(os.path.expanduser(filename))
         head, tail = os.path.split(filename)
@@ -411,6 +426,9 @@ class GlitterPlayer(EventDispatcher):
         self.open_file(filename)
 
     def gui_play_button_press(self):
+        """Plays or pauses the video in response to the user pressing the
+        play button in the GUI.
+        """
         if self.paused:
             # always unpause, but if reached end, also seek to start
             self.set_pause(False)
@@ -424,6 +442,8 @@ class GlitterPlayer(EventDispatcher):
                 self.set_pause(True)
 
     def player_on_key_down(self, window, keycode, text, modifiers):
+        """Handles any key down presses from the GUI that controls the player.
+        """
         item = keycode[1]
 
         if item == 'up':
@@ -467,13 +487,19 @@ class GlitterPlayer(EventDispatcher):
         return False
 
     def player_on_key_up(self, window, keycode):
+        """Handles any key up presses from the GUI that controls the player.
+        """
         item = keycode[1]
         if item in ('up', 'down', 'right', 'left', 'spacebar'):
             return True
         return False
 
     @classmethod
-    def get_file_data(cls, filename):
+    def get_file_data(
+            cls, filename: str, metadata_only: bool = False
+    ) -> Tuple[List[float], dict]:
+        """Returns the timestamps and metadata of the video file.
+        """
         filename = os.path.abspath(filename)
         ff_opts = {
             'sync': 'video', 'an': True, 'sn': True, 'paused': False, 'x': 4,
@@ -493,33 +519,18 @@ class GlitterPlayer(EventDispatcher):
 
         # read video frames
         timestamps = []
-        while True:
-            frame, val = ffplayer.get_frame()
 
-            assert val != 'paused'
-            if val == 'eof':
-                break
-            if frame is None:
-                time.sleep(.1)
-                continue
-            timestamps.append(frame[1])
+        if not metadata_only:
+            while True:
+                frame, val = ffplayer.get_frame()
+
+                assert val != 'paused'
+                if val == 'eof':
+                    break
+                if frame is None:
+                    time.sleep(.1)
+                    continue
+                timestamps.append(frame[1])
+
         ffplayer.close_player()
         return timestamps, metadata
-
-
-class SeekSlider(Slider):
-    """widget that controls the speed of video playback."""
-
-    __events__ = ('on_release', )
-
-    def on_touch_up(self, touch):
-        if super(SeekSlider, self).on_touch_up(touch):
-            self.dispatch('on_release')
-            return True
-        return False
-
-    def on_release(self, *args):
-        pass
-
-
-Builder.load_file(join(dirname(__file__), 'player_style.kv'))
