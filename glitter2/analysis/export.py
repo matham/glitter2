@@ -28,7 +28,7 @@ from glitter2.analysis import FileDataAnalysis
 from glitter2.utils import fix_name
 from glitter2.storage.data_file import DataFile
 from glitter2.player import GlitterPlayer
-from glitter2.analysis.clever_sys import read_clever_sys_file, \
+from glitter2.storage.imports.clever_sys import read_clever_sys_file, \
     map_frames_to_timestamps
 from glitter2.channel import PosChannel, ZoneChannel
 
