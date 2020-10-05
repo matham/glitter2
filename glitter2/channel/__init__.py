@@ -216,6 +216,20 @@ class ChannelController(EventDispatcher):
             self.app.create_channel_widget(channel)
         return channel
 
+    def duplicate_channel(self, channel: 'ChannelBase') -> 'ChannelBase':
+        new_channel = channel.data_channel.data_file.duplicate_channel(
+            channel.data_channel)
+        metadata = new_channel.channel_config_dict
+        if isinstance(channel, EventChannel):
+            channel_type = 'event'
+        elif isinstance(channel, PosChannel):
+            channel_type = 'pos'
+        elif isinstance(channel, ZoneChannel):
+            channel_type = 'zone'
+        else:
+            assert False
+        return self.create_channel(channel_type, new_channel, metadata)
+
     def delete_channel(self, channel: 'ChannelBase', _recompute=True):
         channel.deselect_channel()
         if isinstance(channel, EventChannel):
