@@ -448,6 +448,9 @@
         MinSizeYFlatTextButton:
             text: 'Clear data'
             on_release: root.channel.reset_data_to_default()
+        MinSizeYFlatTextButton:
+            text: 'Close'
+            on_release: root.dismiss()
 
 
 <PosSettingsDropDown@ChannelSettingsDropDown>:
@@ -501,6 +504,9 @@
         MinSizeYFlatTextButton:
             text: 'Clear data'
             on_release: root.channel.reset_data_to_default()
+        MinSizeYFlatTextButton:
+            text: 'Close'
+            on_release: root.dismiss()
 
 
 <ZoneSettingsDropDown@ChannelSettingsDropDown>:
