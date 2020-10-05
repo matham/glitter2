@@ -43,6 +43,8 @@ intersphinx_mapping = {
     'kivy': ('https://kivy.org/doc/stable/', None),
     'ffpyplayer': ('https://matham.github.io/ffpyplayer/', None),
     'base_kivy_app': ('https://matham.github.io/pyflycap2/', None),
+    'kivy_garden.painter': ('https://kivy-garden.github.io/painter/', None),
+    'kivy_garden.collider': ('https://kivy-garden.github.io/collider/', None),
 }
 
 # Add any paths that contain templates here, relative to this directory.
