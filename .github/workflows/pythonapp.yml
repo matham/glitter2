@@ -116,7 +116,7 @@ jobs:
         python -m pytest --cov=glitter2 --cov-report term --cov-branch glitter2/tests
 
   osx_app:
-    runs-on: macOS-latest
+    runs-on: macos-10.15
     if: github.event_name != 'pull_request'
     steps:
     - name: Switch Xcode version
