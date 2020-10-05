@@ -617,8 +617,6 @@
                 input_filter: 'float'
                 text: '{:0.5f}'.format(app.ruler.point_distance_mm)
                 on_focus: if not self.focus: app.ruler.point_distance_mm = float(self.text or 0)
-            FlatImageButton:
-                scale_down_color: True
-                source: 'flat_save.png'
-                flat_color: app.theme.accent
-                on_release: app.ruler.update_pixels_per_meter()
+        MinSizeYFlatTextButton:
+            text: 'Compute and save'
+            on_release: app.ruler.update_pixels_per_meter()
