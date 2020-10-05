@@ -5,9 +5,8 @@
 
 import re
 import os
-from collections import defaultdict
 
-__all__ = ('read_clever_sys_file', 'map_frames_to_timestamps')
+__all__ = ('read_clever_sys_file', '')
 
 _clever_sys_regex = [
     re.compile(r'^Video\s+File\s*:\s*(?P<video_file>.+?)\s*$'),
@@ -234,22 +233,3 @@ def read_clever_sys_file(filename):
                     fh, metadata['height'])
 
     return data, metadata, zones, calibration
-
-
-def map_frames_to_timestamps(timestamps, frame_rate, min_frame, max_frame):
-    n = len(timestamps)
-    mapping = defaultdict(list)
-    half_period = 1 / (frame_rate * 2)
-
-    start_t = min_frame / frame_rate - half_period
-    t_index = 0
-    while t_index < n and timestamps[t_index] < start_t:
-        t_index += 1
-
-    for frame in range(min_frame, max_frame + 1):
-        end_t = frame / frame_rate + half_period
-        while t_index < n and timestamps[t_index] < end_t:
-            mapping[frame].append(timestamps[t_index])
-            t_index += 1
-
-    return mapping

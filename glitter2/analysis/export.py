@@ -28,8 +28,8 @@ from glitter2.analysis import FileDataAnalysis
 from glitter2.utils import fix_name
 from glitter2.storage.data_file import DataFile
 from glitter2.player import GlitterPlayer
-from glitter2.storage.imports.clever_sys import read_clever_sys_file, \
-    map_frames_to_timestamps
+from glitter2.storage.imports.clever_sys import read_clever_sys_file
+from glitter2.storage.imports import map_frame_rate_to_timestamps
 from glitter2.channel import PosChannel, ZoneChannel
 
 __all__ = ('SourceFile', 'ExportManager')
@@ -229,8 +229,8 @@ class SourceFile(object):
             if not data_file.pixels_per_meter and calibration_set:
                 data_file.set_pixels_per_meter(pixels_per_meter)
 
-            timestamps_mapping = map_frames_to_timestamps(
-                data_file.timestamps, rate, video_metadata['from'],
+            timestamps_mapping = map_frame_rate_to_timestamps(
+                np.asarray(data_file.timestamps), rate, video_metadata['from'],
                 video_metadata['to'])
 
             try:
