@@ -8,6 +8,7 @@ import numpy as np
 from typing import List, Dict, Optional, Tuple, Callable, Set, Union, Any, Type
 import nixio as nix
 from nixio.exceptions.exceptions import InvalidFile
+from bisect import bisect_left
 
 from more_kivy_app.utils import yaml_dumps, yaml_loads
 
@@ -952,6 +953,71 @@ class DataFile(object):
         if i < len(arr) - 1:
             return False
         return True
+
+    def condition_timestamp(self, t: float) -> Optional[float]:
+        """If timestamp ``t`` is within a interval of seen timestamps in
+        :attr:`timestamps_arrays`, it returns the closest seen timestamp to
+        ``t``. Otherwise it returns None indicating the timestamp is outside
+        of any timestamps interval.
+
+        When reading timestamps from the video file, different systems may
+        read slightly different timestamps. Conditioning the timestamp before
+        use ensures identical behavior when re-opening files on different
+        systems.
+        """
+        # we have seen this exact timestamp
+        if t in self.timestamp_data_map:
+            return t
+
+        # new timestamp
+        start = self.timestamp_intervals_start
+        end = self.timestamp_intervals_end
+        keys = self.timestamp_intervals_ordered_keys
+
+        # if we have not seen any frames yet, this timestamp is always valid
+        if not keys:
+            return t
+
+        i = bisect_left(end, t)
+
+        if i == len(keys):
+            # t is larger than the largest known timestamp
+            if self._saw_last_timestamp:
+                # if we already saw the end, it cannot be larger
+                raise ValueError(
+                    f'{t} is after the timestamp of the previously seen '
+                    f'last frame of the video, which was {end[i]}')
+
+            # t should increase the last interval
+            return None
+
+        # timestamp is less than or equal to time at endpoint of interval i
+        if t < start[i]:
+            # time is before the start of the ith interval. We know it's larger
+            # than the end of previous interval if any
+            if not i:
+                # t is before the start of the video!?
+                assert self._saw_first_timestamp
+                raise ValueError(
+                    f'{t} is before the timestamp of the previously seen '
+                    f'first frame of the video, which was {start[i]}')
+
+            # t is between two intervals
+            return None
+
+        # t is in the ith interval, find the closest value
+        timestamps = self.timestamps_arrays[keys[i]]
+        k = bisect_left(timestamps, t)
+
+        # it cannot be zero. It clearly cannot be less than timestamps[0] as
+        # that would make it outside the interval. It cannot be exactly
+        # timestamps[0] as we would have seen it already
+        assert k
+
+        if timestamps[k] - t <= t - timestamps[k - 1]:
+            # it's closer to k
+            return float(timestamps[k])
+        return float(timestamps[k - 1])
 
 
 class DataChannelBase(object):

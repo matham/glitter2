@@ -571,9 +571,13 @@ class StorageController(EventDispatcher):
             self.data_file.notify_saw_last_timestamp()
         self.saw_all_timestamps = self.data_file.saw_all_timestamps
 
-    def add_timestamp(self, t: float):
+    def add_timestamp(self, t: float) -> float:
+        conditioned_t = self.data_file.condition_timestamp(t)
+        if conditioned_t is not None:
+            t = conditioned_t
         self.data_file.notify_add_timestamp(t)
         self.saw_all_timestamps = self.data_file.saw_all_timestamps
+        return t
 
     @app_error
     def try_open_video_from_h5(self):

@@ -5,6 +5,7 @@ The main module that provides the app that runs the GUI.
 """
 from os.path import join, dirname
 from typing import Iterable, List, Dict
+from ffpyplayer.pic import Image
 
 from kivy.lang import Builder
 from kivy.factory import Factory
@@ -161,8 +162,8 @@ class Glitter2App(BaseKivyApp):
             self.channel_controller.max_duration = self.player.duration
         return self.storage_controller.notify_video_change(item, value)
 
-    def add_video_frame(self, t, image):
-        self.storage_controller.add_timestamp(t)
+    def add_video_frame(self, t: float, image: Image):
+        t = self.storage_controller.add_timestamp(t)
         self.channel_controller.set_current_timestamp(t)
         self.image_display.update_img(image)
 
