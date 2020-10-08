@@ -43,7 +43,7 @@ jobs:
         python3 -m pip install kivy[base] --pre --extra-index-url https://kivy.org/downloads/simple/
         python3 -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
         python3 -m pip install https://github.com/matham/more-kivy-app/archive/master.zip
-        python3 -m pip install --upgrade nixio --pre
+        python3 -m pip install --upgrade nixio==1.5.0b4 --pre
     - name: Install project
       run: python3 -m pip install -e .[dev]
     - name: Make wheel
@@ -95,7 +95,7 @@ jobs:
         python -m pip install kivy[base] --pre --extra-index-url  https://kivy.org/downloads/simple/
         python -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
         python -m pip install https://github.com/matham/more-kivy-app/archive/master.zip
-        python -m pip install --upgrade nixio --pre
+        python -m pip install --upgrade nixio==1.5.0b4 --pre
         python -m pip install -e .[dev]
     - name: Make PyInstaller app
       run: |
@@ -148,7 +148,7 @@ jobs:
         python -m pip install --upgrade https://github.com/kivy/plyer/archive/master.zip
         python -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
         python -m pip install https://github.com/matham/more-kivy-app/archive/master.zip
-        python -m pip install --upgrade nixio --pre
+        python -m pip install --upgrade nixio==1.5.0b4 --pre
         python -m pip install .
     - name: Finalize Glitter bundle
       run: |
@@ -202,7 +202,7 @@ jobs:
         python3 -m pip install kivy[base,dev] --pre --extra-index-url https://kivy.org/downloads/simple/
         python3 -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
         python3 -m pip install https://github.com/matham/more-kivy-app/archive/master.zip
-        python3 -m pip install --upgrade nixio --pre
+        python3 -m pip install --upgrade nixio==1.5.0b4 --pre
 
         python3 -m pip install -e .[dev]
     - name: Generate docs
