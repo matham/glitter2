@@ -119,6 +119,22 @@
             size_hint_x: None
             width: self.minimum_width
             FlatImageToggleButton:
+                id: hide_shapes
+                scale_down_color: True
+                state: 'normal'
+                source: 'eye-off.png' if self.state == 'normal' else 'eye.png'
+                flat_color: app.theme.accent
+                on_kv_post:
+                    app.channel_controller.show_zone_drawing = False
+                    edit_zones.state = 'normal'
+                    app.image_display_manager.zone_painter.clear_selected_shapes()
+                on_state:
+                    app.channel_controller.show_zone_drawing = self.state == 'down'
+                    if self.state == 'normal': edit_zones.state = 'normal'
+                    if self.state == 'normal': app.image_display_manager.zone_painter.clear_selected_shapes()
+            FlatDivider:
+                color: app.theme.divider
+            FlatImageToggleButton:
                 id: edit_zones
                 disabled: hide_shapes.state == 'normal'
                 scale_down_color: True
@@ -128,8 +144,6 @@
                     app.image_display_manager.zone_painter.locked = self.state == 'normal'
                     app.interactive_player_mode = self.state == 'normal' and ruler.state == 'normal'
                     if self.state == 'down': ruler.state = 'normal'
-            FlatDivider:
-                color: app.theme.divider
             BoxLayout:
                 disabled: hide_shapes.state == 'normal' or edit_zones.state == 'normal'
                 size_hint_y: None
@@ -167,18 +181,6 @@
                     source: 'flat_polygon.png'
                     flat_color: app.theme.accent
                     on_state: app.image_display_manager.zone_painter.draw_mode = 'polygon' if self.state == 'down' else 'none'
-            FlatDivider:
-                color: app.theme.divider
-            FlatImageToggleButton:
-                id: hide_shapes
-                scale_down_color: True
-                state: 'down'
-                source: 'eye-off.png' if self.state == 'normal' else 'eye.png'
-                flat_color: app.theme.accent
-                on_state:
-                    app.channel_controller.show_zone_drawing = self.state == 'down'
-                    if self.state == 'normal': edit_zones.state = 'normal'
-                    if self.state == 'normal': app.image_display_manager.zone_painter.clear_selected_shapes()
             FlatDivider:
                 color: app.theme.divider
             FlatImageToggleButton:
@@ -302,7 +304,7 @@
                 size: self.size
     FlatImageToggleButton:
         scale_down_color: True
-        source: 'transit-connection-variant.png'
+        source: 'eye-off.png' if self.state == 'normal' else 'eye.png'
         flat_color: app.theme.accent
         state: 'down' if root.channel.display_line else 'normal'
         on_state: root.channel.display_line = self.state == 'down'
