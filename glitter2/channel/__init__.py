@@ -501,14 +501,6 @@ class ChannelBase(EventDispatcher):
     def deselect_channel(self):
         raise NotImplementedError
 
-    @classmethod
-    def make_channel_metadata(cls, name='Channel', existing_names=()):
-        metadata = read_config_from_object(cls)
-        metadata['color_gl'] = next(_color_theme)
-        metadata['color'] = [int(c * 255) for c in metadata['color_gl']]
-        metadata['name'] = fix_name(name, existing_names)
-        return metadata
-
 
 class TemporalChannel(ChannelBase):
     """Channels the have a time component.
@@ -1243,31 +1235,6 @@ class ZoneChannel(ChannelBase):
         self._zone_area_color_instruction = None
         self.channel_controller.zone_painter.canvas.remove_group(
             f'zone_area_{id(self)}')
-
-    @classmethod
-    def make_channel_metadata(
-            cls, shape_class, name='Channel', existing_names=(), **kwargs):
-        metadata = super().make_channel_metadata(
-            name=name, existing_names=existing_names)
-        if shape_class == 'polygon':
-            shape = PaintPolygon(
-                points=kwargs['points'],
-                selection_point=kwargs['selection_point'])
-        elif shape_class == 'circle':
-            shape = PaintCircle(
-                center=kwargs['center'], radius=kwargs['radius'])
-        elif shape_class == 'ellipse':
-            shape = PaintEllipse(
-                center=kwargs['center'], radius_x=kwargs['radius_x'],
-                radius_y=kwargs['radius_y'], angle=kwargs['angle'])
-        elif shape_class == 'point':
-            shape = PaintPoint(position=kwargs['position'])
-        else:
-            raise ValueError(f'Unrecognized shape class {shape_class}')
-
-        shape.set_valid()
-        metadata['shape_config'] = shape.get_state()
-        return metadata
 
 
 class Ruler(EventDispatcher):
