@@ -11,5 +11,5 @@
    analysis/api.rst
    channel/api.rst
    storage/api.rst
-   player.rst
+   player/api.rst
    utils.rst
