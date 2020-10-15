@@ -159,7 +159,8 @@ class Glitter2App(BaseKivyApp):
 
     def notify_video_change(self, item, value=None):
         if item == 'opened':
-            self.channel_controller.max_duration = self.player.duration
+            self.channel_controller.overview_controller.set_max_duration(
+                self.player.duration)
         return self.storage_controller.notify_video_change(item, value)
 
     def add_video_frame(self, t: float, image: Image):

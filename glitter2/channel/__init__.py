@@ -13,8 +13,7 @@ from math import sqrt
 from kivy.properties import NumericProperty, ObjectProperty, StringProperty, \
     BooleanProperty, ListProperty, DictProperty
 from kivy.event import EventDispatcher
-from kivy.graphics.texture import Texture
-from kivy.graphics import Rectangle, Color, Line, Point
+from kivy.graphics import Color, Line, Point
 
 from kivy_garden.painter import PaintShape, PaintCanvasBehaviorBase, \
     PaintCircle, PaintEllipse, PaintPolygon, PaintPoint
@@ -25,6 +24,8 @@ from more_kivy_app.config import read_config_from_object, apply_config
 
 from glitter2.storage.data_file import DataChannelBase, EventChannelData, \
     TemporalDataChannelBase, PosChannelData, ZoneChannelData
+from glitter2.channel.channel_overview import ChannelStateViewerController, \
+    ChannelStateViewer
 from glitter2.utils import fix_name as fix_name_original
 
 __all__ = ('ChannelController', 'ChannelBase', 'TemporalChannel',
@@ -71,21 +72,7 @@ class ChannelController(EventDispatcher):
 
     pos_channels_time_tail: float = 2
 
-    overview_timestamps_index: Dict[float, int] = {}
-
-    max_duration = NumericProperty(0)
-    """Automatically set when the video opens.
-    """
-
-    overview_width = NumericProperty(0)
-    """Automatically set by the widget.
-    """
-
-    overview_num_timestamps_per_pixel: list = []
-
-    overview_pixel_per_time: float = 0
-
-    overview_widget = None
+    overview_controller: ChannelStateViewerController = None
 
     n_sep_pixels_per_channel: int = 1
 
@@ -97,8 +84,6 @@ class ChannelController(EventDispatcher):
 
     channels_keys: Dict[str, Union['EventChannel', 'PosChannel']] = {}
 
-    channel_temporal_back_selection_color = .45, .45, .45, 1
-
     selected_channel: Optional['ChannelBase'] = None
 
     delete_key_pressed = False
@@ -109,7 +94,7 @@ class ChannelController(EventDispatcher):
 
     show_zone_drawing = BooleanProperty(True)
 
-    _last_timestamp_and_index = None
+    _last_timestamp = None
 
     def __init__(self, app, **kwargs):
         super(ChannelController, self).__init__(**kwargs)
@@ -117,18 +102,19 @@ class ChannelController(EventDispatcher):
         self.event_channels = []
         self.pos_channels = []
         self.zone_channels = []
-        self.overview_timestamps_index = {}
         self.app = app
         self.channels_keys = {}
         self.channels = {}
 
-        from kivy.metrics import dp
-        self.n_sep_pixels_per_channel = int(dp(3))
-        self.n_pixels_per_channel = int(dp(5))
+        self.overview_controller = ChannelStateViewerController()
 
-        self.fbind('max_duration', self._compute_overview)
-        self.fbind('overview_width', self._compute_overview)
         self.fbind('show_zone_drawing', self._set_zone_channels_drawing)
+
+    def post_config_applied(self):
+        self.overview_controller.n_pixels_per_channel = \
+            self.n_pixels_per_channel
+        self.overview_controller.n_sep_pixels_per_channel = \
+            self.n_sep_pixels_per_channel
 
     def _set_zone_channels_drawing(self, *args):
         show = self.show_zone_drawing
@@ -141,10 +127,6 @@ class ChannelController(EventDispatcher):
 
         for channel in self.pos_channels:
             channel.find_highlighted_shape()
-
-    def set_overview_widget(self, widget):
-        self.overview_widget = widget
-        self._compute_overview()
 
     def create_channel(self, channel_type, data_channel, config=None, **kwargs):
         """Creates the requested channel as well as the widget for it.
@@ -190,16 +172,12 @@ class ChannelController(EventDispatcher):
         channel.fbind('name', self._change_channel_name)
 
         if channel_type != 'zone':
-            last_ts = self._last_timestamp_and_index
+            last_ts = self._last_timestamp
             if last_ts is not None:
-                channel.set_current_timestamp(*last_ts)
+                channel.set_current_timestamp(last_ts)
             # now display it in the overview
-            if self.overview_pixel_per_time:
-                w = int(self.overview_width)
-                timestamps = self.overview_timestamps_index
-                pixels = self.overview_num_timestamps_per_pixel
-                channel.compute_modified_timestamps_count(w, timestamps, pixels)
-            self._display_overview()
+            channel.overview_channel = self.overview_controller.add_channel(
+                channel, data_channel)
 
             channel.fbind('keyboard_key', self._track_key)
             self._track_key()
@@ -230,13 +208,14 @@ class ChannelController(EventDispatcher):
             assert False
         return self.create_channel(channel_type, new_channel, metadata)
 
-    def delete_channel(self, channel: 'ChannelBase', _recompute=True):
+    def delete_channel(self, channel: 'ChannelBase', redisplay=True):
         channel.deselect_channel()
         if isinstance(channel, EventChannel):
             self.event_channels.remove(channel)
             channel.funbind('keyboard_key', self._track_key)
             channel.funbind('channel_group', self._track_event_group)
-            channel.clear_modified_timestamps_count()
+            self.overview_controller.remove_channel(
+                channel, redisplay=redisplay)
             self._track_event_group()
             self._track_key()
         elif isinstance(channel, PosChannel):
@@ -245,6 +224,7 @@ class ChannelController(EventDispatcher):
             channel.clear_zone_highlighted()
             channel.clear_pos_graphics()
             self.pos_channels.remove(channel)
+            self.overview_controller.remove_channel(channel)
         elif isinstance(channel, ZoneChannel):
             channel.clear_zone_area_instructions()
             # clear and refs to the zone from pos channels
@@ -266,13 +246,15 @@ class ChannelController(EventDispatcher):
                 painter.remove_shape(channel.shape)
                 channel.shape = None
         else:
-            if _recompute:
-                self._display_overview()
+            if redisplay:
+                self.overview_controller.display_overview()
 
     def delete_all_channels(self):
+        # this may be called when the file is closed, so it should not access
+        # any data. TODO: Make clear data access API
         for channel in list(self.iterate_channels()):
-            self.delete_channel(channel, _recompute=False)
-        self._display_overview()
+            self.delete_channel(channel, redisplay=False)
+        self.overview_controller.display_overview()
 
     def _track_key(self, *args):
         self.channels_keys = {
@@ -311,101 +293,17 @@ class ChannelController(EventDispatcher):
         :param timestamps:
         :return:
         """
-        self._last_timestamp_and_index = None
-        self.overview_timestamps_index = {t: 0 for t in timestamps}
-        self._compute_overview()
-
-    def _compute_overview(self, *args):
-        duration = self.max_duration
-        w = int(self.overview_width)
-
-        if w < 2 or duration <= 0:
-            self.overview_num_timestamps_per_pixel = []
-            self.overview_pixel_per_time = 0
-
-            for channel in self.event_channels:
-                channel.clear_modified_timestamps_count()
-            for channel in self.pos_channels:
-                channel.clear_modified_timestamps_count()
-
-            self._display_overview()
-            return
-
-        pixels = self.overview_num_timestamps_per_pixel = [0, ] * w
-        self.overview_pixel_per_time = pixel_per_time = w / duration
-
-        timestamps = self.overview_timestamps_index
-        for t in timestamps:
-            x = min(w - 1, max(0, int(t * pixel_per_time)))
-            pixels[x] += 1
-            timestamps[t] = x
-
-        for channel in self.event_channels:
-            channel.compute_modified_timestamps_count(w, timestamps, pixels)
-        for channel in self.pos_channels:
-            channel.compute_modified_timestamps_count(w, timestamps, pixels)
-        self._display_overview()
-
-    def _display_overview(self):
-        if self.overview_widget is None:
-            return
-
-        if not self.overview_num_timestamps_per_pixel:
-            self.overview_widget.height = 0
-            return
-
-        channels = [
-            c for c in chain(self.event_channels, self.pos_channels)
-            if c.show_overview
-        ]
-
-        if not channels:
-            self.overview_widget.height = 0
-            return
-
-        canvas = self.overview_widget.canvas
-        pixel_sep = self.n_sep_pixels_per_channel
-        pixel_h = self.n_pixels_per_channel
-        n = len(channels)
-        w = int(self.overview_width)
-        self.overview_widget.height = n * (pixel_sep + pixel_h) + pixel_sep
-
-        for i, channel in enumerate(reversed(channels)):
-            offset = i * (pixel_sep + pixel_h)
-            channel.create_modified_canvas_items(
-                canvas, 'overview_graphics_{}'.format(channel), (0, offset),
-                (w, 2 * pixel_sep + pixel_h), (0, offset + pixel_sep),
-                (w, pixel_h))
+        self._last_timestamp = None
+        self.overview_controller.reset_timestamps(timestamps)
 
     def set_current_timestamp(self, t):
-        timestamps = self.overview_timestamps_index
-        pixels = self.overview_num_timestamps_per_pixel
-        w = len(pixels)
-        is_new = False
+        self.overview_controller.set_current_timestamp(t)
 
-        # get the pixel index in pixels array that corresponds to t (or None)
-        if w:
-            if t in timestamps:
-                x = timestamps[t]
-            else:
-                pixel_per_time = self.overview_pixel_per_time
-                # we round down because pixel n corresponds to time parallel to
-                # pixel [n, n + 1), since w is max pixel at max time.
-                x = min(w - 1, max(0, int(t * pixel_per_time)))
-                pixels[x] += 1
-                timestamps[t] = x
-                is_new = True
-        else:
-            x = None
-            if t not in timestamps:
-                timestamps[t] = 0
-                is_new = True
-
-        self._last_timestamp_and_index = t, x, is_new
+        self._last_timestamp = t
         for channel in self.event_channels:
-            channel.set_current_timestamp(t, x, is_new)
+            channel.set_current_timestamp(t)
         for channel in self.pos_channels:
-            channel.set_current_timestamp(t, x, is_new)
+            channel.set_current_timestamp(t)
 
         # if delete is pressed, clear the active channel for the new timestamp
         chan = self.selected_channel
@@ -506,256 +404,53 @@ class TemporalChannel(ChannelBase):
     """Channels the have a time component.
     """
 
-    overview_num_timestamps_modified_per_pixel = []
-
-    modified_count_texture: Optional[Texture] = None
-
-    selection_color_instruction: Optional[Color] = None
-
-    selection_rect: Optional[Rectangle] = None
-
-    texture_rect: Optional[Rectangle] = None
-
-    modified_count_buffer: Optional[np.ndarray] = None
-
     data_channel: TemporalDataChannelBase = None
 
     current_timestamp: float = None
 
-    current_timestamp_array_index: Optional[int] = None
-
     current_value = None
-
-    show_overview = True
 
     eraser_pressed = False
 
-    def __init__(self, **kwargs):
-        super(TemporalChannel, self).__init__(**kwargs)
-        self.overview_num_timestamps_modified_per_pixel = []
+    overview_channel: ChannelStateViewer = None
 
-    def _paint_modified_count_texture(self, *largs):
-        if self.modified_count_texture is None:
-            return
-
-        buff2 = np.repeat(
-            self.modified_count_buffer[np.newaxis, ...],
-            self.channel_controller.n_pixels_per_channel, axis=0)
-        self.modified_count_texture.blit_buffer(
-            buff2.ravel(order='C'), colorfmt='rgb', bufferfmt='ubyte')
-
-    def clear_modified_timestamps_count(self):
-        self.channel_controller.overview_widget.canvas.remove_group(
-            'overview_graphics_{}'.format(id(self)))
-        self.overview_num_timestamps_modified_per_pixel = []
-        self.modified_count_texture = None
-        self.modified_count_buffer = None
-        self.selection_color_instruction = None
-        self.selection_rect = None
-        self.texture_rect = None
-
-    def create_modified_canvas_items(
-            self, canvas, canvas_name, back_pos, back_size, tex_pos, tex_size):
-        """Called after compute_modified_timestamps_count.
-
-        :param canvas:
-        :param canvas_name:
-        :param back_pos:
-        :param back_size:
-        :param tex_pos:
-        :param tex_size:
-        :return:
-        """
-        controller = self.channel_controller
-        # only recreate texture if size changed
-        texture = self.modified_count_texture
-        if texture is None or tuple(texture.size) != tex_size:
-            texture = self.modified_count_texture = Texture.create(
-                size=tex_size, colorfmt='rgb',
-                callback=self._paint_modified_count_texture)
-            if self.texture_rect is not None:
-                self.texture_rect.texture = texture
-
-        buff2 = np.repeat(
-            self.modified_count_buffer[np.newaxis, ...],
-            self.channel_controller.n_pixels_per_channel, axis=0)
-        texture.blit_buffer(
-            buff2.ravel(order='C'), colorfmt='rgb', bufferfmt='ubyte')
-
-        # for these instructions we can simply re-adjust the pos/size
-        if self.selection_color_instruction is None:
-            with canvas:
-                color = controller.channel_temporal_back_selection_color \
-                    if self.selected else (0, 0, 0, 0)
-                self.selection_color_instruction = Color(
-                    *color, name=canvas_name)
-                self.selection_rect = Rectangle(
-                    pos=back_pos, size=back_size, name=canvas_name)
-                Color(1, 1, 1, 1, name=canvas_name)
-                rect = self.texture_rect = Rectangle(
-                    pos=tex_pos, size=tex_size, name=canvas_name)
-                rect.texture = texture
-        else:
-            self.selection_rect.pos = back_pos
-            self.selection_rect.size = back_size
-            self.texture_rect.pos = tex_pos
-            self.texture_rect.size = tex_size
-
-    def compute_modified_timestamps_count(
-            self, n, overview_timestamps_index, num_timestamps_per_pixel):
-        assert n >= 2
-        pixels = self.overview_num_timestamps_modified_per_pixel = [0, ] * n
-        timestamp_ends = self.data_channel.data_file.timestamp_intervals_end
-        buff = self.modified_count_buffer = np.zeros((n, 3), dtype=np.uint8)
-
-        pixel_per_time = self.channel_controller.overview_pixel_per_time
-        index_ends = [
-            min(n - 1, max(0, int(t * pixel_per_time)))
-            for t in timestamp_ends
-        ]
-
-        for t, v in self.data_channel.get_timestamps_modified_state().items():
-            if v:
-                pixels[overview_timestamps_index[t]] += 1
-
-        full_color = np.array(self.color, dtype=np.uint8)
-        partial_color = np.array(
-            [int(c * .4) for c in self.color], dtype=np.uint8)
-
-        i = 0
-        # initially, find the first non-zero pixel to be colored
-        while i < n and not pixels[i]:
-            i += 1
-
-        while i < n:
-            assert 0 < pixels[i] <= num_timestamps_per_pixel[i]
-            if pixels[i] == num_timestamps_per_pixel[i]:
-                color = full_color
-            else:
-                color = partial_color
-            buff[i, :] = color
-
-            # if there's a end timestamp (seek start) in this pixel, even if
-            # there's no further timestamps, don't color pixels. We don't have
-            # to worry about a end timestamp later, because by def if there' a
-            # end, num_timestamps_per_pixel will be truthy
-            end_timestamp = i in index_ends
-            i += 1
-            # fill in until the next non-zero pixel-timestamps
-            while i < n and not num_timestamps_per_pixel[i]:
-                assert not pixels[i]
-                if not end_timestamp:
-                    buff[i, :] = color
-
-                i += 1
-
-            # now, find the next non-zero pixel to be colored
-            while i < n and not pixels[i]:
-                i += 1
-
-    def set_current_timestamp(
-            self, t: float, index: Optional[int], is_new: bool):
-        # if we see a new timestamp, then there may have been some empty pixels
-        # between the last timestamp and the new one, so fill in the color
-        if is_new:
-            last_t = self.current_timestamp
-            last_i = self.current_timestamp_array_index
-            if last_i is not None:
-                self._update_display_texture(last_t, last_i, index)
-
+    def set_current_timestamp(self, t: float):
         self.current_timestamp = t
-        self.current_timestamp_array_index = index
 
     def compare_value_change(self, old, new):
         raise NotImplementedError
 
     def change_current_value(self, value):
-        changed = self.compare_value_change(self.current_value, value)
-        # first set the value
-        self.current_value = value
         t = self.current_timestamp
+        changed = self.compare_value_change(self.current_value, value)
+
+        self.current_value = value
         self.data_channel.set_timestamp_value(t, value)
 
-        if changed is None:
-            # it hasn't changed with respect to the default value (i.e. it may
-            # already have been non-default and it was now changed again)
-            return changed
-        elif changed:
-            # it's changed from the default
-            val = 1
-        else:
-            # it is now the default
-            val = -1
-
-        # now change the display
-        i = self.current_timestamp_array_index
-        if i is None:
-            return changed
-
-        self.overview_num_timestamps_modified_per_pixel[i] += val
-        self._update_display_texture(t, i)
+        self.overview_channel.change_current_value(changed)
         return changed
-
-    def _update_display_texture(self, t, i, next_index=None):
-        texture = self.modified_count_texture
-        if texture is None:  # no display available
-            return
-
-        num_timestamps_per_pixel = \
-            self.channel_controller.overview_num_timestamps_per_pixel
-        pixels = self.overview_num_timestamps_modified_per_pixel
-        buff = self.modified_count_buffer
-
-        n = len(pixels)
-        assert num_timestamps_per_pixel[i], "current ts should make # positive"
-        assert 0 <= pixels[i] <= num_timestamps_per_pixel[i]
-
-        # set current color
-        if pixels[i] == num_timestamps_per_pixel[i]:
-            color = self.color
-        elif not pixels[i]:
-            color = [0, 0, 0]
-        else:
-            color = [int(c * .4) for c in self.color]
-        buff[i, :] = color
-
-        # only paint pixels after us, if there are further time stamps and
-        # there's blank pixels between us and the next timestamp. If the next
-        # index is known to be the same as current, there's nothing to do
-        if next_index != i \
-                and not self.data_channel.data_file.is_end_timestamp(t):
-            i += 1
-            # fill in until the next non-zero pixel-timestamps
-            while i < n and not num_timestamps_per_pixel[i]:
-                assert not pixels[i]
-                buff[i, :] = color
-                i += 1
-
-        buff2 = np.repeat(
-            buff[np.newaxis, ...],
-            self.channel_controller.n_pixels_per_channel, axis=0)
-        texture.blit_buffer(
-            buff2.ravel(order='C'), colorfmt='rgb', bufferfmt='ubyte')
-        return
 
     def select_channel(self):
         if self.selected:
             return False
+
         self.channel_controller.selected_channel = self
-        if self.selection_color_instruction is not None:
-            self.selection_color_instruction.rgba = \
-                self.channel_controller.channel_temporal_back_selection_color
+
+        self.overview_channel.set_selection(True)
         self.selected = True
+
         return True
 
     def deselect_channel(self):
         if not self.selected:
             return False
+
         if self.channel_controller.selected_channel is self:
             self.channel_controller.selected_channel = None
-        if self.selection_color_instruction is not None:
-            self.selection_color_instruction.rgba = 0, 0, 0, 0
+
+        self.overview_channel.set_selection(False)
         self.selected = False
+
         return True
 
     def reset_current_value(self):
@@ -765,25 +460,7 @@ class TemporalChannel(ChannelBase):
         self.data_channel.reset_data_to_default()
         self.current_value = self.data_channel.get_timestamp_value(
             self.current_timestamp)
-
-        # now change the display
-        i = self.current_timestamp_array_index
-        texture = self.modified_count_texture
-        if i is None or texture is None:  # no display available
-            return
-
-        pixels = self.overview_num_timestamps_modified_per_pixel
-        n = len(pixels)
-        self.overview_num_timestamps_modified_per_pixel = [0, ] * n
-
-        buff = self.modified_count_buffer
-        buff[:] = 0
-
-        buff2 = np.repeat(
-            buff[np.newaxis, ...],
-            self.channel_controller.n_pixels_per_channel, axis=0)
-        texture.blit_buffer(
-            buff2.ravel(order='C'), colorfmt='rgb', bufferfmt='ubyte')
+        self.overview_channel.reset_data_to_default()
 
 
 class EventChannel(TemporalChannel):
@@ -808,9 +485,8 @@ class EventChannel(TemporalChannel):
 
     current_value = ObjectProperty(False)
 
-    def set_current_timestamp(
-            self, t: float, index: Optional[int], is_new: bool):
-        super().set_current_timestamp(t, index, is_new)
+    def set_current_timestamp(self, t: float):
+        super().set_current_timestamp(t)
         val = self.current_value = self.data_channel.get_timestamp_value(t)
 
         if self.is_toggle_button:
@@ -956,9 +632,8 @@ class PosChannel(TemporalChannel):
         canvas.remove_group(f'pos_graphics_point_{id(self)}')
         canvas.remove_group(f'pos_graphics_line_{id(self)}')
 
-    def set_current_timestamp(
-            self, t: float, index: Optional[int], is_new: bool):
-        super().set_current_timestamp(t, index, is_new)
+    def set_current_timestamp(self, t: float):
+        super().set_current_timestamp(t)
         self.current_value = self.data_channel.get_timestamp_value(t)
 
         if self.selected:
@@ -1120,7 +795,7 @@ class ZoneChannel(ChannelBase):
 
     _collider = None
 
-    _zone_area_color_instruction: Color = None
+    _zone_area_color_instruction: Optional[Color] = None
 
     shape_config = {}
 

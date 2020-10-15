@@ -103,10 +103,10 @@
                         pos: self.pos
                 RelativeLayout:
                     id: scoring_viewer
-                    on_kv_post: app.channel_controller.set_overview_widget(self.__self__)
+                    on_kv_post: app.channel_controller.overview_controller.set_widget(self.__self__)
                     size_hint_y: None
                     height: 0
-                    on_width: app.channel_controller.overview_width = int(self.width)
+                    on_width: app.channel_controller.overview_controller.set_width(int(self.width))
             FloatLayout:
                 size_hint_y: None
                 height: '42dp'
