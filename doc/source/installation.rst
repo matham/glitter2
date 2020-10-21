@@ -4,16 +4,18 @@ Installation
 ============
 
 Glitter2 can be installed either by downloading a pre-compiled application or by installing
-Glitter2 and all its dependencies to a Python installation.
-
-The latest pre-compiled app for Windows or MacOS can be downloaded from the
-`release page <https://github.com/matham/glitter2/releases>`_
+Glitter2 and all its dependencies to an existing Python installation.
 
 Installing a pre-compiled app
 -----------------------------
 
+The latest pre-compiled app for Windows or MacOS can be downloaded from the
+`release page <https://github.com/matham/glitter2/releases>`_
+
 Windows
 ~~~~~~~
+
+To update if you previously downloaded Glitter2, simply delete the ``Glitter2.exe`` file and continue below.
 
 Download ``Glitter2.exe`` and double click to run Glitter2. It will create a configuration ``.yaml``
 file next to ``Glitter2.exe`` where the application settings is saved as in the following image.
@@ -34,6 +36,9 @@ Click the circled ``Run anyway`` and Glitter2 will start.
 
 MacOS
 ~~~~~
+
+To update if you previously installed Glitter2, in ``Finder`` under ``Applications`` right click
+on ``Glitter2`` and select "Move to trash" and then continue below.
 
 Download ``Glitter2.dmg`` and double click to mount and install it. This will launch the following
 window. To install, drag the Glitter2 icon into the applications icon:
@@ -77,7 +82,7 @@ Installing from source
 To install from source, first install the dependencies that need to be installed manually with::
 
     pip install nixio==1.5.0b4 --pre
-    pip install "kivy[base]~=2.0.0" --pre
+    pip install "kivy[base]~=2.0.0rc4" --pre
 
 After installing the dependencies Glitter2 can be installed using::
 

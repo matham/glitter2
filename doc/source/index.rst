@@ -9,7 +9,6 @@ Contents:
    :maxdepth: 2
 
    installation.rst
-   getting_started.rst
 
    app.rst
    config.rst
