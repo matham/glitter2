@@ -404,12 +404,9 @@
             padding: '5dp'
             spacing: '5dp'
             cols: 2
-            FlatLabel:
+            SizedFlatLabel:
                 text: 'Button type:'
-                size_hint: None, None
-                size: self.texture_size
                 center_texture: True
-                flat_color: app.theme.text_primary
             FlatSpinner:
                 flat_color: app.theme.text_primary
                 flat_menu_color: app.theme.accent
@@ -421,36 +418,30 @@
                 values: ['Press to mark', 'Press to toggle mark']
                 text: self.values[1] if root.channel.is_toggle_button else self.values[0]
                 on_text: root.channel.is_toggle_button = self.text == self.values[1]
-            FlatLabel:
+            SizedFlatLabel:
                 text: 'Marker key-stroke:'
-                size_hint: None, None
-                size: self.texture_size
                 center_texture: True
-                flat_color: app.theme.text_primary
             FlatSizedTextInput:
                 size_hint_min_x: '100dp'
                 background_color: app.theme.primary_light
                 text: root.channel.keyboard_key
                 on_text: if self.text in app.channel_controller.channels_keys and app.channel_controller.channels_keys[self.text] is not root.channel: self.text = ''
                 on_focus: if not self.focus: root.channel.keyboard_key = self.text
-            FlatLabel:
+            SizedFlatLabel:
                 text: 'Channel group:'
-                size_hint: None, None
-                size: self.texture_size
                 center_texture: True
-                flat_color: app.theme.text_primary
             FlatSizedTextInput:
                 size_hint_min_x: '100dp'
                 background_color: app.theme.primary_light
                 text: root.channel.channel_group
                 on_focus: if not self.focus: root.channel.channel_group = self.text
-        MinSizeYFlatTextButton:
+        MinSizeXFlatTextButton:
             text: 'Duplicate channel'
             on_release: app.channel_controller.duplicate_channel(root.channel)
-        MinSizeYFlatTextButton:
+        MinSizeXFlatTextButton:
             text: 'Clear data'
             on_release: root.channel.reset_data_to_default()
-        MinSizeYFlatTextButton:
+        MinSizeXFlatTextButton:
             text: 'Close'
             on_release: root.dismiss()
 
@@ -488,25 +479,22 @@
             padding: '5dp'
             spacing: '5dp'
             cols: 2
-            FlatLabel:
+            SizedFlatLabel:
                 text: 'Select key-stroke:'
-                size_hint: None, None
-                size: self.texture_size
                 center_texture: True
-                flat_color: app.theme.text_primary
             FlatSizedTextInput:
                 size_hint_min_x: '100dp'
                 background_color: app.theme.primary_light
                 text: root.channel.keyboard_key
                 on_text: if self.text in app.channel_controller.channels_keys and app.channel_controller.channels_keys[self.text] is not root.channel: self.text = ''
                 on_focus: if not self.focus: root.channel.keyboard_key = self.text
-        MinSizeYFlatTextButton:
+        MinSizeXFlatTextButton:
             text: 'Duplicate channel'
             on_release: app.channel_controller.duplicate_channel(root.channel)
-        MinSizeYFlatTextButton:
+        MinSizeXFlatTextButton:
             text: 'Clear data'
             on_release: root.channel.reset_data_to_default()
-        MinSizeYFlatTextButton:
+        MinSizeXFlatTextButton:
             text: 'Close'
             on_release: root.dismiss()
 
@@ -538,10 +526,10 @@
                 on_release:
                     root.dismiss()
                     app.delete_channel(root.channel)
-        MinSizeYFlatTextButton:
+        MinSizeXFlatTextButton:
             text: 'Duplicate channel'
             on_release: app.channel_controller.duplicate_channel(root.channel)
-        MinSizeYFlatTextButton:
+        MinSizeXFlatTextButton:
             text: 'Close'
             on_release: root.dismiss()
 
@@ -570,12 +558,9 @@
             height: self.minimum_height
             size_hint_min_x: self.minimum_width
             cols: 3
-            FlatLabel:
+            SizedFlatLabel:
                 text: 'Point 1:'
-                size_hint: None, None
-                size: self.texture_size
                 center_texture: True
-                flat_color: app.theme.text_primary
             FlatSizedTextInput:
                 size_hint_min_x: '65dp'
                 background_color: app.theme.primary_light
@@ -588,12 +573,9 @@
                 input_filter: 'float'
                 text: '{:0.2f}'.format(app.ruler.point_1[1])
                 on_focus: if not self.focus: app.ruler.point_1[1] = float(self.text or 0)
-            FlatLabel:
+            SizedFlatLabel:
                 text: 'Point 2:'
-                size_hint: None, None
-                size: self.texture_size
                 center_texture: True
-                flat_color: app.theme.text_primary
             FlatSizedTextInput:
                 background_color: app.theme.primary_light
                 input_filter: 'float'
@@ -609,18 +591,15 @@
             size_hint_y: None
             height: self.minimum_height
             size_hint_min_x: self.minimum_width
-            FlatLabel:
+            SizedFlatLabel:
                 text: 'Point distance (mm):'
-                size_hint: None, None
-                size: self.texture_size
                 center_texture: True
-                flat_color: app.theme.text_primary
             FlatSizedTextInput:
                 size_hint_min_x: '65dp'
                 background_color: app.theme.primary_light
                 input_filter: 'float'
                 text: '{:0.5f}'.format(app.ruler.point_distance_mm)
                 on_focus: if not self.focus: app.ruler.point_distance_mm = float(self.text or 0)
-        MinSizeYFlatTextButton:
+        MinSizeXFlatTextButton:
             text: 'Compute and save'
             on_release: app.ruler.update_pixels_per_meter()

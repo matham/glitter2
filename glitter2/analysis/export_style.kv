@@ -59,11 +59,8 @@
                 disabled: app.export_manager.thread_has_job
                 size_hint_min_x: self.minimum_width
                 spacing: '5dp'
-                FlatLabel:
+                SizedFlatLabel:
                     text: 'Glob file filter:'
-                    size: self.texture_size
-                    size_hint: None, None
-                    flat_color: app.theme.text_primary
                 FlatSizedTextInput:
                     text: app.export_manager.source_match_suffix
                     background_color: app.theme.primary_light
@@ -71,11 +68,8 @@
                     on_focus: if not self.focus: app.export_manager.source_match_suffix = self.text
                     width: '100dp'
                     size_hint_x: None
-                FlatLabel:
+                SizedFlatLabel:
                     text: 'Source path:'
-                    size: self.texture_size
-                    size_hint: None, None
-                    flat_color: app.theme.text_primary
                 FlatImageButton:
                     scale_down_color: True
                     source: 'flat_folder.png'
@@ -129,11 +123,8 @@
                 flat_color: app.theme.accent
                 on_release: root.export_options.open(self.parent)
             Widget
-            FlatLabel:
+            SizedFlatLabel:
                 text:'Succeeded: [b]{}[/b], Failed: [b]{}[/b], Skipped: [b]{}[/b]'.format(app.export_manager.num_processed_files, app.export_manager.num_failed_files, app.export_manager.num_skipped_files)
-                size_hint: None, None
-                size: self.texture_size
-                flat_color: app.theme.text_primary
                 center_texture: False
                 markup: True
         RecycleView:
@@ -173,11 +164,8 @@
         Rectangle:
             pos: self.pos
             size: self.size
-    FlatLabel:
+    SizedFlatLabel:
         text: 'Filename:'
-        size: self.texture_size
-        size_hint: None, None
-        flat_color: app.theme.text_primary
         bold: True
         center_texture: False
     FlatLabel:
@@ -386,12 +374,9 @@
     BoxLayout:
         size_hint: None, None
         size: self.minimum_width, '26dp'
-        FlatLabel:
-            size: self.texture_size
-            size_hint: None, None
+        SizedFlatLabel:
             text: "Export position-zone channels collision data:"
             padding_x: '1dp'
-            flat_color: app.theme.text_primary
         CheckBox:
             state: 'down' if app.export_manager.raw_dump_zone_collider else 'normal'
             on_state: app.export_manager.raw_dump_zone_collider = self.state == 'down'
@@ -441,12 +426,9 @@
         height: '26dp'
         size_hint_min_x: self.minimum_width
         spacing: '5dp'
-        FlatLabel:
-            size: self.texture_size
-            size_hint: None, None
+        SizedFlatLabel:
             text: "Analysis start time:"
             padding_x: '1dp'
-            flat_color: app.theme.text_primary
         FlatSizedTextInput:
             input_filter: 'float'
             background_color: app.theme.primary_light
@@ -454,12 +436,9 @@
             size_hint_min_x: '50dp'
             size_hint_max_x: '150dp'
             on_focus: if not self.focus: app.export_manager.gui_set_start_time(int(self.text) if self.text else None)
-        FlatLabel:
-            size: self.texture_size
-            size_hint: None, None
+        SizedFlatLabel:
             text: "Analysis end time:"
             padding_x: '1dp'
-            flat_color: app.theme.text_primary
         FlatSizedTextInput:
             input_filter: 'float'
             background_color: app.theme.primary_light
@@ -522,12 +501,9 @@
                 size_hint_min_y: dp(300)
                 bar_width: '10dp'
                 scroll_type: ['bars']
-                FlatLabel:
+                SizedFlatLabel:
                     id: result
                     text: root.result
-                    size_hint: None, None
-                    size: self.texture_size
-                    flat_color: app.theme.text_primary
 
 
 <ZoneEventGroupChannelName@FlatToggleButton>:

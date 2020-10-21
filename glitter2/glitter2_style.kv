@@ -125,7 +125,7 @@
 <TickSlider@TickMarker+Slider>
 
 
-<MinSizeYFlatTextButton@FlatButton>:
+<MinSizeXFlatTextButton@FlatButton>:
     size_hint_y: None
     height: self.texture_size[1]
     size_hint_min_x: self.texture_size[0]
@@ -134,3 +134,9 @@
     scale_down_color: True
     flat_color: app.theme.primary_text
     flat_background_color: app.theme.accent
+
+
+<SizedFlatLabel@FlatLabel>:
+    size: self.texture_size
+    size_hint: None, None
+    flat_color: app.theme.text_primary
