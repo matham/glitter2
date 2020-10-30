@@ -20,26 +20,45 @@ from glitter2.storage.data_file import DataFile
 __all__ = (
     'default_value', 'not_cached', 'AnalysisFactory', 'AnalysisSpec',
     'FileDataAnalysis', 'AnalysisChannel', 'TemporalAnalysisChannel',
-    'EventAnalysisChannel', 'PosAnalysisChannel', 'ZoneAnalysisChannel')
+    'EventAnalysisChannel', 'PosAnalysisChannel', 'ZoneAnalysisChannel',
+    'get_variable_type_optional')
 
 
 def _sort_dict(d: dict) -> List[tuple]:
     return list(sorted(d.items(), key=lambda x: x[0]))
 
 
-def _get_flat_types(type_hint):
+def _get_flat_types(type_hint: Type) -> Tuple[Type]:
     if hasattr(type_hint, '__origin__') and type_hint.__origin__ is Union:
         return type_hint.__args__
     return type_hint,
 
 
-def _filter_default(type_hint):
+def _filter_default(type_hint: Type) -> List[Type]:
     types = _get_flat_types(type_hint)
-    default_types = {DefaultType, None, type(None)}
-    types = [t for t in types if t not in default_types]
-    if len(types) == 1:
-        return types[0]
-    raise ValueError(f'Expected one type value but got {types}')
+    return [t for t in types if t != DefaultType]
+
+
+known_arg_types = {
+    int, float, str, List[int], List[float], List[str], type(None)}
+known_ret_types = {int, float, str}
+
+
+def is_type_unknown(known_types, query):
+    return set(query) - known_types
+
+
+def get_variable_type_optional(type_hint: List[Type]) -> Tuple[Type, bool]:
+    if len(type_hint) == 1:
+        return type_hint[0], False
+
+    if type(None) not in type_hint:
+        raise ValueError('Expected to contain none type if more than one type')
+    type_hint.remove(type(None))
+
+    if len(type_hint) == 1:
+        return type_hint[0], True
+    raise ValueError('Expected only one type')
 
 
 class default_value(int):
@@ -47,8 +66,8 @@ class default_value(int):
 
 
 DefaultType = Type[default_value]
-DefaultFloat = Union[float, None, DefaultType]
-DefaultStr = Union[str, None, DefaultType]
+DefaultFloat = Union[float, type(None), DefaultType]
+DefaultStr = Union[str, type(None), DefaultType]
 not_cached = object()
 
 
@@ -76,6 +95,111 @@ class AnalysisFactory:
                 f'Unrecognized class {cls_name} of method {method}')
 
         return cls.by_name[name], method_name
+
+    @classmethod
+    def get_classes_from_type(
+            cls, analysis_type: str) -> List[Type['AnalysisChannel']]:
+        return [c for c in cls.analysis_classes
+                if c.analysis_type == analysis_type]
+
+    @classmethod
+    def get_variables(
+            cls, global_vars=True, local_vars=True
+    ) -> Dict[
+            str,
+            Tuple[List[Type['AnalysisChannel']], str, Tuple[Type, bool], Any]]:
+        variables = {}
+        all_variables = {}
+        for c in cls.analysis_classes:
+            special_args = c.spec_get_special_arg_type()
+            for key, (doc, tp) in c.spec_get_compute_variables().items():
+                if key in all_variables:
+                    doc_, tp_ = all_variables[key]
+                    # we allow empty doc, in which case non-empty is used
+                    if doc and doc_ and doc != doc_ or tp != tp_:
+                        raise ValueError(
+                            f'Variable "{key}" of class {c} was previously '
+                            f'defined with type "{tp_}" and doc "{doc_}", but '
+                            f'we now got type "{tp}" and doc "{doc}"')
+                    if doc:
+                        all_variables[key] = doc, tp
+                else:
+                    all_variables[key] = doc, tp
+
+                is_global = c.spec_get_is_global_arg(key)
+                if is_global and global_vars or not is_global and local_vars:
+
+                    if key not in variables:
+                        special_arg = special_args.get(key, None)
+                        variables[key] = [c], doc, tp, special_arg
+                    else:
+                        classes, doc_, tp_, special_arg = variables[key]
+                        classes.append(c)
+                        # just in case previously we had empty doc
+                        if doc:
+                            variables[key] = classes, doc, tp, special_arg
+
+        return variables
+
+    @classmethod
+    def _get_methods_from_type(
+            cls, analysis_type: str, creating_methods
+    ) -> Dict[str, Tuple[Type['AnalysisChannel'], str, Type]]:
+        methods = {}
+
+        for c in cls.analysis_classes:
+            if c.analysis_type != analysis_type:
+                continue
+
+            special_type = c.spec_get_channel_creating_methods()
+            for key, (doc, tp) in c.spec_get_compute_methods().items():
+                if creating_methods:
+                    if key in special_type:
+                        methods[key] = c, doc, tp
+                else:
+                    if key not in special_type:
+                        methods[key] = c, doc, tp
+
+        return methods
+
+    @classmethod
+    def get_channel_creating_methods_from_type(
+            cls, analysis_type: str
+    ) -> Dict[str, Tuple[Type['AnalysisChannel'], str, Type]]:
+        return cls._get_methods_from_type(analysis_type, True)
+
+    @classmethod
+    def get_compute_methods_from_type(
+            cls, analysis_type: str
+    ) -> Dict[str, Tuple[Type['AnalysisChannel'], str, Type]]:
+        return cls._get_methods_from_type(analysis_type, False)
+
+    @classmethod
+    def get_channel_creating_method_spec(
+            cls, analysis_cls: Type['AnalysisChannel'], name: str
+    ) -> Tuple[str, Type, str, Dict[str, Tuple[Tuple[Type, bool], str]]]:
+        create_type = analysis_cls.spec_get_channel_creating_methods()[name]
+        doc, ret_type = analysis_cls.spec_get_compute_methods()[name]
+        special_args = analysis_cls.spec_get_special_arg_type()
+        variables = {}
+
+        for var, (_, tp) in analysis_cls.spec_get_compute_method_args(
+                name).items():
+            variables[var] = tp, special_args.get(var, None)
+        return doc, ret_type, create_type, variables
+
+    @classmethod
+    def get_compute_method_spec(
+            cls, analysis_cls: Type['AnalysisChannel'], name: str
+    ) -> Tuple[str, Type, Dict[str, Tuple[Tuple[Type, bool], str]]]:
+        doc, ret_type = analysis_cls.spec_get_compute_methods()[name]
+        special_args = analysis_cls.spec_get_special_arg_type()
+        variables = {}
+
+        for var, (_, tp) in analysis_cls.spec_get_compute_method_args(
+                name).items():
+            variables[var] = tp, special_args.get(var, None)
+        return doc, ret_type, variables
 
 
 class AnalysisSpec:
@@ -108,7 +232,7 @@ class AnalysisSpec:
             (channel, new_channel_name, cls, method_name, args, kwargs))
 
     def add_computation(
-            self, channels: Optional[List[str]], compute_method, *args,
+            self, channels: List[str], compute_method, *args,
             compute_key: str = '', **kwargs):
         cls, method_name = AnalysisFactory.get_class_from_method(
             compute_method)
@@ -186,6 +310,27 @@ class AnalysisSpec:
 
         return output
 
+    def clear_arg_defaults(self):
+        self._default_args = defaultdict(dict)
+
+    def clear_new_channel_computation(self):
+        self._new_channels = []
+
+    def clear_computation(self):
+        self._computations = []
+
+    def get_added_channel_names(self) -> Set[str]:
+        names = set()
+        for item in self._new_channels:
+            if item[0]:
+                names.add(item[0])
+
+        for item in self._computations:
+            if item[0]:
+                names.update(item[0])
+
+        return names
+
 
 class FileDataAnalysis:
 
@@ -201,11 +346,11 @@ class FileDataAnalysis:
 
     timestamps: np.ndarray = None
 
-    event_channels_data: Dict[str, np.ndarray] = {}
+    event_channels_data: Dict[str, Optional[np.ndarray]] = {}
 
-    pos_channels_data: Dict[str, np.ndarray] = {}
+    pos_channels_data: Dict[str, Optional[np.ndarray]] = {}
 
-    zone_channels_shapes: Dict[str, PaintShape] = {}
+    zone_channels_shapes: Dict[str, Optional[PaintShape]] = {}
 
     channels_metadata: Dict[str, dict] = {}
 
@@ -243,7 +388,7 @@ class FileDataAnalysis:
         self.nix_file = nix.File.open(self.filename, nix.FileMode.ReadOnly)
         self.data_file = DataFile(nix_file=self.nix_file)
 
-    def load_file_data(self, channels: Set[str] = None):
+    def load_file_metadata(self, channels: Set[str] = None):
         data_file = self.data_file
         data_file.open_file()
 
@@ -269,9 +414,26 @@ class FileDataAnalysis:
         else:
             self.missing_timestamp_values = []
 
+        metadata = self.channels_metadata
+        for channels_data, src_channels in (
+                (self.event_channels_data, data_file.event_channels),
+                (self.pos_channels_data, data_file.pos_channels),
+                (self.zone_channels_shapes, data_file.zone_channels)):
+            for _, channel in _sort_dict(src_channels):
+                m = channel.channel_config_dict
+                name = m['name']
+                if channels and name not in channels:
+                    continue
+
+                metadata[name] = m
+                channels_data[name] = None
+
+    def load_file_data(self, channels: Set[str] = None):
+        self.load_file_metadata(channels)
+        data_file = self.data_file
+
         self.timestamps = self.flatten_data(data_file.timestamps_arrays)
 
-        metadata = self.channels_metadata
         zone_channels_shapes = self.zone_channels_shapes
         shape_cls_map = {
             'PaintCircle': PaintCircle, 'PaintEllipse': PaintEllipse,
@@ -289,7 +451,6 @@ class FileDataAnalysis:
                 if channels and name not in channels:
                     continue
 
-                metadata[name] = m
                 if channels_data is None:
                     state = m['shape_config']
                     cls = shape_cls_map[state['cls']]
@@ -487,7 +648,7 @@ class AnalysisChannel:
     """Dict of variables names to their brief docs shown to the user.
     """
 
-    _compute_variables_cache: Dict[str, Tuple[str, Type]] = {}
+    _compute_variables_cache: Dict[str, Tuple[str, Tuple[Type, bool]]] = {}
 
     _compute_methods_: Dict[str, str] = {}
     """Dict of compute method names to their brief docs shown to the user.
@@ -507,7 +668,8 @@ class AnalysisChannel:
     means. E.g. whether it's a event channel name etc.
     """
 
-    _compute_method_args_cache: Dict[str, Dict[str, Tuple[str, Type]]] = {}
+    _compute_method_args_cache: Dict[
+        str, Dict[str, Tuple[str, Tuple[Type, bool]]]] = {}
 
     def __init__(self, name: str, analysis_object: FileDataAnalysis, **kwargs):
         self.analysis_object = analysis_object
@@ -523,7 +685,8 @@ class AnalysisChannel:
         return res
 
     @classmethod
-    def spec_get_compute_variables(cls) -> Dict[str, Tuple[str, Type]]:
+    def spec_get_compute_variables(
+            cls) -> Dict[str, Tuple[str, Tuple[Type, bool]]]:
         if cls.__dict__.get('_compute_variables_cache', None) is not None:
             return cls._compute_variables_cache
 
@@ -538,14 +701,13 @@ class AnalysisChannel:
                     f'No type annotation found for variable {name} of {cls}')
 
             annotated_type = _filter_default(annotations[name])
+            unknown = is_type_unknown(known_arg_types, annotated_type)
             special_arg_type = cls.spec_get_special_arg_type()
-            if name not in special_arg_type and \
-                    annotated_type not in (int, float, str):
+            if name not in special_arg_type and unknown:
                 raise ValueError(
-                    f'Type {annotated_type} for {name} of {cls} is not one of '
-                    f'(int, float, or str)')
+                    f'Type {unknown} for {name} of {cls} is not recognized')
 
-            variables[name] = value, annotated_type
+            variables[name] = value, get_variable_type_optional(annotated_type)
         return variables
 
     @classmethod
@@ -565,12 +727,12 @@ class AnalysisChannel:
                     f'No return type annotation found for {name} of {cls}')
 
             annotated_type = _filter_default(annotations['return'])
+            unknown = is_type_unknown(known_ret_types, annotated_type)
             channel_methods = cls.spec_get_channel_creating_methods()
             # if it doesn't create a channel and we don't recognize the type...
-            if name not in channel_methods and \
-                    annotated_type not in (int, float, str):
+            if name not in channel_methods and unknown:
                 raise ValueError(
-                    f'Return type {annotated_type} for {name} of {cls} is not '
+                    f'Return type {unknown} for {name} of {cls} is not '
                     f'a understood type')
 
             methods[name] = value, annotated_type
@@ -597,7 +759,8 @@ class AnalysisChannel:
         return cls._special_arg_type_
 
     @classmethod
-    def spec_get_compute_method_args(cls, name) -> Dict[str, Tuple[str, Type]]:
+    def spec_get_compute_method_args(
+            cls, name) -> Dict[str, Tuple[str, Tuple[Type, bool]]]:
         if '_compute_method_args_cache' not in cls.__dict__:
             cls._compute_method_args_cache = {}
         cache = cls._compute_method_args_cache
@@ -616,14 +779,15 @@ class AnalysisChannel:
                         f'Variable {var_name} of method {name} is not '
                         f'documented in the _compute_variables_ dictionary')
 
-                doc, var_type_ = known_variables[var_name]
-                var_type = _filter_default(var_type)
+                doc, (var_type_, optional_) = known_variables[var_name]
+                var_type, optional = get_variable_type_optional(
+                    _filter_default(var_type))
                 if var_type != var_type_:
                     raise ValueError(
                         f'Variable {var_name} of method {name} was documented '
                         f'as both {var_type} and {var_type_}')
 
-                variables[var_name] = doc, var_type
+                variables[var_name] = doc, (var_type, optional)
 
         return cache[name]
 
@@ -764,18 +928,16 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
 
     _active_interval: Tuple[Dict[str, np.ndarray], Tuple] = None
 
-    start: float = None
+    start: Optional[float] = None
 
-    end: float = None
+    end: Optional[float] = None
 
     event_channels: List[str]
 
     _compute_variables_: Dict[str, str] = {
-        'start': 'The start time in video time, or none if to start from '
-                 'the beginning of the video',
-        'end': 'The end time in video time, or none if to end at '
-                 'the end of the video',
-        'event_channels': 'The event channels',
+        'start': '',
+        'end': '',
+        'event_channels': '',
     }
 
     _compute_methods_: Dict[str, str] = {
@@ -902,22 +1064,22 @@ class PosAnalysisChannel(TemporalAnalysisChannel):
 
     _colliders: Dict[str, Union[Collide2DPoly, CollideEllipse]]
 
-    start: float = None
+    start: Optional[float] = None
 
-    end: float = None
+    end: Optional[float] = None
 
-    event_channel: str
+    event_channel: Optional[str]
 
     event_channels: List[str]
 
-    zone_channel: str
+    zone_channel: Optional[str]
 
     zone_channels: List[str]
 
     _compute_variables_: Dict[str, str] = {
-        'start': 'The start time in video time, or none if to start from '
+        'start': 'The start time in video time, or none to start from '
                  'the beginning of the video',
-        'end': 'The end time in video time, or none if to end at '
+        'end': 'The end time in video time, or none to end at '
                  'the end of the video',
         'event_channel': 'The event channel',
         'event_channels': 'The event channels',

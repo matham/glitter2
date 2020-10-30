@@ -35,6 +35,7 @@ from glitter2.analysis.export import ExportManager
 from glitter2.channel.channel_widgets import EventChannelWidget, \
     PosChannelWidget, ZoneChannelWidget, ImageDisplayWidgetManager, \
     ZonePainter, RulerWidget
+from glitter2.analysis.export_widget import ExportStatsSelection
 
 __all__ = ('Glitter2App', 'run_app', 'MainView')
 
@@ -108,6 +109,8 @@ class Glitter2App(BaseKivyApp):
     zone_painter: ZonePainter = None
 
     export_manager: ExportManager = None
+
+    export_stats: ExportStatsSelection
 
     ruler: Ruler = None
 
@@ -246,6 +249,8 @@ class Glitter2App(BaseKivyApp):
                 obj.fbind(prop, self.trigger_config_updated)
         self.ruler.fbind(
             'pixels_per_meter', self.trigger_config_updated)
+
+        self.export_stats.show_analysis_options()
 
         Clock.schedule_interval(self._set_window_focus, 0)
         self._set_window_focus()

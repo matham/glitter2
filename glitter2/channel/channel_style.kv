@@ -1,7 +1,5 @@
 #:import Factory kivy.factory.Factory
 
-<BoxShowMore@ShowMoreBehavior+BoxLayout>
-
 <TrackFlatToggleButton@TrackPressingButtonBehavior+FlatToggleButton>
 <TrackFlatImageButton@TrackPressingButtonBehavior+FlatImageButton>
 
@@ -24,14 +22,8 @@
         BoxLayout:
             size_hint_y: None
             height: self.minimum_height
-            FlatImageToggleButton:
+            ExpandButton:
                 id: expand_event
-                height: '34dp'
-                size_hint_y: None
-                state: 'down'
-                scale_down_color: False
-                flat_color: app.theme.accent
-                source: 'flat_arrow_right.png' if self.state == 'normal' else 'flat_arrow_down.png'
             FlatImageButton:
                 scale_down_color: True
                 source: 'flat_plus.png'
@@ -69,14 +61,8 @@
         BoxLayout:
             size_hint_y: None
             height: self.minimum_height
-            FlatImageToggleButton:
+            ExpandButton:
                 id: expand_pos
-                height: '34dp'
-                size_hint_y: None
-                state: 'down'
-                scale_down_color: False
-                flat_color: app.theme.accent
-                source: 'flat_arrow_right.png' if self.state == 'normal' else 'flat_arrow_down.png'
             FlatImageButton:
                 scale_down_color: True
                 source: 'flat_plus.png'
@@ -202,14 +188,8 @@
         BoxLayout:
             size_hint_y: None
             height: self.minimum_height
-            FlatImageToggleButton:
+            ExpandButton:
                 id: expand_zone
-                height: '34dp'
-                size_hint_y: None
-                state: 'down'
-                scale_down_color: False
-                flat_color: app.theme.accent
-                source: 'flat_arrow_right.png' if self.state == 'normal' else 'flat_arrow_down.png'
             FlatLabel:
                 text: 'Zone'
                 flat_color: app.theme.text_primary
@@ -407,14 +387,7 @@
             SizedFlatLabel:
                 text: 'Button type:'
                 center_texture: True
-            FlatSpinner:
-                flat_color: app.theme.text_primary
-                flat_menu_color: app.theme.accent
-                flat_drop_background_color: app.theme.primary_text
-                flat_drop_text_color: app.theme.text_primary
-                flat_border_color: app.theme.divider
-                size_hint: None, None
-                size: self.minimum_width, '34dp'
+            SizedFlatSpinner:
                 values: ['Press to mark', 'Press to toggle mark']
                 text: self.values[1] if root.channel.is_toggle_button else self.values[0]
                 on_text: root.channel.is_toggle_button = self.text == self.values[1]
@@ -545,13 +518,8 @@
         spacing: '5dp'
         padding: '5dp'
         size: self.minimum_size
-        FlatLabel:
+        MinSizeXFlatLabel:
             text: 'Pixels per meter: {:.10g}'.format(app.ruler.pixels_per_meter)
-            size_hint_y: None
-            height: self.texture_size[1]
-            size_hint_min_x: self.texture_size[0]
-            center_texture: True
-            flat_color: app.theme.text_primary
         GridLayout:
             spacing: '5dp'
             size_hint_y: None

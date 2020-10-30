@@ -316,6 +316,8 @@ class ExportManager(EventDispatcher):
 
     export_stats_data = BooleanProperty(False)
 
+    stats_template_path = StringProperty('')
+
     stats_export_path = StringProperty('')
 
     source_contents: List['SourceFile'] = []
@@ -675,6 +677,8 @@ class ExportManager(EventDispatcher):
                 self.stats_export_path = paths[0]
                 if not self.stats_export_path.endswith('.xlsx'):
                     self.stats_export_path += '.xlsx'
+            elif item == 'stats_template_path':
+                self.stats_template_path = paths[0]
 
         return set_path
 

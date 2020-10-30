@@ -125,6 +125,18 @@
 <TickSlider@TickMarker+Slider>
 
 
+<BoxShowMore@ShowMoreBehavior+BoxLayout>
+
+
+<ExpandButton@FlatImageToggleButton>:
+    height: '34dp'
+    size_hint_y: None
+    state: 'down'
+    scale_down_color: False
+    flat_color: app.theme.accent
+    source: 'chevron-right.png' if self.state == 'normal' else 'chevron-down.png'
+
+
 <MinSizeXFlatTextButton@FlatButton>:
     size_hint_y: None
     height: self.texture_size[1]
@@ -136,7 +148,39 @@
     flat_background_color: app.theme.accent
 
 
+<MinSizeXFlatLabel@FlatLabel>:
+    size_hint_y: None
+    height: self.texture_size[1]
+    size_hint_min_x: self.texture_size[0]
+    center_texture: True
+    flat_color: app.theme.text_primary
+
+
+<MinSizeYFlatLabel@FlatLabel>:
+    size_hint_x: None
+    width: self.texture_size[0]
+    size_hint_min_y: self.texture_size[1]
+    center_texture: True
+    flat_color: app.theme.text_primary
+
+
+<MinSizeXYFlatLabel@FlatLabel>:
+    size_hint_min: self.texture_size
+    center_texture: True
+    flat_color: app.theme.text_primary
+
+
 <SizedFlatLabel@FlatLabel>:
     size: self.texture_size
     size_hint: None, None
     flat_color: app.theme.text_primary
+
+
+<SizedFlatSpinner@FlatSpinner>:
+    flat_color: app.theme.text_primary
+    flat_menu_color: app.theme.accent
+    flat_drop_background_color: app.theme.primary_text
+    flat_drop_text_color: app.theme.text_primary
+    flat_border_color: app.theme.divider
+    size_hint: None, None
+    size: self.minimum_size
