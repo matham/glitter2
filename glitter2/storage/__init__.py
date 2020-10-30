@@ -89,7 +89,9 @@ class StorageController(EventDispatcher):
     an existing file.
     """
 
-    _config_props_ = ('root_path', 'backup_interval', 'compression')
+    _config_props_ = (
+        'root_path', 'backup_interval', 'compression', 'last_filename',
+        'last_filename_summary')
 
     root_path = StringProperty('')
 
