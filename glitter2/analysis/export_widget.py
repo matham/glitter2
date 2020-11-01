@@ -1,4 +1,4 @@
-from typing import Type, Optional, Dict, List, Any, Tuple, Union
+from typing import Type, Optional, Dict, List, Any, Tuple, Union, Callable
 from functools import partial
 from bisect import insort_left
 from os.path import exists, join
@@ -9,8 +9,9 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.widget import Widget
 from kivy.properties import DictProperty, ListProperty, StringProperty, \
-    ObjectProperty
+    ObjectProperty, BooleanProperty
 from kivy.clock import Clock
+from kivy.app import App
 
 from more_kivy_app.app import app_error
 
@@ -59,7 +60,8 @@ class ExportStatsSelection(BoxLayout):
 
     zone_channel_names: List[str] = ListProperty()
 
-    widgets_using_channel_name: Dict[str, List[Any]] = {}
+    widgets_using_channel_name: Dict[
+        str, List['SpinnerTextContextBehavior']] = {}
 
     def __init__(self, **kwargs):
         self.new_channel_methods = {'event': [], 'pos': [], 'zone': []}
@@ -102,7 +104,7 @@ class ExportStatsSelection(BoxLayout):
                 continue
 
             for widget in widgets:
-                widget.channel_removed()
+                widget.spinner_item_reference_was_removed()
             del widgets_using_channel_name[name]
 
         if not filename:
@@ -159,7 +161,7 @@ class ExportStatsSelection(BoxLayout):
                 self.global_parameters, self.local_parameters,
                 self.new_channels_widget, self.compute_methods_widget]:
             triggers.append(Clock.create_trigger(
-                partial(self._update_name_width, container), -1))
+                partial(self._update_name_width, container), 0))
 
         self._show_global_variables()
         self._show_local_variables()
@@ -274,7 +276,7 @@ class ExportStatsSelection(BoxLayout):
         # if old name was empty it'd just be an empty list
         widgets_using_name = self.widgets_using_channel_name.pop(old_name, [])
         for user in widgets_using_name:
-            user.channel_removed()
+            user.spinner_item_reference_was_removed()
 
         self.refresh_channel_names(index)
 
@@ -300,9 +302,9 @@ class ExportStatsSelection(BoxLayout):
         widgets_using_name = self.widgets_using_channel_name.get(old_name, [])
         for user in widgets_using_name:
             if name:
-                user.channel_renamed(name)
+                user.spinner_item_reference_was_renamed(name)
             else:
-                user.channel_removed()
+                user.spinner_item_reference_was_removed()
 
         if name:
             # there won't be widgets using the new name - we fixed it
@@ -483,8 +485,6 @@ class ComputeWidgetBase(BoxLayout):
 
     is_variable_optional: Dict[str, bool] = {}
 
-    compute_channel_names: List[str] = ListProperty()
-
     def __init__(
             self, export_stats: ExportStatsSelection, channel_type,
             method_class, name, doc, variables, **kwargs):
@@ -500,14 +500,6 @@ class ComputeWidgetBase(BoxLayout):
         super().__init__(**kwargs)
 
         self.show_variables()
-
-        src = f'{channel_type}_channel_names'
-        self.channel_names_context.fbind(src, self._update_channel_names)
-        self._update_channel_names()
-
-    def _update_channel_names(self, *args):
-        self.compute_channel_names = getattr(
-            self.channel_names_context, f'{self.channel_type}_channel_names')
 
     def get_variable_callback(self, name, widget, value):
         self.variables_values[name] = value
@@ -559,14 +551,14 @@ class ComputeWidgetBase(BoxLayout):
     def delete_method(self):
         # remove_variables_tracking_channel_names
         variables = _sort_dict(self.variables)
-        widgets = self.variables_container.children[::-1][::2]
+        widgets = self.variables_container.children[::-1][1::2]
         for widget, (name, (_, special_arg)) in zip(widgets, variables):
-            val = self.variables_values[name]
-            if isinstance(widget, SpinnerChannelItems):
-                widget.delete_items(self.export_stats)
-            elif special_arg and val:
-                assert isinstance(widget, Factory.VariableSpinner), widget
-                self.export_stats.use_name_of_other_channel(widget, val, '')
+            if isinstance(widget, SpinnerListFromContext):
+                widget.remove_widget_refs()
+            elif special_arg:
+                assert isinstance(
+                    widget, Factory.VariableContextSpinner), widget
+                widget.remove_reference_to_spinner_item()
 
 
 class ComputeNewChannelWidget(ComputeWidgetBase):
@@ -582,7 +574,7 @@ class ComputeNewChannelWidget(ComputeWidgetBase):
 
     compute_channel: Optional[str] = ''
 
-    channel_selector: 'Factory.VariableSpinner' = None
+    channel_selector: 'SpinnerTextContextBehavior' = None
 
     def __init__(self, create_type, **kwargs):
         self.create_type = create_type
@@ -593,8 +585,7 @@ class ComputeNewChannelWidget(ComputeWidgetBase):
         super().delete_method()
 
         if self.channel_selector is not None:
-            self.export_stats.use_name_of_other_channel(
-                self.channel_selector, self.compute_channel or '', '')
+            self.channel_selector.remove_reference_to_spinner_item()
 
 
 class ComputeMethodWidget(ComputeWidgetBase):
@@ -603,7 +594,7 @@ class ComputeMethodWidget(ComputeWidgetBase):
 
     compute_channels: Optional[List[str]] = []
 
-    channel_selector: 'SpinnerChannelItems' = None
+    channel_selector: 'SpinnerListFromContext' = None
 
     def __init__(self, ret_type, **kwargs):
         self.ret_type = ret_type
@@ -619,15 +610,11 @@ class ComputeMethodWidget(ComputeWidgetBase):
         super().delete_method()
 
         if self.channel_selector is not None:
-            self.channel_selector.delete_items(self.export_stats)
+            self.channel_selector.remove_widget_refs()
 
 
 # TODO: add common inheritance for all variables, global, local, etc
 # TODO: add way to distinguish when variable is default vs None
-
-def _watch_spinner_values(context, attr, target, *args):
-    target.values = ['<none>'] + getattr(context, attr)
-
 
 def get_variable_widget(
         context, var_type, special_arg, callback, optional=True, default=True):
@@ -650,22 +637,19 @@ def get_variable_widget(
             # these don't have a default
             return None
 
+        include_none_in_values = default or optional
         if var_type == str:
-            widget = Factory.VariableSpinner()
-            widget.text_autoupdate = False
-            widget.value_callback = partial(callback, widget)
-
-            attr = f'{special_arg}_channel_names'
-            context.fbind(attr, _watch_spinner_values, context, attr, widget)
-            widget.values = ['<none>'] + getattr(context, attr)
+            widget = Factory.VariableContextSpinner(
+                variable_context=context,
+                variable_name=f'{special_arg}_channel_names',
+                variable_value_callback=callback,
+                include_none_in_values=include_none_in_values)
         elif var_type == List[str]:
-            widget = SpinnerChannelItems()
-            widget.context = context
-            widget.update_channels_callback = partial(callback, widget)
-
-            attr = f'{special_arg}_channel_names'
-            context.fbind(attr, _watch_spinner_values, context, attr, widget)
-            widget.values = ['<none>'] + getattr(context, attr)
+            widget = SpinnerListFromContext(
+                variable_context=context,
+                variable_name=f'{special_arg}_channel_names',
+                variable_value_callback=callback,
+                include_none_in_values=include_none_in_values)
         else:
             assert False, (special_arg, var_type)
         return widget
@@ -693,28 +677,144 @@ def get_variable_widget(
     return widget
 
 
-class SpinnerChannelNameItem(BoxLayout):
+class ValueCallbackBehavior:
 
-    text = StringProperty('')
+    variable_value_callback: Optional[Callable] = None
+
+    # TODO: Make default use default_value and differentiate None/default
+    variable_value = ObjectProperty(None, allownone=True)
+
+    def __init__(
+            self, variable_value_callback: Optional[Callable] = None, **kwargs):
+        self.variable_value_callback = variable_value_callback
+        super().__init__(**kwargs)
+
+        self.fbind('variable_value', self._track_variable_value)
+        self._track_variable_value()
+
+    def _track_variable_value(self, *args):
+        if self.variable_value_callback is not None:
+            self.variable_value_callback(self, self.variable_value)
+
+
+class SpinnerTextCallbackBehavior(ValueCallbackBehavior):
+
+    def _track_variable_value(self, *args):
+        value = self.variable_value
+        if value == '<none>' or not value:
+            value = None
+
+        if self.variable_value_callback is not None:
+            self.variable_value_callback(self, value)
+
+
+class SpinnerFromContextBehavior:
+    """Must have a values property (not set here as subclass likely has it).
+    """
+
+    variable_context = None
+
+    variable_name = ''
+
+    include_none_in_values = False
+
+    def __init__(
+            self, variable_context=None, variable_name: str = '',
+            include_none_in_values=False, **kwargs):
+        self.variable_context = variable_context
+        self.variable_name = variable_name
+        self.include_none_in_values = include_none_in_values
+
+        super().__init__(**kwargs)
+
+        Clock.schedule_once(self.bind_variable_values_from_context)
+
+    def bind_variable_values_from_context(self, *args):
+        self.variable_context.fbind(
+            self.variable_name, self._update_values_from_context)
+        self._update_values_from_context()
+
+    def _update_values_from_context(self, *args):
+        values = getattr(self.variable_context, self.variable_name)
+        if self.include_none_in_values:
+            self.values = ['<none>'] + values
+        else:
+            self.values = values
+
+
+class SpinnerTextContextBehavior:
+    """Must have a text property.
+
+    It only updates the text property.
+    """
 
     export_stats: ExportStatsSelection = None
 
-    def __init__(self, export_stats, **kwargs):
-        self.export_stats = export_stats
+    last_text = ''
+
+    def __init__(self, **kwargs):
+        self.export_stats = App.get_running_app().export_stats
         super().__init__(**kwargs)
 
-        self.export_stats.use_name_of_other_channel(self, '', self.text)
+        # register it if it has a name already
+        self.change_spinner_item_referenced()
+
+    def spinner_item_reference_was_removed(self):
+        self.last_text = '<none>'
+        self.text = '<none>'
+
+    def spinner_item_reference_was_renamed(self, new_name):
+        self.last_text = new_name
+        self.text = new_name
+
+    def change_spinner_item_referenced(self):
+        last_text = self.last_text if self.last_text != '<none>' else ''
+        text = self.text if self.text != '<none>' else ''
+        self.export_stats.use_name_of_other_channel(self, last_text, text)
+        self.last_text = text
+
+    def remove_reference_to_spinner_item(self):
+        last_text = self.last_text if self.last_text != '<none>' else ''
+        self.export_stats.use_name_of_other_channel(self, last_text, '')
+        self.last_text = ''
 
 
-class SpinnerChannelItems(BoxLayout):
+class SpinnerChannelNameItem(SpinnerTextContextBehavior, BoxLayout):
 
-    context: Union[ComputeMethodWidget, ] = ObjectProperty(None, rebind=True)
+    text = StringProperty('')
 
-    update_channels_callback = None
+    bold = BooleanProperty(False)
+
+    def spinner_item_reference_was_removed(self):
+        super().spinner_item_reference_was_removed()
+        self.parent.remove_widget(self)
+
+    def remove_reference_to_spinner_item(self):
+        super().remove_reference_to_spinner_item()
+        self.parent.remove_widget(self)
+
+
+class SpinnerListFromContext(
+        SpinnerFromContextBehavior, ValueCallbackBehavior, BoxLayout):
 
     values: List[str] = ListProperty()
 
-    def delete_items(self, export_stats: ExportStatsSelection):
+    def update_values_from_children(self):
+        children = self.ids.channel_selectors.children[::-1]
+        # todo: use default_value
+        self.variable_value = [c.text for c in children] or None
+
+    def remove_widget_refs(self):
+        self.ids.channel_selector.remove_reference_to_spinner_item()
+        widget: SpinnerTextContextBehavior
         for widget in self.ids.channel_selectors.children:
-            export_stats.use_name_of_other_channel(
-                widget, widget.text, '')
+            widget.remove_reference_to_spinner_item()
+
+
+Factory.register('ValueCallbackBehavior', cls=ValueCallbackBehavior)
+Factory.register(
+    'SpinnerTextCallbackBehavior', cls=SpinnerTextCallbackBehavior)
+Factory.register('SpinnerFromContextBehavior', cls=SpinnerFromContextBehavior)
+Factory.register(
+    'SpinnerTextContextBehavior',
+    cls=SpinnerTextContextBehavior)

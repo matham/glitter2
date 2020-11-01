@@ -158,7 +158,7 @@
             on_focus: if not self.focus: app.export_manager.stats_export_path = self.text
             size_hint_min_x: '200dp'
         MinSizeYFlatLabel:
-            text: 'Generate results for sample only:'
+            text: 'Demo export results for sample file:'
         FlatImageButton:
             scale_down_color: True
             source: 'flat_play.png'
@@ -507,7 +507,7 @@
             id: expand_new_channels
             state: 'normal'
         MinSizeXYFlatLabel:
-            text: '(2) Computation that generates intermediate data channel (e.g. instantaneous speed)'
+            text: '(2) Measure that generates intermediate data channel (e.g. instantaneous speed)'
             bold: True
             center_texture: False
     BoxShowMore:
@@ -542,7 +542,7 @@
                     flat_color: app.theme.accent
                     on_release: if new_channel_method.text: root.add_new_channel_computation(new_channel_type_selector.text, new_channel_method.text)
                 MinSizeYFlatLabel:
-                    text: 'Add computation for channel type:'
+                    text: 'Add measure for channel type:'
                 SizedFlatSpinner:
                     id: new_channel_type_selector
                     text_autoupdate: True
@@ -576,7 +576,7 @@
             id: expand_compute_methods
             state: 'normal'
         MinSizeXYFlatLabel:
-            text: '(3) Computation summary (e.g. overall mean speed) to be exported'
+            text: '(3) summary measure (e.g. overall mean speed) to be exported'
             bold: True
             center_texture: False
     BoxShowMore:
@@ -611,7 +611,7 @@
                     flat_color: app.theme.accent
                     on_release: if compute_channel_method.text: root.add_computation(compute_channel_type_selector.text, compute_channel_method.text)
                 MinSizeYFlatLabel:
-                    text: 'Add computation for channel type:'
+                    text: 'Add measure for channel type:'
                 SizedFlatSpinner:
                     id: compute_channel_type_selector
                     text_autoupdate: True
@@ -675,10 +675,13 @@
                 pos: self.parent.pos
         MinSizeYFlatLabel:
             text: f'@ {root.channel_type} channel:' + (' ' * {5: 0, 4: 1, 3: 3}[len(root.channel_type)])
-        VariableSpinner:
+        VariableContextSpinner:
             id: channel_selector
-            value_callback: lambda x: setattr(root, 'compute_channel', x)
-            values: ['<none>'] + root.compute_channel_names
+            bold: True
+            variable_context: root.__self__
+            include_none_in_values: False
+            variable_name: f'{root.channel_type}_channel_names'
+            variable_value_callback: lambda _, x: setattr(root, 'compute_channel', x)
         MinSizeYFlatLabel:
             text: 'New channel name:'
         FlatSizedTextInput:
@@ -757,11 +760,13 @@
                 pos: self.parent.pos
         MinSizeYFlatLabel:
             text: f'@ {root.channel_type} channels:' + (' ' * {5: 0, 4: 1, 3: 3}[len(root.channel_type)])
-        SpinnerChannelItems:
+        SpinnerListFromContext:
             id: channel_selector
-            context: root.__self__
-            update_channels_callback: lambda x: setattr(root, 'compute_channels', x)
-            values: ['<none>'] + root.compute_channel_names
+            bold: True
+            variable_context: app.export_stats
+            include_none_in_values: False
+            variable_name: f'{root.channel_type}_channel_names'
+            variable_value_callback: lambda _, x: setattr(root, 'compute_channels', x)
         MinSizeYFlatLabel:
             text: 'Export ID:'
         FlatSizedTextInput:
@@ -880,26 +885,26 @@
         size_hint_min_x: '100dp'
 
 
-<VariableSpinner@SizedFlatSpinner>:
-    channel_removed: lambda : setattr(self, 'old_text', '<none>') or setattr(self, 'text', '<none>')
-    channel_renamed: lambda x: setattr(self, 'old_text', x) or setattr(self, 'text', x)
+<SpinnerTextOnlyContext@SpinnerTextContextBehavior+SizedFlatSpinner>
     size_hint_min_x: '100dp'
-    old_text: '<none>'
     text: '<none>'
-    on_text:
-        self.value_callback(self.text if self.text != '<none>' else None)
-        app.export_stats.use_name_of_other_channel(self.__self__, self.old_text if self.old_text != '<none>' else '', self.text if self.text != '<none>' else '')
-        self.old_text = self.text
+    text_autoupdate: False
+    on_text: self.change_spinner_item_referenced()
+
+
+<ContextSpinner@SpinnerFromContextBehavior+SpinnerTextOnlyContext>
+
+
+<VariableContextSpinner@SpinnerTextCallbackBehavior+ContextSpinner>:
+    on_text: self.variable_value = self.text
 
 
 <SpinnerChannelNameItem>:
-    channel_removed: lambda : self.parent.remove_widget(self)
-    channel_renamed: lambda x: setattr(self, 'text', x)
     size_hint: None, None
     size: self.minimum_width, '34dp'
     padding: '7dp', 0, 0, 0
     label: label
-    on_text: self.parent.update_channels()
+    on_text: self.parent.spinner_root.update_values_from_children()
     canvas:
         Color:
             rgba: app.theme.primary
@@ -909,21 +914,21 @@
     MinSizeYFlatLabel:
         id: label
         text: root.text
+        bold: root.bold
     FlatImageButton:
         scale_down_color: True
         source: 'flat_delete.png'
         flat_color: app.theme.accent
-        on_release:
-            root.parent.remove_widget(root)
-            app.export_stats.use_name_of_other_channel(root.__self__, label.text, '')
+        on_release: root.remove_reference_to_spinner_item()
 
 
-<SpinnerChannelItems>:
+<SpinnerListFromContext>:
     size_hint_y: None
     height: self.minimum_height
     size_hint_min_x: self.minimum_width
     size_hint_max_x: self.minimum_width - min(dp(200), channel_selectors.width) + channel_selectors.width
     spacing: '5dp'
+    bold: False
     BoxLayout:
         size_hint: None, None
         size: self.minimum_size
@@ -933,9 +938,8 @@
             Rectangle:
                 pos: self.pos
                 size: self.size
-        VariableSpinner:
+        SpinnerTextOnlyContext:
             id: channel_selector
-            value_callback: lambda x: None
             values: root.values
         BoxLayout:
             size_hint_x: None
@@ -952,7 +956,7 @@
                 source: 'flat_plus.png'
                 flat_color: app.theme.accent
                 on_release:
-                    if channel_selector.text != '<none>' and channel_selector.text not in [w.text for w in channel_selectors.children]: channel_selectors.add_widget(Factory.SpinnerChannelNameItem(text=channel_selector.text, export_stats=app.export_stats))
+                    if channel_selector.text != '<none>' and channel_selector.text not in [w.text for w in channel_selectors.children]: channel_selectors.add_widget(Factory.SpinnerChannelNameItem(text=channel_selector.text, bold=root.bold))
     ScrollView:
         id: scroll
         always_overscroll: True
@@ -990,9 +994,9 @@
                     text: '' if channel_selectors.children else '<-Add channels'
             BoxLayout:
                 id: channel_selectors
+                spinner_root: root
                 size_hint_x: None
                 width: self.minimum_width
                 size_hint_min_y: self.minimum_height
-                update_channels: lambda : root.update_channels_callback([child.text for child in self.children[::-1]] or None)
-                on_children: self.update_channels()
+                on_children: root.update_values_from_children()
                 spacing: '1dp'

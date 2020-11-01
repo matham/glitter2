@@ -66,8 +66,8 @@ class default_value(int):
 
 
 DefaultType = Type[default_value]
-DefaultFloat = Union[float, type(None), DefaultType]
-DefaultStr = Union[str, type(None), DefaultType]
+DefaultFloat = Union[float, DefaultType]
+DefaultStr = Union[str, DefaultType]
 not_cached = object()
 
 
@@ -979,8 +979,8 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
         return intervals
 
     def compute_active_duration(
-            self, start: DefaultFloat = default_value,
-            end: DefaultFloat = default_value) -> float:
+            self, start: Optional[DefaultFloat] = default_value,
+            end: Optional[DefaultFloat] = default_value) -> float:
         val, (start, end) = self.get_cache(
             '_active_duration', start=start, end=end)
         if val is not not_cached:
@@ -992,8 +992,8 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
         return val
 
     def compute_delay_to_first(
-            self, start: DefaultFloat = default_value,
-            end: DefaultFloat = default_value) -> float:
+            self, start: Optional[DefaultFloat] = default_value,
+            end: Optional[DefaultFloat] = default_value) -> float:
         val, (start, end) = self.get_cache(
             '_delay_to_first', start=start, end=end)
         if val is not not_cached:
@@ -1006,8 +1006,8 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
         return val
 
     def compute_scored_duration(
-            self, start: DefaultFloat = default_value,
-            end: DefaultFloat = default_value) -> float:
+            self, start: Optional[DefaultFloat] = default_value,
+            end: Optional[DefaultFloat] = default_value) -> float:
         val, (start, end) = self.get_cache(
             '_scored_duration', start=start, end=end)
         if val is not not_cached:
@@ -1019,8 +1019,8 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
         return val
 
     def compute_event_count(
-            self, start: DefaultFloat = default_value,
-            end: DefaultFloat = default_value) -> int:
+            self, start: Optional[DefaultFloat] = default_value,
+            end: Optional[DefaultFloat] = default_value) -> int:
         val, (start, end) = self.get_cache(
             '_event_count', start=start, end=end)
         if val is not not_cached:
@@ -1170,9 +1170,9 @@ class PosAnalysisChannel(TemporalAnalysisChannel):
 
     def compute_mean_center_distance(
             self, zone_channel: DefaultStr,
-            event_channel: DefaultStr = default_value,
-            start: DefaultFloat = default_value,
-            end: DefaultFloat = default_value) -> float:
+            event_channel: Optional[DefaultStr] = default_value,
+            start: Optional[DefaultFloat] = default_value,
+            end: Optional[DefaultFloat] = default_value) -> float:
         val, (zone_channel, event_channel, start, end) = self.get_cache(
             '_mean_center_distance', zone_channel=zone_channel,
             event_channel=event_channel, start=start, end=end)
@@ -1191,9 +1191,9 @@ class PosAnalysisChannel(TemporalAnalysisChannel):
         return val
 
     def compute_distance_traveled(
-            self, event_channel: DefaultStr = default_value,
-            start: DefaultFloat = default_value,
-            end: DefaultFloat = default_value) -> float:
+            self, event_channel: Optional[DefaultStr] = default_value,
+            start: Optional[DefaultFloat] = default_value,
+            end: Optional[DefaultFloat] = default_value) -> float:
         val, (event_channel, start, end) = self.get_cache(
             '_distance_traveled', event_channel=event_channel, start=start,
             end=end)
@@ -1214,9 +1214,9 @@ class PosAnalysisChannel(TemporalAnalysisChannel):
         return val
 
     def compute_mean_speed(
-            self, event_channel: DefaultStr = default_value,
-            start: DefaultFloat = default_value,
-            end: DefaultFloat = default_value) -> float:
+            self, event_channel: Optional[DefaultStr] = default_value,
+            start: Optional[DefaultFloat] = default_value,
+            end: Optional[DefaultFloat] = default_value) -> float:
         val, (event_channel, start, end) = self.get_cache(
             '_mean_speed', event_channel=event_channel, start=start,
             end=end)
