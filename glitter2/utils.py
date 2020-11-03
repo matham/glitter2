@@ -5,6 +5,7 @@ Used across glitter2.
 """
 
 import re
+from itertools import chain
 
 from kivy.animation import Animation
 from kivy.properties import NumericProperty, BooleanProperty
@@ -16,7 +17,7 @@ __all__ = ('fix_name', 'LoadingAnim')
 _name_pat = re.compile('^(.+)-([0-9]+)$')
 
 
-def fix_name(name, *names):
+def fix_name(name, *names, ignore_case=True):
     '''Fixes the name so that it is unique among the names in ``names``.
 
     :Params:
@@ -44,7 +45,14 @@ def fix_name(name, *names):
 ['bole', 'cole'])
         'troll-3'
     '''
-    if not any((name in n for n in names)):
+    normalized_name = name.lower()
+    if ignore_case:
+        normalized_names = list(chain(
+            *(map(str.lower, name_list) for name_list in names)))
+    else:
+        normalized_names = list(chain(*names))
+
+    if normalized_name not in normalized_names:
         return name
 
     m = re.match(_name_pat, name)
@@ -54,9 +62,12 @@ def fix_name(name, *names):
         i = int(i)
 
     new_name = '{}-{}'.format(name, i)
-    while any((new_name in n for n in names)):
+    normalized_new_name = new_name.lower()
+    while normalized_new_name in normalized_names:
         i += 1
         new_name = '{}-{}'.format(name, i)
+        normalized_new_name = new_name.lower()
+
     return new_name
 
 

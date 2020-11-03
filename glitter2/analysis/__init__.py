@@ -344,6 +344,8 @@ class FileDataAnalysis:
 
     channels_metadata: Dict[str, dict] = {}
 
+    normalized_names_map: Dict[str, str] = {}
+
     missed_timestamps = False
 
     missing_timestamp_values = []
@@ -358,6 +360,7 @@ class FileDataAnalysis:
         self.pos_channels_data = {}
         self.zone_channels_shapes = {}
         self.channels_metadata = {}
+        self.normalized_names_map = {}
 
     def flatten_data(self, data_arrays) -> np.ndarray:
         ordered_indices = self.data_file.timestamp_intervals_ordered_keys
@@ -408,6 +411,7 @@ class FileDataAnalysis:
             self.missing_timestamp_values = []
 
         metadata = self.channels_metadata
+        normalized_names_map = self.normalized_names_map
         for channels_data, src_channels in (
                 (self.event_channels_data, data_file.event_channels),
                 (self.pos_channels_data, data_file.pos_channels),
@@ -418,6 +422,7 @@ class FileDataAnalysis:
                 if channels and name not in channels:
                     continue
 
+                normalized_names_map[name.lower()] = name
                 metadata[name] = m
                 channels_data[name] = None
 
@@ -625,6 +630,14 @@ class FileDataAnalysis:
         self.channels_metadata[name] = d
         self.zone_channels_shapes[name] = shape
 
+    def normalized_name(self, name):
+        normalized_name = name.lower()
+        names = self.normalized_names_map
+        if normalized_name not in names:
+            raise KeyError(f'No channel named "{name}"')
+
+        return names[normalized_name]
+
 
 class AnalysisChannel:
     """compute_variables and compute_methods are per-class."""
@@ -667,10 +680,11 @@ class AnalysisChannel:
     def __init__(self, name: str, analysis_object: FileDataAnalysis, **kwargs):
         self.analysis_object = analysis_object
         self.name = name
-        try:
-            self.metadata = analysis_object.channels_metadata[name]
-        except KeyError:
-            raise KeyError(f'No channel with name "{name}" found in the file')
+        self.metadata = analysis_object.channels_metadata[
+            analysis_object.normalized_name(name)]
+
+    def normalized_name(self, name):
+        return self.analysis_object.normalized_name(name)
 
     def compute_named_statistics(self, stat_options: Dict[str, dict]) -> List:
         res = []
@@ -822,9 +836,10 @@ class TemporalAnalysisChannel(AnalysisChannel):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.timestamps = self.analysis_object.timestamps
+        norm = self.analysis_object.normalized_name
         self.data = getattr(
             self.analysis_object,
-            f'{self.analysis_type}_channels_data')[self.name]
+            f'{self.analysis_type}_channels_data')[norm(self.name)]
 
     @staticmethod
     def _get_active_intervals(
@@ -1045,8 +1060,9 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
     def compute_combine_events_and(
             self, event_channels: List[str]) -> Tuple[np.ndarray, dict]:
         channels_data = self.analysis_object.event_channels_data
+        norm = self.analysis_object.normalized_name
 
-        arr = [channels_data[name] for name in event_channels]
+        arr = [channels_data[norm(name)] for name in event_channels]
         arr.append(self.data)
 
         return np.logical_and.reduce(arr, axis=0), {}
@@ -1054,8 +1070,9 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
     def compute_combine_events_or(
             self, event_channels: List[str]) -> Tuple[np.ndarray, dict]:
         channels_data = self.analysis_object.event_channels_data
+        norm = self.analysis_object.normalized_name
 
-        arr = [channels_data[name] for name in event_channels]
+        arr = [channels_data[norm(name)] for name in event_channels]
         arr.append(self.data)
 
         return np.logical_or.reduce(arr, axis=0), {}
@@ -1132,7 +1149,9 @@ class PosAnalysisChannel(TemporalAnalysisChannel):
     def get_collider(
             self, zone_name: str) -> Union[Collide2DPoly, CollideEllipse]:
         if zone_name not in self._colliders:
-            shape = self.analysis_object.zone_channels_shapes[zone_name]
+            norm = self.analysis_object.normalized_name
+
+            shape = self.analysis_object.zone_channels_shapes[norm(zone_name)]
             self._colliders[zone_name] = \
                 ZoneAnalysisChannel.collider_from_shape(shape)
 
@@ -1148,10 +1167,13 @@ class PosAnalysisChannel(TemporalAnalysisChannel):
         if val is not not_cached:
             return val
 
+        norm = self.analysis_object.normalized_name
+
         data = self.data[:, 0] != -1
         if event_channel:
             data = np.logical_and(
-                data, self.analysis_object.event_channels_data[event_channel])
+                data,
+                self.analysis_object.event_channels_data[norm(event_channel)])
 
         intervals = self._get_active_intervals(
             data, self.timestamps, start=start, end=end)
@@ -1160,9 +1182,10 @@ class PosAnalysisChannel(TemporalAnalysisChannel):
 
     def compute_event_from_pos(
             self, event_channels: List[str]) -> Tuple[np.ndarray, dict]:
+        norm = self.analysis_object.normalized_name
         channels_data = self.analysis_object.event_channels_data
 
-        arr = [channels_data[name] for name in event_channels]
+        arr = [channels_data[norm(name)] for name in event_channels]
         arr.append(self.data[:, 0] != -1)
 
         return np.logical_or.reduce(arr, axis=0), {}
@@ -1269,7 +1292,8 @@ class ZoneAnalysisChannel(AnalysisChannel):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.shape = self.analysis_object.zone_channels_shapes[self.name]
+        norm = self.analysis_object.normalized_name
+        self.shape = self.analysis_object.zone_channels_shapes[norm(self.name)]
 
     @staticmethod
     def collider_from_shape(
