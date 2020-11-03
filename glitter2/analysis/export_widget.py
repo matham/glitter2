@@ -783,16 +783,39 @@ class SpinnerListFromContext(
 
     values: List[str] = ListProperty()
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.fbind('values', self.update_shown_values)
+
     def update_values_from_children(self):
         children = self.ids.channel_selectors.children[::-1]
         # todo: use default_value
         self.variable_value = [c.text for c in children] or None
+
+        self.update_shown_values()
 
     def remove_widget_refs(self):
         self.ids.channel_selector.remove_reference_to_spinner_item()
         widget: SpinnerTextContextBehavior
         for widget in self.ids.channel_selectors.children:
             widget.remove_reference_to_spinner_item()
+
+    def update_shown_values(self, *args):
+        spinner = self.ids.channel_selector
+        used_values = self.variable_value or []
+
+        values = [v for v in self.values if v not in used_values]
+        spinner.values = values
+
+        if spinner.text == '<none>' or not values or values == ['<none>']:
+            return
+        if spinner.text not in used_values:
+            return
+
+        if values[0] == '<none>':
+            spinner.text = values[1]
+        else:
+            spinner.text = values[0]
 
 
 Factory.register('ValueCallbackBehavior', cls=ValueCallbackBehavior)
