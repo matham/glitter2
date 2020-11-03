@@ -41,7 +41,9 @@ def _filter_default(type_hint: Type) -> List[Type]:
 
 known_arg_types = {
     int, float, str, List[int], List[float], List[str], type(None)}
-known_ret_types = {int, float, str}
+known_ret_types = {
+    int, float, str, List[int], List[float], List[str], Tuple[int],
+    Tuple[float], Tuple[str]}
 
 
 def is_type_unknown(known_types, query):
@@ -936,20 +938,26 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
 
     _compute_methods_: Dict[str, str] = {
         'active_duration':
-            'The total duration in seconds that the event was active',
+            'The total duration, in seconds, that the event was ON/active',
         'delay_to_first':
-            'The delay relative to the start of the video of the first '
+            'The delay, relative to the start of the video, of the first '
             'occurrence of the event',
         'scored_duration':
             'The duration of the video or the section that was analyzed, if '
-            'only part of the data is exported',
-        'event_count': 'The number of time the event occurred',
+            'only a interval of the data is exported',
+        'event_count': 'The number of times the event occurred',
         'combine_events_and':
-            'Creates a new event channel from the given event channel, where '
-            'it is active if "all" the channels are active',
+            'Creates a new event channel from the listed event channels, '
+            'where the new channel is active if "all" of the listed channels '
+            'are active',
         'combine_events_or':
-            'Creates a new event channel from the given event channel, where '
-            'it is active if "any" the channels are active',
+            'Creates a new event channel from the listed event channels, '
+            'where the new channel is active if "any" of the listed channels '
+            'are active',
+        'event_intervals':
+            'The list of timestamps of the start and end of each active '
+            'interval. Given as [s1, e1, s2, e2, ...], where s and e indicate '
+            'the start and end timestamps of the intervals, if any',
     }
 
     _channel_creating_methods_: Dict[str, str] = {
@@ -1025,6 +1033,15 @@ class EventAnalysisChannel(TemporalAnalysisChannel):
         self._event_count = val, (start, end)
         return val
 
+    def compute_event_intervals(
+            self, start: Optional[DefaultFloat] = default_value,
+            end: Optional[DefaultFloat] = default_value) -> List[float]:
+        start, end = self.get_args(start=start, end=end)
+
+        intervals = self.get_active_intervals(start, end)['intervals']
+        items = np.reshape(intervals, intervals.shape[0] * 2)
+        return items.tolist()
+
     def compute_combine_events_and(
             self, event_channels: List[str]) -> Tuple[np.ndarray, dict]:
         channels_data = self.analysis_object.event_channels_data
@@ -1071,33 +1088,34 @@ class PosAnalysisChannel(TemporalAnalysisChannel):
     zone_channels: List[str]
 
     _compute_variables_: Dict[str, str] = {
-        'start': 'The start time in video time, or none to start from '
+        'start': 'The start time in video time, or nothing to start from '
                  'the beginning of the video',
-        'end': 'The end time in video time, or none to end at '
+        'end': 'The end time in video time, or nothing to end at '
                  'the end of the video',
-        'event_channel': 'The event channel',
-        'event_channels': 'The event channels',
-        'zone_channel': 'The zone channel',
-        'zone_channels': 'The zone channels',
+        'event_channel': 'The event channel to use',
+        'event_channels': 'The listed event channels to use',
+        'zone_channel': 'The zone channel to use',
+        'zone_channels': 'The listed zone channels to use',
     }
 
     _compute_methods_: Dict[str, str] = {
         'event_from_pos':
             'Creates a new event channel from the pos channel, where '
-            'it is active for time t if the channel was coded with a position'
-            ' for time t',
+            'the new channel is active for time "t" if the channel was coded '
+            'with a position for time t',
         'pos_in_any_zone':
-            'Creates a new event channel where it is active for time t if the '
-            'position is in any of the given zones for time t',
+            'Creates a new event channel where the new channel is active for '
+            'time "t" if the position is in any of the listed zones for '
+            'time "t"',
         'mean_center_distance':
-            'The mean distance of the channel to the zone, while the event '
-            'channel is active, if an event channel is selected',
+            'The mean distance of the channel to the named zone, while the '
+            'event channel is active, if an event channel was selected',
         'distance_traveled':
             'The total distance the channel traveled in pixels while the '
-            'event, if given, is active',
+            'event channel is active, if an event channel was selected',
         'mean_speed':
             'The mean speed of the channel in pixels per second while the '
-            'event, if given, is active',
+            'event channel is active, if an event channel was selected',
     }
 
     _channel_creating_methods_: Dict[str, str] = {
@@ -1245,8 +1263,8 @@ class ZoneAnalysisChannel(AnalysisChannel):
     _collider = None
 
     _compute_methods_: Dict[str, str] = {
-        'area': 'Computes the area of the zone in pixels',
-        'centroid': 'Computes the centroid of the zone in pixels',
+        'area': 'The area of the zone in pixels',
+        'centroid': 'The centroid of the zone in pixels',
     }
 
     def __init__(self, **kwargs):
@@ -1285,7 +1303,7 @@ class ZoneAnalysisChannel(AnalysisChannel):
     def compute_area(self) -> float:
         return self.collider.get_area()
 
-    def compute_centroid(self) -> float:
+    def compute_centroid(self) -> Tuple[float]:
         return self.collider.get_centroid()
 
 
