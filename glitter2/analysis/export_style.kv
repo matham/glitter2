@@ -142,8 +142,8 @@
             background_color: app.theme.primary_light
             hint_text: 'Data file template'
             on_focus:
+                if not self.focus and app.export_manager.stats_template_path != self.text: export_stats.set_template_file(self.text)
                 if not self.focus: app.export_manager.stats_template_path = self.text
-                if not self.focus: export_stats.set_template_file(self.text)
             size_hint_min_x: '200dp'
     BoxLayout:
         size_hint_y: None
