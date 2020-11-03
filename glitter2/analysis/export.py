@@ -520,11 +520,6 @@ class ExportManager(EventDispatcher):
         if self.thread_has_job:
             raise TypeError('Cannot start processing while already processing')
 
-        self.thread_has_job += 1
-        # the thread is not currently processing, so it's safe to reset it
-        self.stop_op = False
-        self.currently_processing = True
-
         self.num_processed_files = 0
         self.processed_size = 0
         self.fraction_done = 0
@@ -546,6 +541,11 @@ class ExportManager(EventDispatcher):
                 item.item_index = 0
                 self.source_contents = [item]
                 self.recycle_view.data = [item.get_gui_data()]
+
+        self.thread_has_job += 1
+        # the thread is not currently processing, so it's safe to reset it
+        self.stop_op = False
+        self.currently_processing = True
 
         self.internal_thread_queue.put(('process_files', None))
 
