@@ -2,7 +2,8 @@
 ===============
 
 """
-from typing import Dict, List
+from typing import Dict, List, Optional
+from itertools import chain
 from os.path import dirname, join
 import os
 import sys
@@ -12,31 +13,28 @@ import time
 from queue import Queue, Empty
 import pathlib
 import nixio as nix
-import numpy as np
 
 from kivy.event import EventDispatcher
 from kivy.properties import BooleanProperty, NumericProperty, StringProperty
 from kivy.clock import Clock
 from kivy.lang import Builder
+from kivy.app import App
 from kivy.logger import Logger
 
 from more_kivy_app.app import app_error, report_exception_in_app
 from base_kivy_app.utils import pretty_space
 
 from glitter2.storage.imports.legacy import LegacyFileReader
-from glitter2.analysis import FileDataAnalysis
-from glitter2.utils import fix_name
+from glitter2.analysis import FileDataAnalysis, AnalysisSpec
 from glitter2.storage.data_file import DataFile
 from glitter2.player import GlitterPlayer
 from glitter2.storage.imports.clever_sys import read_clever_sys_file, \
     add_clever_sys_data_to_file
-from glitter2.storage.imports import map_frame_rate_to_timestamps
-from glitter2.channel import PosChannel, ZoneChannel
 
 __all__ = ('SourceFile', 'ExportManager')
 
 
-class SourceFile(object):
+class SourceFile:
 
     filename: pathlib.Path = None
 
@@ -58,8 +56,6 @@ class SourceFile(object):
 
     exception = None
 
-    accumulated_stats = None
-
     def __init__(self, filename: pathlib.Path, source_root: pathlib.Path):
         super(SourceFile, self).__init__()
         self.filename = filename
@@ -76,29 +72,12 @@ class SourceFile(object):
             'source_obj': self,
         }
 
-    def prepare_process_file(self):
+    def pre_process(self):
         self.exception = None
-        self.accumulated_stats = None
+        self.result = ''
+        self.status = ''
 
-    def process_file(
-            self, source_file: pathlib.Path = None,
-            root_raw_data_export_path: str = None,
-            raw_dump_zone_collider: bool = False,
-            **kwargs):
-        try:
-            if source_file is None:
-                source_file = self.filename
-
-            self._export_file(
-                source_file,
-                root_raw_data_export_path=root_raw_data_export_path,
-                raw_dump_zone_collider=raw_dump_zone_collider, **kwargs)
-        except BaseException as e:
-            self._post_process(e)
-        else:
-            self._post_process()
-
-    def _post_process(self, e=None):
+    def post_process(self, e=None):
         if e is None:
             self.result = ''
             self.status = 'done'
@@ -109,55 +88,141 @@ class SourceFile(object):
             self.status = 'failed'
             self.exception = str(e), tb
 
-    def _export_file(
-            self, filename: pathlib.Path,
-            root_raw_data_export_path: str = None,
-            raw_dump_zone_collider: bool = False,
-            **kwargs):
-        analysis = FileDataAnalysis(filename=str(filename))
+    def reset_status(self):
+        self.exception = None
+        self.result = ''
+        self.status = ''
 
+
+class FileProcessBase:
+
+    def init_process(self):
+        pass
+
+    def process_file(self, src: SourceFile):
+        src.pre_process()
         try:
-            analysis.load_data()
-
-            if root_raw_data_export_path:
-                root = pathlib.Path(root_raw_data_export_path)
-                raw_filename = root.joinpath(
-                    self.filename.relative_to(
-                        self.source_root)).with_suffix('.xlsx')
-                analysis.export_raw_data_to_excel(
-                    str(raw_filename),
-                    dump_zone_collider=raw_dump_zone_collider)
-
-            self.accumulated_stats = analysis.get_named_statistics(**kwargs)
-        finally:
-            analysis.close()
-
-    def upgrade_legacy_file(self, legacy_upgrade_path: str):
-        try:
-            legacy_upgrade_path = pathlib.Path(legacy_upgrade_path)
-            target_filename = legacy_upgrade_path.joinpath(
-                self.filename.relative_to(self.source_root))
-
-            if not target_filename.parent.exists():
-                os.makedirs(str(target_filename.parent))
-            if target_filename.exists():
-                raise ValueError('"{}" already exists'.format(target_filename))
-
-            legacy_reader = LegacyFileReader()
-            nix_file = nix.File.open(
-                str(target_filename), nix.FileMode.Overwrite)
-            try:
-                legacy_reader.upgrade_legacy_file(str(self.filename), nix_file)
-            finally:
-                nix_file.close()
+            res = self._process_file(src)
         except BaseException as e:
-            self._post_process(e)
+            src.post_process(e)
+            res = None
         else:
-            self._post_process()
-            return target_filename
+            src.post_process()
+
+        return res
+
+    def _process_file(self, src: SourceFile):
+        raise NotImplementedError
+
+    def finish_process(self):
+        pass
+
+
+class SummeryStatsExporter(FileProcessBase):
+
+    spec: AnalysisSpec = None
+
+    export_filename: 'str' = ''
+
+    results: list = []
+
+    def __init__(self, spec, export_filename, **kwargs):
+        super().__init__(**kwargs)
+        self.spec = spec
+        self.export_filename = export_filename
+
+        if not export_filename:
+            raise ValueError('No export path specified for the stats data')
+        if pathlib.Path(export_filename).exists():
+            raise ValueError('"{}" already exists'.format(export_filename))
+
+        self.results = []
+
+    def _process_file(self, src: SourceFile):
+        spec = self.spec
+        with FileDataAnalysis(filename=str(src.filename)) as data_file:
+            data_file.load_file_data()
+
+            self.results.append(data_file.compute_data_summary(spec))
+
+    def finish_process(self):
+        results = list(chain(*self.results))
+        FileDataAnalysis.export_computed_data_summary(
+            self.export_filename, results)
+
+
+class RawDataExporter(FileProcessBase):
+
+    dump_zone_collider = False
+
+    data_export_root: str = ''
+
+    def __init__(
+            self, dump_zone_collider=False, data_export_root='',
+            **kwargs):
+        super().__init__(**kwargs)
+        self.dump_zone_collider = dump_zone_collider
+        self.data_export_root = data_export_root
+
+        if not data_export_root:
+            raise ValueError('No export path specified for the raw data')
+
+    def _process_file(self, src: SourceFile):
+        with FileDataAnalysis(filename=str(src.filename)) as data_file:
+            data_file.load_file_data()
+
+            root = pathlib.Path(self.data_export_root)
+            filename = root.joinpath(
+                src.filename.relative_to(
+                    src.source_root)).with_suffix('.xlsx')
+            data_file.export_raw_data_to_excel(
+                str(filename), dump_zone_collider=self.dump_zone_collider)
+
+
+class LegacyGlitterImporter(FileProcessBase):
+
+    output_files_root: str = ''
+
+    def __init__(self, output_files_root='', **kwargs):
+        super().__init__(**kwargs)
+        self.output_files_root = output_files_root
+
+        if not output_files_root:
+            raise ValueError('No export path specified for imported H5 files')
+
+    def _process_file(self, src: SourceFile):
+        output_files_root = pathlib.Path(self.output_files_root)
+        target_filename = output_files_root.joinpath(
+            src.filename.relative_to(src.source_root))
+
+        if not target_filename.parent.exists():
+            os.makedirs(str(target_filename.parent))
+        if target_filename.exists():
+            raise ValueError(f'"{target_filename}" already exists')
+
+        legacy_reader = LegacyFileReader()
+        nix_file = nix.File.open(
+            str(target_filename), nix.FileMode.Overwrite)
+        try:
+            legacy_reader.upgrade_legacy_file(str(src.filename), nix_file)
+        finally:
+            nix_file.close()
+        return target_filename
+
+
+class CleverSysImporter(FileProcessBase):
+
+    output_files_root: str = ''
+
+    def __init__(self, output_files_root='', **kwargs):
+        super().__init__(**kwargs)
+        self.output_files_root = output_files_root
+
+        if not output_files_root:
+            raise ValueError('No export path specified for imported H5 files')
 
     def _create_or_open_data_file(
-            self, target_filename, video_file, width, height):
+            self, src: SourceFile, target_filename, video_file, width, height):
         existed = target_filename.exists()
         nix_file = nix.File.open(str(target_filename), nix.FileMode.ReadWrite)
 
@@ -168,12 +233,12 @@ class SourceFile(object):
                 if not data_file.saw_all_timestamps:
                     raise ValueError(
                         f'Did not watch all video frames for '
-                        f'"{self.filename}" so we add import data')
+                        f'"{src.filename}" so we add import data')
 
                 metadata = data_file.video_metadata_dict
                 if tuple(metadata['src_vid_size']) != (width, height):
                     raise ValueError(
-                        f'CleverSys data file\'s ({self.filename}) video size '
+                        f'CleverSys data file\'s ({src.filename}) video size '
                         f'does not match the original video file that created '
                         f'the h5 data file ({target_filename}). '
                         f'Please make sure to open the correct video file')
@@ -196,57 +261,67 @@ class SourceFile(object):
 
         return nix_file, data_file
 
-    def import_clever_sys_file(self, output_path: str):
+    def _process_file(self, src: SourceFile):
+        data, video_metadata, zones, calibration = read_clever_sys_file(
+            src.filename)
+
+        video_file = pathlib.Path(video_metadata['video_file'])
+        target_filename = pathlib.Path(self.output_files_root).joinpath(
+            video_file.relative_to(video_file.parts[0])).with_suffix('.h5')
+
+        if not target_filename.parent.exists():
+            os.makedirs(str(target_filename.parent))
+
+        w = video_metadata['width']
+        h = video_metadata['height']
+        nix_file, data_file = self._create_or_open_data_file(
+            src, target_filename, video_file, w, h)
+
         try:
-            data, video_metadata, zones, calibration = read_clever_sys_file(
-                self.filename)
+            add_clever_sys_data_to_file(
+                data_file, data, video_metadata, zones, calibration)
+        finally:
+            nix_file.close()
 
-            video_file = pathlib.Path(video_metadata['video_file'])
-            target_filename = pathlib.Path(output_path).joinpath(
-                video_file.relative_to(video_file.parts[0])).with_suffix('.h5')
+        return target_filename
 
-            if not target_filename.parent.exists():
-                os.makedirs(str(target_filename.parent))
 
-            w = video_metadata['width']
-            h = video_metadata['height']
-            nix_file, data_file = self._create_or_open_data_file(
-                target_filename, video_file, w, h)
+class CSVImporter(FileProcessBase):
 
-            try:
-                add_clever_sys_data_to_file(
-                    data_file, data, video_metadata, zones, calibration)
-            finally:
-                nix_file.close()
+    output_files_root: str = ''
 
-        except BaseException as e:
-            self._post_process(e)
-        else:
-            self._post_process()
-            return target_filename
+    def __init__(self, output_files_root='', **kwargs):
+        super().__init__(**kwargs)
+        self.output_files_root = output_files_root
 
-    def import_tracking_csv_file(self, output_path: str):
+        if not output_files_root:
+            raise ValueError('No export path specified for imported H5 files')
+
+    def _process_file(self, src: SourceFile):
+        video_file = pathlib.Path('')
+        target_filename = pathlib.Path(self.output_files_root).joinpath(
+            video_file.relative_to(video_file.parts[0])).with_suffix('.h5')
+
+        if not target_filename.parent.exists():
+            os.makedirs(str(target_filename.parent))
+        if target_filename.exists():
+            raise ValueError(f'"{target_filename}" already exists')
+
+        nix_file, data_file = None, None
         try:
-            output_path = pathlib.Path(output_path)
-            target_filename = output_path.joinpath(
-                self.filename.relative_to(self.source_root))
+            pass
+        finally:
+            nix_file.close()
 
-            if not target_filename.parent.exists():
-                os.makedirs(str(target_filename.parent))
-            if target_filename.exists():
-                pass
-        except BaseException as e:
-            self._post_process(e)
-        else:
-            self._post_process()
-            return target_filename
+        return target_filename
 
 
 class ExportManager(EventDispatcher):
 
     _config_props_ = (
         'source', 'source_match_suffix', 'generated_file_output_path',
-        'root_raw_data_export_path', 'stats_export_path')
+        'root_raw_data_export_path', 'stats_export_path',
+        'raw_dump_zone_collider')
 
     num_files = NumericProperty(0)
 
@@ -282,6 +357,8 @@ class ExportManager(EventDispatcher):
 
     currently_processing = BooleanProperty(False)
 
+    source_processing = BooleanProperty(False)
+
     stop_op = False
 
     _start_processing_time = 0
@@ -296,25 +373,13 @@ class ExportManager(EventDispatcher):
 
     generated_file_output_path = StringProperty('')
 
-    upgrade_legacy_files = BooleanProperty(False)
+    batch_mode = 'export_raw'
 
-    import_clever_sys_files = BooleanProperty(False)
-
-    import_tracking_csv_files = BooleanProperty(False)
-
-    events_stats: Dict[str, dict] = {}
-
-    pos_stats: Dict[str, dict] = {}
-
-    zones_stats: Dict[str, dict] = {}
-
-    export_raw_data = BooleanProperty(False)
+    batch_export_mode = 'legacy'
 
     root_raw_data_export_path = StringProperty('')
 
     raw_dump_zone_collider = BooleanProperty(True)
-
-    export_stats_data = BooleanProperty(False)
 
     stats_template_path = StringProperty('')
 
@@ -322,7 +387,9 @@ class ExportManager(EventDispatcher):
 
     source_contents: List['SourceFile'] = []
 
-    source_processing = BooleanProperty(False)
+    spec: Optional[AnalysisSpec] = None
+
+    currently_open_temp_h5_file: Optional[pathlib.Path] = None
 
     def __init__(self, **kwargs):
         super(ExportManager, self).__init__(**kwargs)
@@ -386,32 +453,50 @@ class ExportManager(EventDispatcher):
         :param source: Source file/directory.
         """
         source = pathlib.Path(source)
-        self.source = source = source.expanduser().absolute()
-        self.source_viz = str(source)
         if not source.is_dir():
             raise ValueError
 
+        self.source = source = source.expanduser().absolute()
+        self.source_viz = str(source)
+        self.clear_sources()
+
+    def clear_sources(self):
+        if self.thread_has_job:
+            raise TypeError('Cannot change source while already processing')
+
         self.source_contents = []
+        if self.recycle_view is not None:
+            self.recycle_view.data = []
 
     @app_error
     def request_refresh_source_contents(self):
         if self.thread_has_job:
             raise TypeError('Cannot start processing while already processing')
+
+        self.clear_sources()
+        filename = App.get_running_app().storage_controller.backup_filename
+        self.currently_open_temp_h5_file = None
+        if filename:
+            self.currently_open_temp_h5_file = pathlib.Path(filename)
+
         self.thread_has_job += 1
         self.stop_op = False
         self.source_processing = True
-        self.source_contents = []
         self.internal_thread_queue.put(
             ('refresh_source_contents',
              (self.source, self.source_match_suffix)))
 
-    def refresh_source_contents(self, source, match_suffix):
+    def refresh_source_contents(self, source: pathlib.Path, match_suffix: str):
         contents = []
         total_size = 0
         num_files = 0
+        temp_h5 = self.currently_open_temp_h5_file
+
         for base in source.glob('**'):
+            # always be ready to stop
             if self.stop_op:
                 return [], 0, 0, []
+
             for file in base.glob(match_suffix):
                 if self.stop_op:
                     return [], 0, 0, []
@@ -419,18 +504,22 @@ class ExportManager(EventDispatcher):
                 if not file.is_file():
                     continue
 
+                if temp_h5 is not None and temp_h5 == file:
+                    continue
+
                 item = SourceFile(filename=file, source_root=source)
                 num_files += 1
                 total_size += item.file_size
                 contents.append(item)
 
-        items = self.flatten_files(contents, set_index=True)
-        return contents, total_size, num_files, items
+        gui_data = self.set_src_data_index(contents, set_index=True)
+        return contents, total_size, num_files, gui_data
 
     @app_error
-    def request_export_files(self):
+    def request_process_files(self, summary_template_file=None):
         if self.thread_has_job:
             raise TypeError('Cannot start processing while already processing')
+
         self.thread_has_job += 1
         # the thread is not currently processing, so it's safe to reset it
         self.stop_op = False
@@ -444,12 +533,28 @@ class ExportManager(EventDispatcher):
         self.num_skipped_files = 0
         self._start_processing_time = 0
         self.num_failed_files = 0
-        self.internal_thread_queue.put(('export_files', None))
+
+        self.spec = None
+        if self.batch_mode == 'export_stats':
+            self.spec = App.get_running_app().export_stats.get_analysis_spec()
+
+            if summary_template_file is not None:
+                template = pathlib.Path(summary_template_file)
+                item = SourceFile(
+                    filename=template, source_root=template.parent)
+
+                item.item_index = 0
+                self.source_contents = [item]
+                self.recycle_view.data = [item.get_gui_data()]
+
+        self.internal_thread_queue.put(('process_files', None))
 
     @app_error
     def request_set_skip(self, obj, skip):
+        # do it in thread because we need to recompute size
         if self.thread_has_job:
             raise TypeError('Cannot set skip while processing')
+
         self.thread_has_job += 1
         self.internal_thread_queue.put(('set_skip', (obj, skip)))
 
@@ -477,12 +582,12 @@ class ExportManager(EventDispatcher):
                 elif msg == 'refresh_source_contents':
                     res = self.refresh_source_contents(*value)
                     kivy_queue_put(('refresh_source_contents', res))
-                elif msg == 'export_files':
+                elif msg == 'process_files':
                     self._start_processing_time = time.perf_counter()
                     self.compute_to_be_processed_size()
                     self.reset_file_status()
                     self._elapsed_time_trigger()
-                    self.export_files()
+                    self.process_files()
             except BaseException as e:
                 kivy_queue_put(
                     ('exception',
@@ -493,7 +598,7 @@ class ExportManager(EventDispatcher):
             finally:
                 kivy_queue_put(
                     ('increment', (self, 'thread_has_job', -1)))
-                if msg == 'export_files':
+                if msg == 'process_files':
                     self._elapsed_time_trigger.cancel()
                     kivy_queue_put(
                         ('setattr', (self, 'currently_processing', False)))
@@ -522,33 +627,34 @@ class ExportManager(EventDispatcher):
                     obj, prop, val = value
                     setattr(obj, prop, getattr(obj, prop) + val)
                 elif msg == 'refresh_source_contents':
-                    contents, total_size, num_files, items = value
+                    contents, total_size, num_files, gui_data = value
                     self.num_files = num_files
                     self.total_size = total_size
                     self.source_contents = contents
-                    self.recycle_view.data = items
+                    self.recycle_view.data = gui_data
                 elif msg == 'update_source_items':
                     self.recycle_view.data = value
                 elif msg == 'update_source_item':
                     i, item = value
                     self.recycle_view.data[i] = item
                 else:
-                    print('Got unknown ExportManager message', msg, value)
+                    assert False, f'Unknown message "{msg}", "{value}"'
             except Empty:
                 break
             except BaseException as e:
                 exc = ''.join(traceback.format_exception(*sys.exc_info()))
                 report_exception_in_app(str(e), exc_info=exc)
 
-    def flatten_files(
+    def set_src_data_index(
             self, source_contents=None, set_index=False) -> List[dict]:
-        items = [item.get_gui_data()
-                 for item in source_contents or self.source_contents]
+        gui_data = [
+            item.get_gui_data()
+            for item in source_contents or self.source_contents]
 
         if set_index:
-            for i, item in enumerate(items):
+            for i, item in enumerate(gui_data):
                 item['source_obj'].item_index = i
-        return items
+        return gui_data
 
     def compute_to_be_processed_size(self):
         total_size = 0
@@ -557,6 +663,7 @@ class ExportManager(EventDispatcher):
             # we don't include skipped files
             if item.skip:
                 continue
+
             num_files += 1
             total_size += item.file_size
 
@@ -568,44 +675,40 @@ class ExportManager(EventDispatcher):
     def reset_file_status(self):
         for item in self.source_contents:
             if not item.skip:
-                item.result = item.status = ''
+                item.reset_status()
+
         self.kivy_thread_queue.put(
-            ('update_source_items', self.flatten_files()))
+            ('update_source_items', self.set_src_data_index()))
         self.trigger_run_in_kivy()
 
-    def export_files(self):
+    def process_files(self):
         queue_put = self.kivy_thread_queue.put
         trigger = self.trigger_run_in_kivy
-        upgrade_legacy_files = self.upgrade_legacy_files
-        import_clever_sys_files = self.import_clever_sys_files
-        import_tracking_csv_files = self.import_tracking_csv_files
-        generated_file_output_path = self.generated_file_output_path
+        mode = self.batch_mode
+        export_mode = self.batch_export_mode
 
-        raw_dump_zone_collider = self.raw_dump_zone_collider
-        if self.export_raw_data:
-            root_raw_data_export_path = self.root_raw_data_export_path
-            if not root_raw_data_export_path:
-                raise ValueError('No export path specified for the raw data')
+        if mode == 'export_raw':
+            processor = RawDataExporter(
+                dump_zone_collider=self.raw_dump_zone_collider,
+                data_export_root=self.root_raw_data_export_path)
+        elif mode == 'export_stats':
+            processor = SummeryStatsExporter(
+                spec=self.spec, export_filename=self.stats_export_path)
         else:
-            root_raw_data_export_path = ''
+            assert mode == 'import'
+            if export_mode == 'legacy':
+                processor = LegacyGlitterImporter(
+                    output_files_root=self.generated_file_output_path)
+            elif export_mode == 'cleversys':
+                processor = CleverSysImporter(
+                    output_files_root=self.generated_file_output_path)
+            elif export_mode == 'csv':
+                processor = CSVImporter(
+                    output_files_root=self.generated_file_output_path)
+            else:
+                assert False, export_mode
 
-        if self.export_stats_data:
-            stats_export_path = self.stats_export_path
-            if not stats_export_path:
-                raise ValueError('No export path specified for the stats data')
-        else:
-            stats_export_path = '' \
-                                ''
-        accumulated_stats = []
-        if stats_export_path:
-            stats_kwargs = {
-                'events': self.events_stats,
-                'pos': self.pos_stats,
-                'zones': self.zones_stats
-            }
-        else:
-            stats_kwargs = {}
-
+        processor.init_process()
         for item in self.source_contents:
             if self.stop_op:
                 return
@@ -614,42 +717,20 @@ class ExportManager(EventDispatcher):
                 trigger()
                 continue
 
-            item.prepare_process_file()
-
-            source_file = None
-            if generated_file_output_path and upgrade_legacy_files:
-                source_file = item.upgrade_legacy_file(
-                    generated_file_output_path)
-            elif generated_file_output_path and import_clever_sys_files:
-                source_file = item.import_clever_sys_file(
-                    generated_file_output_path)
-            elif generated_file_output_path and import_tracking_csv_files:
-                source_file = item.import_tracking_csv_file(
-                    generated_file_output_path)
-
-            if item.exception is None:
-                item.process_file(
-                    source_file,
-                    root_raw_data_export_path=root_raw_data_export_path,
-                    raw_dump_zone_collider=raw_dump_zone_collider,
-                    **stats_kwargs)
-            if item.accumulated_stats is not None:
-                accumulated_stats.extend(item.accumulated_stats)
+            processor.process_file(item)
 
             queue_put(
                 ('update_source_item', (item.item_index, item.get_gui_data())))
             if item.status != 'done':
                 queue_put(('increment', (self, 'num_failed_files', 1)))
             queue_put(('increment', (self, 'num_processed_files', 1)))
-            queue_put(
-                ('increment', (self, 'processed_size', item.file_size)))
+            queue_put(('increment', (self, 'processed_size', item.file_size)))
+
             if item.exception is not None:
                 queue_put(('exception', item.exception))
             trigger()
 
-        if stats_export_path:
-            FileDataAnalysis.export_accumulated_named_statistics(
-                stats_export_path, accumulated_stats)
+        processor.finish_process()
 
     def stop(self):
         if self.internal_thread_queue:
@@ -669,8 +750,6 @@ class ExportManager(EventDispatcher):
                 self.set_source(paths[0])
             elif item == 'generated_file_output_path':
                 self.generated_file_output_path = paths[0]
-            elif item == 'clever_sys_path':
-                self.clever_sys_path = paths[0]
             elif item == 'root_raw_data_export_path':
                 self.root_raw_data_export_path = paths[0]
             elif item == 'stats_export_path':
@@ -681,20 +760,6 @@ class ExportManager(EventDispatcher):
                 self.stats_template_path = paths[0]
 
         return set_path
-
-    def gui_set_start_time(self, t):
-        t = t or None
-        for d in self.events_stats.values():
-            d['start'] = t
-        for d in self.pos_stats.values():
-            d['start'] = t
-
-    def gui_set_end_time(self, t):
-        t = t or None
-        for d in self.events_stats.values():
-            d['end'] = t
-        for d in self.pos_stats.values():
-            d['end'] = t
 
 
 Builder.load_file(join(dirname(__file__), 'export_style.kv'))

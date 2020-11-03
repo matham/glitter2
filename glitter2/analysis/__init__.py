@@ -319,18 +319,6 @@ class AnalysisSpec:
     def clear_computation(self):
         self._computations = []
 
-    def get_added_channel_names(self) -> Set[str]:
-        names = set()
-        for item in self._new_channels:
-            if item[0]:
-                names.add(item[0])
-
-        for item in self._computations:
-            if item[0]:
-                names.update(item[0])
-
-        return names
-
 
 class FileDataAnalysis:
 
@@ -404,6 +392,9 @@ class FileDataAnalysis:
         if self.missed_timestamps:
             data_arrays_order = data_file.timestamp_intervals_ordered_keys
             data = [data_file.timestamps_arrays[i] for i in data_arrays_order]
+            if not data:
+                raise ValueError('No data found in the file')
+
             missing = [float(item[-1]) for item in data[:-1]]
             if not data_file._saw_first_timestamp:
                 missing.insert(0, float(data[0][0]))
@@ -674,7 +665,10 @@ class AnalysisChannel:
     def __init__(self, name: str, analysis_object: FileDataAnalysis, **kwargs):
         self.analysis_object = analysis_object
         self.name = name
-        self.metadata = analysis_object.channels_metadata[name]
+        try:
+            self.metadata = analysis_object.channels_metadata[name]
+        except KeyError:
+            raise KeyError(f'No channel with name "{name}" found in the file')
 
     def compute_named_statistics(self, stat_options: Dict[str, dict]) -> List:
         res = []

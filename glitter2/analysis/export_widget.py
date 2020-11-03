@@ -139,22 +139,6 @@ class ExportStatsSelection(BoxLayout):
 
         self.refresh_channel_names(-1)
 
-    @app_error
-    def export_stats_for_template(self, export_path: str):
-        if exists(export_path):
-            raise ValueError(f'{export_path} already exists')
-
-        filename = self.template_filename
-        if not filename:
-            raise ValueError('No sample data file selected')
-
-        spec = self.get_analysis_spec()
-        with FileDataAnalysis(filename=filename) as template:
-            template.load_file_data(channels=spec.get_added_channel_names())
-
-            result = template.compute_data_summary(spec)
-            template.export_computed_data_summary(export_path, result)
-
     def show_analysis_options(self):
         triggers = self._update_name_width_trigger = []
         for container in [

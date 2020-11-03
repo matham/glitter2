@@ -45,9 +45,13 @@
             bold: True
             center_texture: True
         SizedFlatSpinner:
+            disabled: bool(app.export_manager.thread_has_job)
             id: batch_mode
             text_autoupdate: True
             values: ['Export raw data', 'Export channel statistics', 'Import data files']
+            on_text:
+                app.export_manager.batch_mode = {'raw': 'export_raw', 'channel': 'export_stats', 'data': 'import'}[self.text.split(' ')[-2]]
+                app.export_manager.clear_sources()
         Widget
     ScreenManager:
         id: screen_manager
@@ -82,6 +86,7 @@
     size_hint_y: None
     size_hint_min_x: self.minimum_width
     height: self.minimum_height
+    disabled: bool(app.export_manager.thread_has_job)
     BoxLayout:
         size_hint_y: None
         height: '26dp'
@@ -123,6 +128,7 @@
         height: '26dp'
         size_hint_min_x: self.minimum_width
         spacing: '5dp'
+        disabled: bool(app.export_manager.thread_has_job)
         MinSizeYFlatLabel:
             text: 'Sample input data file:'
         FlatImageButton:
@@ -144,6 +150,7 @@
         height: '26dp'
         size_hint_min_x: self.minimum_width
         spacing: '5dp'
+        disabled: bool(app.export_manager.thread_has_job)
         MinSizeYFlatLabel:
             text: 'Output excel file:'
         FlatImageButton:
@@ -163,7 +170,7 @@
             scale_down_color: True
             source: 'flat_play.png'
             flat_color: app.theme.accent
-            on_release: app.export_stats.export_stats_for_template(app.export_manager.stats_export_path)
+            on_release: app.export_manager.request_process_files(app.export_manager.stats_template_path)
     FlatSplitter:
         size_hint_y: None
         height: '200dp'
@@ -199,9 +206,8 @@
             text_autoupdate: True
             values: ['Create data file from legacy Glitter H5 files', 'Create/Append data files from CleverSys TXT files', 'Create/Append data files from csv XYT files']
             on_text:
-                app.export_manager.upgrade_legacy_files = self.text == self.values[0]
-                app.export_manager.import_clever_sys_files = self.text == self.values[1]
-                app.export_manager.import_tracking_csv_files = self.text == self.values[2]
+                app.export_manager.batch_export_mode = {'H5': 'legacy', 'TXT': 'cleversys', 'XYT': 'csv'}[self.text.split(' ')[-2]]
+                app.export_manager.clear_sources()
     BoxLayout:
         size_hint_y: None
         height: '26dp'
@@ -311,7 +317,7 @@
             flat_color: app.theme.accent
             state: 'down' if app.export_manager.currently_processing else 'normal'
             on_release:
-                if self.state == 'down': app.export_manager.request_export_files()
+                if self.state == 'down': app.export_manager.request_process_files()
                 if self.state == 'normal': app.export_manager.stop_op = True
         Widget
         MinSizeYFlatLabel:
@@ -377,7 +383,7 @@
     FlatToggleButton:
         id: skip
         disabled: bool(app.export_manager.thread_has_job)
-        text: "Don't skip" if self.state == 'normal' else 'Skip'
+        text: "Not skipping" if self.state == 'normal' else 'Skipping'
         size_hint: None, None
         size: max(self.texture_size[0], self.width), self.texture_size[1]
         padding_x: '1dp'
@@ -462,6 +468,7 @@
             size_hint_min_x: self.minimum_width
             height: self.minimum_height
             spacing: '1dp'
+            disabled: bool(app.export_manager.thread_has_job)
             canvas:
                 Color:
                     rgba: app.theme.primary_light
@@ -524,6 +531,7 @@
             size_hint_min_x: self.minimum_width
             height: self.minimum_height
             spacing: '5dp'
+            disabled: bool(app.export_manager.thread_has_job)
             BoxLayout:
                 size_hint_y: None
                 height: self.minimum_height
@@ -593,6 +601,7 @@
             size_hint_min_x: self.minimum_width
             height: self.minimum_height
             spacing: '5dp'
+            disabled: bool(app.export_manager.thread_has_job)
             BoxLayout:
                 size_hint_y: None
                 height: self.minimum_height
