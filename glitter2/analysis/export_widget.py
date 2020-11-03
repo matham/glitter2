@@ -97,7 +97,7 @@ class ExportStatsSelection(BoxLayout):
             self.src_event_channel_names + self.src_pos_channel_names +
             self.src_zone_channel_names)
         widgets_using_channel_name = self.widgets_using_channel_name
-        for name, widgets in widgets_using_channel_name.items():
+        for name, widgets in list(widgets_using_channel_name.items()):
             # only clear when it refers to a source channel, not a manually
             # created channel
             if name not in src_names:
