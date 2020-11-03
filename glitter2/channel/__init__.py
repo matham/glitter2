@@ -26,7 +26,7 @@ from glitter2.storage.data_file import DataChannelBase, EventChannelData, \
     TemporalDataChannelBase, PosChannelData, ZoneChannelData
 from glitter2.channel.channel_overview import ChannelStateViewerController, \
     ChannelStateViewer
-from glitter2.utils import fix_name as fix_name_original
+from glitter2.utils import fix_name
 
 __all__ = ('ChannelController', 'ChannelBase', 'TemporalChannel',
            'EventChannel', 'PosChannel', 'ZoneChannel', 'Ruler')
@@ -45,11 +45,6 @@ _color_theme_tab10 = (
 )
 
 _color_theme = cycle(_color_theme_tab10)
-
-
-def fix_name(name, *names):
-    name = fix_name_original(name, *names)
-    return name.replace(';', '').replace(':', '')
 
 
 class ChannelController(EventDispatcher):
