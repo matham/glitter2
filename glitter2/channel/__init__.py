@@ -69,9 +69,9 @@ class ChannelController(EventDispatcher):
 
     overview_controller: ChannelStateViewerController = None
 
-    n_sep_pixels_per_channel: int = 1
+    n_sep_pixels_per_channel: int = 3
 
-    n_pixels_per_channel: int = 1
+    n_pixels_per_channel: int = 5
 
     app = None
 
