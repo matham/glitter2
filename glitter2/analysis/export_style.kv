@@ -179,7 +179,7 @@
         sizable_from: 'bottom'
         flat_color: app.theme.accent
         ScrollView:
-            always_overscroll: True
+            always_overscroll: False
             bar_width: '10dp'
             scroll_type: ['bars']
             ExportStatsSelection:
@@ -424,7 +424,7 @@
         BoxLayout:
             size_hint_min_y: self.minimum_height
             ScrollView:
-                always_overscroll: True
+                always_overscroll: False
                 size_hint_min_y: dp(300)
                 bar_width: '10dp'
                 scroll_type: ['bars']
@@ -967,7 +967,7 @@
                     if channel_selector.text != '<none>' and channel_selector.text not in [w.text for w in channel_selectors.children]: channel_selectors.add_widget(Factory.SpinnerChannelNameItem(text=channel_selector.text, bold=root.bold))
     ScrollView:
         id: scroll
-        always_overscroll: True
+        always_overscroll: False
         size_hint_min_y: channels_box.minimum_height
         bar_width: '10dp'
         scroll_type: ['bars']
