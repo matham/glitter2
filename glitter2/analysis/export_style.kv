@@ -206,6 +206,7 @@
             text: 'Select import operation:'
             bold: True
         SizedFlatSpinner:
+            disabled: bool(app.export_manager.thread_has_job)
             id: batch_mode
             text_autoupdate: True
             values: ['Create data file from legacy Glitter H5 files', 'Create/append data files from CleverSys TXT files', 'Create/append data files from csv XYT files']
