@@ -691,8 +691,16 @@ class DataFile(object):
         video.
         """
         self.unsaved_callback()
+
         self.saw_all_timestamps = True
+        self._saw_first_timestamp = True
+        self._saw_last_timestamp = True
+
         self.nix_file.sections['data_config']['saw_all_timestamps'] = \
+            yaml_dumps(True)
+        self.nix_file.sections['data_config']['saw_first_timestamp'] = \
+            yaml_dumps(True)
+        self.nix_file.sections['data_config']['saw_last_timestamp'] = \
             yaml_dumps(True)
 
     def notify_interrupt_timestamps(self):
@@ -984,9 +992,8 @@ class DataFile(object):
             # t is larger than the largest known timestamp
             if self._saw_last_timestamp:
                 # if we already saw the end, it cannot be larger
-                raise ValueError(
-                    f'{t} is after the timestamp of the previously seen '
-                    f'last frame of the video, which was {end[i]}')
+                return float(end[-1])
+            assert not self.saw_all_timestamps
 
             # t should increase the last interval
             return None
@@ -998,10 +1005,9 @@ class DataFile(object):
             if not i:
                 # t is before the start of the video!?
                 assert self._saw_first_timestamp
-                raise ValueError(
-                    f'{t} is before the timestamp of the previously seen '
-                    f'first frame of the video, which was {start[i]}')
+                return float(start[i])
 
+            assert not self.saw_all_timestamps
             # t is between two intervals
             return None
 
