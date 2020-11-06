@@ -6,10 +6,8 @@
 import re
 import numpy as np
 import os
-import pathlib
 
-from kivy_garden.painter import PaintShape, PaintCanvasBehaviorBase, \
-    PaintCircle, PaintEllipse, PaintPolygon, PaintPoint
+from kivy_garden.painter import PaintCircle, PaintPolygon
 
 from glitter2.utils import fix_name
 from glitter2.storage.imports import map_frame_rate_to_timestamps

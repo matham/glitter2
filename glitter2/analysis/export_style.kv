@@ -89,8 +89,11 @@
     disabled: bool(app.export_manager.thread_has_job)
     BoxLayout:
         size_hint_y: None
-        height: '26dp'
+        height: self.minimum_height
         size_hint_min_x: self.minimum_width
+        spacing: '5dp'
+        MinSizeYFlatLabel:
+            text: "Select directory to save raw data:"
         FlatImageButton:
             scale_down_color: True
             source: 'flat_folder.png'
@@ -130,7 +133,7 @@
         spacing: '5dp'
         disabled: bool(app.export_manager.thread_has_job)
         MinSizeYFlatLabel:
-            text: 'Sample input data file:'
+            text: 'Select sample input data file:'
         FlatImageButton:
             scale_down_color: True
             source: 'flat_folder.png'
@@ -152,7 +155,7 @@
         spacing: '5dp'
         disabled: bool(app.export_manager.thread_has_job)
         MinSizeYFlatLabel:
-            text: 'Output excel file:'
+            text: 'Select output excel file:'
         FlatImageButton:
             scale_down_color: True
             source: 'flat_folder.png'
@@ -196,15 +199,16 @@
     spacing: '10dp'
     BoxLayout:
         size_hint_y: None
-        height: '25dp'
+        height: self.minimum_height
         size_hint_min_x: self.minimum_width
         spacing: '5dp'
         MinSizeYFlatLabel:
             text: 'Select import operation:'
+            bold: True
         SizedFlatSpinner:
             id: batch_mode
             text_autoupdate: True
-            values: ['Create data file from legacy Glitter H5 files', 'Create/Append data files from CleverSys TXT files', 'Create/Append data files from csv XYT files']
+            values: ['Create data file from legacy Glitter H5 files', 'Create/append data files from CleverSys TXT files', 'Create/append data files from csv XYT files']
             on_text:
                 app.export_manager.batch_export_mode = {'H5': 'legacy', 'TXT': 'cleversys', 'XYT': 'csv'}[self.text.split(' ')[-2]]
                 app.export_manager.clear_sources()
@@ -220,7 +224,7 @@
         FlatSizedTextInput:
             text: app.export_manager.generated_file_output_path
             background_color: app.theme.primary_light
-            hint_text: 'Output directory for generated H5 files'
+            hint_text: 'Output directory for generated data files'
             on_focus: if not self.focus: app.export_manager.generated_file_output_path = self.text
             size_hint_min_x: '200dp'
 
@@ -239,7 +243,7 @@
             pos: self.pos
             size: self.size
     MinSizeXFlatLabel:
-        text: 'Input files selection'
+        text: 'Select input files'
         bold: True
     BoxLayout:
         size_hint_y: None
@@ -247,7 +251,7 @@
         height: '34dp'
         spacing: '5dp'
         MinSizeYFlatLabel:
-            text: 'Refresh files:'
+            text: 'Refresh file list:'
         AnimatedToggleButton:
             anim_active: bool(app.export_manager.source_processing)
             disabled: bool(app.export_manager.thread_has_job) and not app.export_manager.source_processing
@@ -298,7 +302,7 @@
             pos: self.pos
             size: self.size
     MinSizeXFlatLabel:
-        text: 'Input/output Files in the batch'
+        text: 'Input Files to process'
         bold: True
     BoxLayout:
         size_hint_y: None
@@ -307,7 +311,7 @@
         padding: '15dp', '5dp'
         spacing: '5dp'
         MinSizeYFlatLabel:
-            text:'Start:'
+            text:'Start processing:'
             center_texture: True
         AnimatedToggleButton:
             anim_active: bool(app.export_manager.currently_processing)

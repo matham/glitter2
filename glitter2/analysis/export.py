@@ -30,6 +30,7 @@ from glitter2.storage.data_file import DataFile
 from glitter2.player import GlitterPlayer
 from glitter2.storage.imports.clever_sys import read_clever_sys_file, \
     add_clever_sys_data_to_file
+from glitter2.storage.imports.csv import read_csv, add_csv_data_to_file
 
 __all__ = ('SourceFile', 'ExportManager')
 
@@ -116,6 +117,45 @@ class FileProcessBase:
 
     def finish_process(self):
         pass
+
+    def _create_or_open_data_file(
+            self, src: SourceFile, target_filename, video_file, width, height):
+        existed = target_filename.exists()
+        nix_file = nix.File.open(str(target_filename), nix.FileMode.ReadWrite)
+
+        try:
+            if existed:
+                data_file = DataFile(nix_file=nix_file)
+                data_file.open_file()
+                if not data_file.saw_all_timestamps:
+                    raise ValueError(
+                        f'Did not watch all video frames for '
+                        f'"{src.filename}" so we cannot add import data')
+
+                metadata = data_file.video_metadata_dict
+                if tuple(metadata['src_vid_size']) != (width, height):
+                    raise ValueError(
+                        f'Data file\'s ({src.filename}) video size '
+                        f'does not match the original video file that created '
+                        f'the h5 data file ({target_filename}).')
+
+                return nix_file, data_file
+
+            data_file = DataFile(nix_file=nix_file)
+            data_file.init_new_file()
+            timestamps, metadata = GlitterPlayer.get_file_data(str(video_file))
+            data_file.set_file_data(
+                video_file_metadata=metadata, saw_all_timestamps=True,
+                timestamps=[timestamps], event_channels=[], pos_channels=[],
+                zone_channels=[])
+
+            data_file = DataFile(nix_file=nix_file)
+            data_file.open_file()
+        except BaseException:
+            nix_file.close()
+            raise
+
+        return nix_file, data_file
 
 
 class SummeryStatsExporter(FileProcessBase):
@@ -221,51 +261,17 @@ class CleverSysImporter(FileProcessBase):
         if not output_files_root:
             raise ValueError('No export path specified for imported H5 files')
 
-    def _create_or_open_data_file(
-            self, src: SourceFile, target_filename, video_file, width, height):
-        existed = target_filename.exists()
-        nix_file = nix.File.open(str(target_filename), nix.FileMode.ReadWrite)
-
-        try:
-            if existed:
-                data_file = DataFile(nix_file=nix_file)
-                data_file.open_file()
-                if not data_file.saw_all_timestamps:
-                    raise ValueError(
-                        f'Did not watch all video frames for '
-                        f'"{src.filename}" so we add import data')
-
-                metadata = data_file.video_metadata_dict
-                if tuple(metadata['src_vid_size']) != (width, height):
-                    raise ValueError(
-                        f'CleverSys data file\'s ({src.filename}) video size '
-                        f'does not match the original video file that created '
-                        f'the h5 data file ({target_filename}). '
-                        f'Please make sure to open the correct video file')
-
-                return nix_file, data_file
-
-            data_file = DataFile(nix_file=nix_file)
-            data_file.init_new_file()
-            timestamps, metadata = GlitterPlayer.get_file_data(str(video_file))
-            data_file.set_file_data(
-                video_file_metadata=metadata, saw_all_timestamps=True,
-                timestamps=[timestamps], event_channels=[], pos_channels=[],
-                zone_channels=[])
-
-            data_file = DataFile(nix_file=nix_file)
-            data_file.open_file()
-        except BaseException:
-            nix_file.close()
-            raise
-
-        return nix_file, data_file
-
     def _process_file(self, src: SourceFile):
         data, video_metadata, zones, calibration = read_clever_sys_file(
             src.filename)
 
         video_file = pathlib.Path(video_metadata['video_file'])
+        if not video_file.exists():
+            video_file = src.filename.parent.joinpath(video_file.name)
+            if not video_file.exists():
+                raise ValueError(
+                    f"Could not find {video_metadata['video_file']}")
+
         target_filename = pathlib.Path(self.output_files_root).joinpath(
             video_file.relative_to(video_file.parts[0])).with_suffix('.h5')
 
@@ -298,18 +304,28 @@ class CSVImporter(FileProcessBase):
             raise ValueError('No export path specified for imported H5 files')
 
     def _process_file(self, src: SourceFile):
-        video_file = pathlib.Path('')
+        metadata, timestamps, events, pos, zones = read_csv(str(src.filename))
+
+        video_file = pathlib.Path(metadata['filename'])
+        if not video_file.exists():
+            video_file = src.filename.parent.joinpath(video_file.name)
+            if not video_file.exists():
+                raise ValueError(f"Could not find {metadata['filename']}")
+
         target_filename = pathlib.Path(self.output_files_root).joinpath(
             video_file.relative_to(video_file.parts[0])).with_suffix('.h5')
 
         if not target_filename.parent.exists():
             os.makedirs(str(target_filename.parent))
-        if target_filename.exists():
-            raise ValueError(f'"{target_filename}" already exists')
 
-        nix_file, data_file = None, None
+        w = metadata['video_width']
+        h = metadata['video_height']
+        nix_file, data_file = self._create_or_open_data_file(
+            src, target_filename, video_file, w, h)
+
         try:
-            pass
+            add_csv_data_to_file(
+                data_file, metadata, timestamps, events, pos, zones)
         finally:
             nix_file.close()
 
