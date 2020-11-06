@@ -9,12 +9,13 @@ from kivy_garden.painter import PaintCircle, PaintPolygon
 
 from glitter2.storage.imports import map_timestamps_to_timestamps
 from glitter2.utils import fix_name
+from glitter2.storage.data_file import DataFile
 
 
 __all__ = ('read_csv', 'add_csv_data_to_file')
 
 
-def _parse_pos(header, data, i):
+def _parse_pos(header, data, i, width, height):
     name = header[i][4:-2]
     if not header[i].endswith(':x') or len(header) - 1 == i or \
             header[i + 1] != f'pos:{name}:y':
@@ -23,10 +24,12 @@ def _parse_pos(header, data, i):
             f'"pos:{name}:y" at columns ({i}, {i + 1})')
 
     state = np.array([data[i], data[i + 1]], dtype=np.float).T
+    # flip y-axis
+    state[:, 1] = height - state[:, 1]
     return name, state
 
 
-def _parse_zone(header, data, i):
+def _parse_zone(header, data, i, width, height):
     name = header[i][5:-9]
     if not header[i].endswith(':property') or len(header) - 1 == i or \
             header[i + 1] != f'zone:{name}:value':
@@ -51,6 +54,10 @@ def _parse_zone(header, data, i):
             raise ValueError(
                 f'Expected at least 6 points for channel {name}')
 
+        # flip y-axis
+        for i in range(0, len(points), 2):
+            points[i] = height - points[i]
+
         shape = PaintPolygon.create_shape(points)
     elif shape_type == 'circle':
         if 'center' not in metadata or 'radius' not in metadata:
@@ -62,6 +69,9 @@ def _parse_zone(header, data, i):
         if not len(center) == 2:
             raise ValueError(
                 f'Expected center to be tuple of "x, y" for channel {name}')
+
+        # flip y-axis
+        center[1] = height - center[1]
         shape = PaintCircle.create_shape(center, radius)
     else:
         raise ValueError(
@@ -105,6 +115,11 @@ def read_csv(filename: str):
     for key in ('filename', 'video_width', 'video_height'):
         if key not in metadata:
             raise ValueError(f'Could not find {key} in the metadata')
+    width = metadata['video_width'] = float(metadata['video_width'])
+    height = metadata['video_height'] = float(metadata['video_height'])
+    if 'saw_all_timestamps' in metadata:
+        metadata['saw_all_timestamps'] = \
+            metadata['saw_all_timestamps'] in ('true', 'TRUE')
 
     timestamps = np.array(data[2], dtype=np.float64)
 
@@ -121,53 +136,84 @@ def read_csv(filename: str):
             i += 1
 
         elif header[i].startswith('pos:'):
-            name, state = _parse_pos(header, data, i)
+            name, state = _parse_pos(header, data, i, width, height)
             name = fix_name(name, events, pos, zones)
             pos[name] = state
             i += 2
 
         elif header[i].startswith('zone:'):
-            name, shape = _parse_zone(header, data, i)
+            name, shape = _parse_zone(header, data, i, width, height)
             name = fix_name(name, events, pos, zones)
             zones[name] = shape
             i += 2
+        elif not header[i]:
+            i += 1
+        else:
+            raise ValueError(f'Unrecognized column type with name {header[i]}')
 
     return metadata, timestamps, events, pos, zones
 
 
-def add_csv_data_to_file(data_file, metadata, timestamps, events, pos, zones):
+def _set_data_from_mapped_video_timestamps(
+        data_file: DataFile, timestamps, events, pos, names):
+    assert data_file.saw_all_timestamps
+    timestamps_mapping = map_timestamps_to_timestamps(
+        timestamps, np.asarray(data_file.timestamps))
+
+    for channel_type, channels in [('event', events), ('pos', pos)]:
+        for name, data in channels.items():
+            name = fix_name(name, names)
+            names.add(name)
+
+            channel = data_file.create_channel(channel_type)
+            channel.channel_config_dict = {'name': name}
+
+            for i in range(len(timestamps)):
+                t = timestamps[i]
+                if t not in timestamps_mapping:
+                    continue
+
+                for val in timestamps_mapping[t]:
+                    channel.set_timestamp_value(val, data[i])
+
+
+def _set_data_from_src_timestamps(data_file: DataFile, events, pos, names):
+    assert data_file.saw_all_timestamps
+
+    for channel_type, channels in [('event', events), ('pos', pos)]:
+        for name, data in channels.items():
+            name = fix_name(name, names)
+            names.add(name)
+
+            channel = data_file.create_channel(channel_type)
+            channel.channel_config_dict = {'name': name}
+            channel.set_channel_data(data)
+
+
+def add_csv_data_to_file(
+        data_file: DataFile, metadata, timestamps, events, pos, zones,
+        use_src_timestamps):
     pixels_per_meter = metadata.get('pixels_per_meter', 0)
     if pixels_per_meter:
         data_file.set_pixels_per_meter(pixels_per_meter)
 
-    timestamps_mapping = map_timestamps_to_timestamps(
-        timestamps, np.asarray(data_file.timestamps))
+    names = set()
+    for channels in (
+            data_file.event_channels, data_file.pos_channels,
+            data_file.zone_channels):
+        for channel in channels.values():
+            names.add(channel.channel_config_dict['name'])
 
-    for name, data in events.items():
-        channel = data_file.create_channel('event')
-        channel.channel_config_dict = {'name': name}
-
-        for i in range(len(timestamps)):
-            t = timestamps[i]
-            if t not in timestamps_mapping:
-                continue
-
-            for val in timestamps_mapping[t]:
-                channel.set_timestamp_value(val, data[i])
-
-    for name, data in pos.items():
-        channel = data_file.create_channel('pos')
-        channel.channel_config_dict = {'name': name}
-
-        for i in range(len(timestamps)):
-            t = timestamps[i]
-            if t not in timestamps_mapping:
-                continue
-
-            for val in timestamps_mapping[t]:
-                channel.set_timestamp_value(val, (data[i][0], data[i][1]))
+    if use_src_timestamps:
+        _set_data_from_src_timestamps(data_file, events, pos, names)
+    else:
+        _set_data_from_mapped_video_timestamps(
+            data_file, timestamps, events, pos, names)
 
     for name, shape in zones.items():
+        name = fix_name(name, names)
+        names.add(name)
+
         channel = data_file.create_channel('zone')
         channel.channel_config_dict = {
             'shape_config': shape.get_state(), 'name': name}

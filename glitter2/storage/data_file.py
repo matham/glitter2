@@ -1222,6 +1222,18 @@ class TemporalDataChannelBase(DataChannelBase):
         for key, target_arr in channel.data_arrays.items():
             target_arr[:] = src_data_arrays[key]
 
+    def set_channel_data(self, data: Union[list, np.ndarray]):
+        self.data_file.pad_channel_to_num_frames_interval(self)
+        data_file = self.data_file
+
+        if not data_file.saw_all_timestamps:
+            raise TypeError(
+                "Cannot set all the channel data at once if we haven't seen "
+                "all the timestamps of the video file")
+
+        data_file.unsaved_callback()
+        self.data_array[:] = data
+
 
 class EventChannelData(TemporalDataChannelBase):
     """Channel that stores event data.
@@ -1327,7 +1339,8 @@ class PosChannelData(TemporalDataChannelBase):
 
         return results
 
-    def set_timestamp_value(self, t: float, value: Tuple[float, float]):
+    def set_timestamp_value(
+            self, t: float, value: Union[Tuple[float, float], np.ndarray]):
         """Changes the value of the data array for the given timestamp ``t``
         to ``value``.
         """

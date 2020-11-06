@@ -3,6 +3,7 @@
 
 """
 from typing import Dict, List, Optional
+import numpy as np
 from itertools import chain
 from os.path import dirname, join
 import os
@@ -119,7 +120,8 @@ class FileProcessBase:
         pass
 
     def _create_or_open_data_file(
-            self, src: SourceFile, target_filename, video_file, width, height):
+            self, src: SourceFile, target_filename, video_file, width, height,
+            timestamps=None):
         existed = target_filename.exists()
         nix_file = nix.File.open(str(target_filename), nix.FileMode.ReadWrite)
 
@@ -139,11 +141,24 @@ class FileProcessBase:
                         f'does not match the original video file that created '
                         f'the h5 data file ({target_filename}).')
 
-                return nix_file, data_file
+                use_src_timestamps = False
+                if timestamps is not None and \
+                        len(data_file.timestamps) == len(timestamps) and \
+                        np.all(np.asarray(data_file.timestamps) ==
+                               np.asarray(timestamps)):
+                    use_src_timestamps = True
+
+                return nix_file, data_file, use_src_timestamps
 
             data_file = DataFile(nix_file=nix_file)
             data_file.init_new_file()
-            timestamps, metadata = GlitterPlayer.get_file_data(str(video_file))
+
+            use_src_timestamps = timestamps is not None
+            timestamps_, metadata = GlitterPlayer.get_file_data(
+                str(video_file), metadata_only=use_src_timestamps)
+            if not use_src_timestamps:
+                timestamps = timestamps_
+
             data_file.set_file_data(
                 video_file_metadata=metadata, saw_all_timestamps=True,
                 timestamps=[timestamps], event_channels=[], pos_channels=[],
@@ -155,7 +170,7 @@ class FileProcessBase:
             nix_file.close()
             raise
 
-        return nix_file, data_file
+        return nix_file, data_file, use_src_timestamps
 
 
 class SummeryStatsExporter(FileProcessBase):
@@ -280,7 +295,7 @@ class CleverSysImporter(FileProcessBase):
 
         w = video_metadata['width']
         h = video_metadata['height']
-        nix_file, data_file = self._create_or_open_data_file(
+        nix_file, data_file, src_timestamps = self._create_or_open_data_file(
             src, target_filename, video_file, w, h)
 
         try:
@@ -305,6 +320,7 @@ class CSVImporter(FileProcessBase):
 
     def _process_file(self, src: SourceFile):
         metadata, timestamps, events, pos, zones = read_csv(str(src.filename))
+        saw_all_timestamps = metadata.get('saw_all_timestamps', False)
 
         video_file = pathlib.Path(metadata['filename'])
         if not video_file.exists():
@@ -320,12 +336,15 @@ class CSVImporter(FileProcessBase):
 
         w = metadata['video_width']
         h = metadata['video_height']
-        nix_file, data_file = self._create_or_open_data_file(
-            src, target_filename, video_file, w, h)
+        # if we saw all the timestamps, use that instead of reading from file
+        timestamps_used = timestamps if saw_all_timestamps else None
+        nix_file, data_file, src_timestamps = self._create_or_open_data_file(
+            src, target_filename, video_file, w, h, timestamps_used)
 
         try:
             add_csv_data_to_file(
-                data_file, metadata, timestamps, events, pos, zones)
+                data_file, metadata, timestamps, events, pos, zones,
+                src_timestamps)
         finally:
             nix_file.close()
 
