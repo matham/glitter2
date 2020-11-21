@@ -169,12 +169,16 @@ class StorageController(EventDispatcher):
             return nix.Compression.No
         return nix.Compression.Auto
 
-    def get_filebrowser_callback(self, func, clear_data=False, **kwargs):
+    def get_filebrowser_callback(
+            self, func, ext=None, clear_data=False, **kwargs):
 
         def callback(paths):
             if not paths:
                 return
             fname = paths[0]
+            if ext and not fname.endswith(ext):
+                fname += ext
+
             self.root_path = dirname(fname)
 
             @app_error

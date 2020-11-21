@@ -80,7 +80,7 @@
             size: self.texture_size
             scale_down_color: True
             flat_color: app.theme.text_primary
-            on_release: app.open_filechooser(callback=app.storage_controller.get_filebrowser_callback(app.storage_controller.write_yaml_config, overwrite=True, exclude_app_settings=True), mode='save', target=app.storage_controller.root_path, title='Export yaml file', filters=['*.yml;*.yaml', '*.*'])
+            on_release: app.open_filechooser(callback=app.storage_controller.get_filebrowser_callback(app.storage_controller.write_yaml_config, overwrite=True, exclude_app_settings=True, ext='.yml'), mode='save', target=app.storage_controller.root_path, title='Export yaml file', filters=['*.yml;*.yaml', '*.*'])
         FlatButton:
             disable: not app.storage_controller.last_filename_summary
             text: 'Import recent YAML <{}>'.format(app.storage_controller.last_filename_summary if app.storage_controller.last_filename_summary else 'empty')
