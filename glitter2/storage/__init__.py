@@ -599,14 +599,6 @@ class StorageController(EventDispatcher):
             if exists(fname) and (
                     not f_size or os.stat(fname).st_size == f_size):
                 self.player.open_file(fname)
-
-    @app_error
-    def open_video_for_current_h5(self, filenames):
-        if not filenames:
-            return
-        fname = filenames[0]
-        self.root_path = dirname(fname)
-        self.player.open_file(fname)
         self.app.opened_file()
 
     def get_h5_filename_from_video(self, filename):

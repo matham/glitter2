@@ -15,9 +15,7 @@
         source: 'flat_save.png'
         flat_color: app.theme.accent
         hover_text: "Save current file"
-        on_release:
-            if app.storage_controller.filename: app.storage_controller.save()
-            if not app.storage_controller.filename: app.open_filechooser(callback=app.storage_controller.get_filebrowser_callback(app.storage_controller.save_as, overwrite=True), mode='save', target=app.storage_controller.root_path, title='Save h5 file', filters=['*.h5', '*.*'])
+        on_release: app.save_data_file()
     FlatImageButton:
         scale_down_color: True
         source: 'flat_menu_down.png'
@@ -28,35 +26,26 @@
         flat_color: app.theme.primary_text
         flat_border_color: app.theme.divider
         FlatButton:
-            text: 'Clear data & open h5 file RO'
+            text: 'Clear & open file read-only'
             size_hint: None, None
             size: self.texture_size
             scale_down_color: True
             flat_color: app.theme.text_primary
             on_release: app.open_filechooser(callback=app.storage_controller.get_filebrowser_callback(app.storage_controller.ui_open_file, read_only=True, clear_data=True), target=app.storage_controller.root_path, title='Open video or H5 file', filters=['*.mkv;*.mp4;*.avi;*.h5', '*.*'])
         FlatButton:
-            text: 'Load video for current h5 file'
-            size_hint: None, None
-            size: self.texture_size
-            scale_down_color: True
-            flat_color: app.theme.text_primary
-            on_release: app.open_filechooser(callback=app.storage_controller.open_video_for_current_h5, target=app.storage_controller.root_path, title='Open video file', filters=['*.mkv;*.mp4;*.avi', '*.*'])
-        FlatButton:
             text: 'Save h5 file'
             size_hint: None, None
             size: self.texture_size
             scale_down_color: True
             flat_color: app.theme.text_primary
-            on_release:
-                if app.storage_controller.filename: app.storage_controller.save()
-                if not app.storage_controller.filename: app.open_filechooser(callback=app.storage_controller.get_filebrowser_callback(app.storage_controller.save_as, overwrite=True), mode='save', target=app.storage_controller.root_path, title='Save h5 file', filters=['*.h5', '*.*'])
+            on_release: app.save_data_file()
         FlatButton:
             text: 'Save as h5 file'
             size_hint: None, None
             size: self.texture_size
             scale_down_color: True
             flat_color: app.theme.text_primary
-            on_release: app.open_filechooser(callback=app.storage_controller.get_filebrowser_callback(app.storage_controller.save_as, overwrite=True), mode='save', target=app.storage_controller.root_path, title='Save h5 file', filters=['*.h5', '*.*'])
+            on_release: app.save_data_file_as()
         FlatButton:
             text: 'Discard unsaved changes'
             size_hint: None, None
@@ -65,7 +54,7 @@
             flat_color: app.theme.text_primary
             on_release: app.storage_controller.discard_file()
         FlatButton:
-            text: 'Close h5 file & clear'
+            text: 'Close file & clear'
             size_hint: None, None
             size: self.texture_size
             scale_down_color: True

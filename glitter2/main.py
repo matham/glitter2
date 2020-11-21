@@ -4,7 +4,7 @@
 The main module that provides the app that runs the GUI.
 """
 from os.path import join, dirname
-from typing import Iterable, List, Dict
+from typing import Iterable, List, Dict, Set
 from ffpyplayer.pic import Image
 
 from kivy.lang import Builder
@@ -46,23 +46,40 @@ class MainView(FocusBehavior, BoxLayout):
 
     app: 'Glitter2App' = None
 
+    keyboard_chars: Set[str] = set()
+
+    ctrl_chars = {'lctrl', 'rctrl', 'ctrl'}
+
+    def __int__(self, **kwargs):
+        super(MainView, self).__int__(**kwargs)
+        self.ctrl_chars = set()
+
     def on_focus(self, *args):
         if not self.focus:
             self.app.image_display_manager.clear_delete()
 
-    def keyboard_on_key_down(self, *args, **kwargs):
-        if super(MainView, self).keyboard_on_key_down(*args, **kwargs):
+    def keyboard_on_key_down(self, window, keycode, text, modifiers):
+        if super(MainView, self).keyboard_on_key_down(
+                window, keycode, text, modifiers):
             return True
         if self.app.current_view != 'scoring':
             return False
 
+        self.keyboard_chars.add(keycode[1])
+        if 's' in self.keyboard_chars and \
+                self.keyboard_chars & self.ctrl_chars:
+            return True
+
         if self.app.interactive_player_mode:
-            if self.app.player.player_on_key_down(*args, **kwargs):
+            if self.app.player.player_on_key_down(
+                    window, keycode, text, modifiers):
                 return True
         else:
-            if self.app.zone_painter.keyboard_on_key_down(*args, **kwargs):
+            if self.app.zone_painter.keyboard_on_key_down(
+                    window, keycode, text, modifiers):
                 return True
-        return self.app.image_display_manager.root_on_key_down(*args, **kwargs)
+        return self.app.image_display_manager.root_on_key_down(
+            window, keycode, text, modifiers)
 
     def keyboard_on_key_up(self, window, keycode):
         if keycode[1] == 'delete':
@@ -70,8 +87,20 @@ class MainView(FocusBehavior, BoxLayout):
             self.app.image_display_manager.clear_delete()
         if super(MainView, self).keyboard_on_key_up(window, keycode):
             return True
+
         if self.app.current_view != 'scoring':
             return False
+
+        if 's' in self.keyboard_chars and \
+                self.keyboard_chars & self.ctrl_chars:
+            if keycode[1] in self.keyboard_chars:
+                self.keyboard_chars.remove(keycode[1])
+
+            self.app.save_data_file()
+            return True
+
+        if keycode[1] in self.keyboard_chars:
+            self.keyboard_chars.remove(keycode[1])
 
         if self.app.interactive_player_mode:
             if self.app.player.player_on_key_up(window, keycode):
@@ -176,6 +205,24 @@ class Glitter2App(BaseKivyApp):
 
     def opened_file(self):
         self.ruler_active = False
+
+    def save_data_file(self):
+        if self.storage_controller.filename:
+            self.storage_controller.save()
+        else:
+            self.save_data_file_as()
+
+    @app_error
+    def save_data_file_as(self):
+        if not self.player.filename:
+            raise TypeError(
+                'Cannot save H5 file because video file is not open')
+
+        self.open_filechooser(
+            callback=self.storage_controller.get_filebrowser_callback(
+                self.storage_controller.save_as, overwrite=True, ext='.h5'),
+            mode='save', target=self.storage_controller.root_path,
+            title='Save h5 file', filters=['*.h5', '*.*'])
 
     def build(self):
         base = dirname(glitter2.__file__)
