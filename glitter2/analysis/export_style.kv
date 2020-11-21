@@ -93,7 +93,7 @@
         size_hint_min_x: self.minimum_width
         spacing: '5dp'
         MinSizeYFlatLabel:
-            text: "Select directory to save raw data:"
+            text: "Output directory to save raw data:"
         FlatImageButton:
             scale_down_color: True
             source: 'flat_folder.png'
@@ -177,7 +177,7 @@
     FlatSplitter:
         size_hint_y: None
         height: '200dp'
-        min_size: min(dp(300), export_stats.height)
+        min_size: min(dp(100), export_stats.height)
         max_size: '800dp'
         sizable_from: 'bottom'
         flat_color: app.theme.accent
@@ -217,6 +217,8 @@
         size_hint_y: None
         height: '26dp'
         size_hint_min_x: self.minimum_width
+        MinSizeYFlatLabel:
+            text: 'Data output directory:'
         FlatImageButton:
             scale_down_color: True
             source: 'flat_folder.png'
