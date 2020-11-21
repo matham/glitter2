@@ -150,6 +150,8 @@ class StorageController(EventDispatcher):
 
     def update_last_filename(self, filename):
         if not filename:
+            self.last_filename = ''
+            self.last_filename_summary = ''
             return
 
         filename = abspath(filename)
@@ -388,6 +390,7 @@ class StorageController(EventDispatcher):
             f.close()
 
         self.write_changes_to_autosave()
+        return True
 
     @app_error
     def discard_file(self):
@@ -492,6 +495,7 @@ class StorageController(EventDispatcher):
             self.ruler.pixels_per_meter = pixels_per_meter
         self.write_changes_to_autosave()
         self.update_last_filename(filename)
+        return True
 
     @app_error
     def import_last_file(self):
@@ -500,9 +504,12 @@ class StorageController(EventDispatcher):
             return
 
         if filename.endswith('.h5'):
-            self.import_file(filename, exclude_app_settings=True)
+            if not self.import_file(filename, exclude_app_settings=True):
+                self.update_last_filename('')
         else:
-            self.import_yaml_config(filename, exclude_app_settings=True)
+            if not self.import_yaml_config(
+                    filename, exclude_app_settings=True):
+                self.update_last_filename('')
 
     def set_data_unsaved(self):
         self.has_unsaved = True
