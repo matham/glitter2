@@ -598,6 +598,34 @@ class ExportManager(EventDispatcher):
         self.thread_has_job += 1
         self.internal_thread_queue.put(('set_skip', (obj, skip)))
 
+    def toggle_skip(self):
+        n = len(self.source_contents)
+        count = sum((src.skip for src in self.source_contents))
+        if not count:
+            # nothing skipped -> skip all
+            state = True
+        elif count == n:
+            # all skipped -> skip none
+            state = False
+        else:
+            # some are skipped -> all
+            state = True
+
+        for src in self.source_contents:
+            src.skip = state
+
+        gui_data = [item.get_gui_data() for item in self.source_contents]
+        return gui_data
+
+    @app_error
+    def request_toggle_skip(self):
+        # do it in thread because we need to recompute size
+        if self.thread_has_job:
+            raise TypeError('Cannot set skip while processing')
+
+        self.thread_has_job += 1
+        self.internal_thread_queue.put(('toggle_skip', None))
+
     def run_thread(self, kivy_queue, read_queue):
         kivy_queue_put = kivy_queue.put
         trigger = self.trigger_run_in_kivy
@@ -618,6 +646,10 @@ class ExportManager(EventDispatcher):
                         ('update_source_item',
                          (obj.item_index, obj.get_gui_data()))
                     )
+                    self.compute_to_be_processed_size()
+                elif msg == 'toggle_skip':
+                    gui_data = self.toggle_skip()
+                    kivy_queue_put(('toggle_skip', gui_data))
                     self.compute_to_be_processed_size()
                 elif msg == 'refresh_source_contents':
                     res = self.refresh_source_contents(*value)
@@ -673,9 +705,14 @@ class ExportManager(EventDispatcher):
                     contents, total_size, num_files, gui_data = value
                     self.num_files = num_files
                     self.total_size = total_size
+                    self.num_processed_files = 0
+                    self.num_skipped_files = 0
+                    self.num_failed_files = 0
                     self.source_contents = contents
                     self.recycle_view.data = gui_data
                 elif msg == 'update_source_items':
+                    self.recycle_view.data = value
+                elif msg == 'toggle_skip':
                     self.recycle_view.data = value
                 elif msg == 'update_source_item':
                     i, item = value

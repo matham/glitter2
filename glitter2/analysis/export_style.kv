@@ -325,6 +325,18 @@
                 if self.state == 'down': app.export_manager.request_process_files()
                 if self.state == 'normal': app.export_manager.stop_op = True
         Widget
+        FlatButton:
+            disabled: bool(app.export_manager.thread_has_job)
+            text: "Skip all"
+            padding_x: '5dp'
+            size_hint_x: None
+            width: self.texture_size[0]
+            size_hint_min_y: self.texture_size[1]
+            center_texture: True
+            on_release: app.export_manager.request_toggle_skip()
+            scale_down_color: True
+            flat_color: app.theme.text_primary
+            flat_background_color: app.theme.primary_light if self.state == 'normal' else app.theme.primary_dark
         MinSizeYFlatLabel:
             text:'Succeeded: [b]{}[/b], Failed: [b]{}[/b], Skipped: [b]{}[/b], Total: [b]{}[/b]'.format(app.export_manager.num_processed_files, app.export_manager.num_failed_files, app.export_manager.num_skipped_files, app.export_manager.num_files)
             center_texture: False
