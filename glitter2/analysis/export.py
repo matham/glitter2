@@ -202,6 +202,7 @@ class SummeryStatsExporter(FileProcessBase):
 
     def finish_process(self):
         results = list(chain(*self.results))
+        pathlib.Path(self.export_filename).parent.mkdir(parents=True)
         FileDataAnalysis.export_computed_data_summary(
             self.export_filename, results)
 
@@ -230,6 +231,7 @@ class RawDataExporter(FileProcessBase):
             filename = root.joinpath(
                 src.filename.relative_to(
                     src.source_root)).with_suffix('.xlsx')
+            filename.parent.mkdir(parents=True)
             data_file.export_raw_data_to_excel(
                 str(filename), dump_zone_collider=self.dump_zone_collider)
 
@@ -251,7 +253,7 @@ class LegacyGlitterImporter(FileProcessBase):
             src.filename.relative_to(src.source_root))
 
         if not target_filename.parent.exists():
-            os.makedirs(str(target_filename.parent))
+            target_filename.parent.mkdir(parents=True)
         if target_filename.exists():
             raise ValueError(f'"{target_filename}" already exists')
 
@@ -291,7 +293,7 @@ class CleverSysImporter(FileProcessBase):
             video_file.relative_to(video_file.parts[0])).with_suffix('.h5')
 
         if not target_filename.parent.exists():
-            os.makedirs(str(target_filename.parent))
+            target_filename.parent.mkdir(parents=True)
 
         w = video_metadata['width']
         h = video_metadata['height']
@@ -332,7 +334,7 @@ class CSVImporter(FileProcessBase):
             video_file.relative_to(video_file.parts[0])).with_suffix('.h5')
 
         if not target_filename.parent.exists():
-            os.makedirs(str(target_filename.parent))
+            target_filename.parent.mkdir(parents=True)
 
         w = metadata['video_width']
         h = metadata['video_height']
