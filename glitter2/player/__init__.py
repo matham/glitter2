@@ -161,6 +161,13 @@ class GlitterPlayer(EventDispatcher):
             return '10.0'
         return '{:0.2f}'.format(rate)
 
+    def advance_frame_if_frame_by_frame(self):
+        if self.play_rate != float('-inf'):
+            return
+        if self.player_state != 'playing':
+            return
+        self._last_frame_clock = 0
+
     @app_error
     def open_file(self, filename):
         """Opens and starts playing the given file.

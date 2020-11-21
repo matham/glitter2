@@ -289,6 +289,7 @@ class PosChannelPainter(Widget):
         if self.collide_point(*touch.pos):
             controller = App.get_running_app().channel_controller
             controller.pos_painter_touch_down(touch.pos)
+            return True
         return False
 
     def on_touch_move(self, touch):
@@ -297,14 +298,18 @@ class PosChannelPainter(Widget):
         if self.collide_point(*touch.pos):
             controller = App.get_running_app().channel_controller
             controller.pos_painter_touch_move(touch.pos)
+            return True
         return False
 
     def on_touch_up(self, touch):
         if super().on_touch_up(touch):
             return True
         if self.collide_point(*touch.pos):
-            controller = App.get_running_app().channel_controller
+            app = App.get_running_app()
+            controller = app.channel_controller
             controller.pos_painter_touch_up(touch.pos)
+            app.player.advance_frame_if_frame_by_frame()
+            return True
         return False
 
 

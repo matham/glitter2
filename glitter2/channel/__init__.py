@@ -340,18 +340,24 @@ class ChannelController(EventDispatcher):
         channel = self.selected_channel
         if channel is not None and isinstance(channel, PosChannel):
             channel.change_current_value(pos)
+            return True
+        return False
 
     def pos_painter_touch_move(self, pos):
         self.touch_pos = pos
         channel = self.selected_channel
         if channel is not None and isinstance(channel, PosChannel):
             channel.change_current_value(pos)
+            return True
+        return False
 
     def pos_painter_touch_up(self, pos):
         self.touch_pos = None
         channel = self.selected_channel
         if channel is not None and isinstance(channel, PosChannel):
             channel.change_current_value(pos)
+            return True
+        return False
 
 
 class ChannelBase(EventDispatcher):
