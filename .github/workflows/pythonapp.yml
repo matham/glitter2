@@ -142,8 +142,6 @@ jobs:
         source activate
         popd
 
-        python -m pip install --upgrade https://github.com/kivy/pyobjus/archive/master.zip
-        python -m pip install --upgrade https://github.com/kivy/plyer/archive/master.zip
         python -m pip install https://github.com/matham/more-kivy-app/archive/master.zip
         python -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
         python -m pip install --upgrade nixio==1.5.0b4 --pre
