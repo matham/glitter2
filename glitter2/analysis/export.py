@@ -500,6 +500,11 @@ class ExportManager(EventDispatcher):
             raise TypeError('Cannot change source while already processing')
 
         self.source_contents = []
+        self.num_files = 0
+        self.total_size = 0
+        self.num_processed_files = 0
+        self.num_skipped_files = 0
+        self.num_failed_files = 0
         if self.recycle_view is not None:
             self.recycle_view.data = []
 
@@ -658,6 +663,9 @@ class ExportManager(EventDispatcher):
                 elif msg == 'setattr':
                     obj, prop, val = value
                     setattr(obj, prop, val)
+                elif msg == 'setattrs':
+                    for obj, prop, val in value:
+                        setattr(obj, prop, val)
                 elif msg == 'increment':
                     obj, prop, val = value
                     setattr(obj, prop, getattr(obj, prop) + val)
@@ -694,17 +702,23 @@ class ExportManager(EventDispatcher):
     def compute_to_be_processed_size(self):
         total_size = 0
         num_files = 0
+        skipped = 0
         for item in self.source_contents:
             # we don't include skipped files
             if item.skip:
+                skipped += 1
                 continue
 
             num_files += 1
             total_size += item.file_size
 
-        self.kivy_thread_queue.put(('setattr', (self, 'num_files', num_files)))
-        self.kivy_thread_queue.put(
-            ('setattr', (self, 'total_size', total_size)))
+        self.kivy_thread_queue.put((
+            'setattrs',
+            [(self, 'num_files', num_files), (self, 'total_size', total_size),
+             (self, 'num_processed_files', 0),
+             (self, 'num_skipped_files', skipped),
+             (self, 'num_failed_files', 0)]
+        ))
         self.trigger_run_in_kivy()
 
     def reset_file_status(self):
