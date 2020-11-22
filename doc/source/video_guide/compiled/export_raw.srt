@@ -1,0 +1,69 @@
+1
+00:00:00,100  --> 00:00:06,704
+Glitter supports batch exporting of the raw data that has been coded with glitter, into excel files that
+can then be used with other programs.
+
+2
+00:00:07,420  --> 00:00:10,502
+The exported data includes the video and channels metadata.
+
+3
+00:00:14,220  --> 00:00:19,527
+And the exported data also includes the raw coded data from the event, position, and zone channels.
+
+4
+00:00:23,220  --> 00:00:26,721
+Click export view, to switch to the export view from the main page.
+
+5
+00:00:27,420  --> 00:00:30,110
+Once in the export view page, you can export the raw data
+
+6
+00:00:30,820  --> 00:00:33,164
+by selecting that mode from the dropdown menu.
+
+7
+00:00:36,380  --> 00:00:42,894
+To export the data, first select the folder into which the excel files will be saved,
+as well as any configuration options.
+
+8
+00:00:43,580  --> 00:00:46,273
+Next, select the input data files to export.
+
+9
+00:00:46,980  --> 00:00:49,384
+First, select the directory to process.
+
+10
+00:00:50,100  --> 00:00:54,888
+Then, select a filter with which to select the data files in that directory and sub-directories.
+
+11
+00:00:55,088  --> 00:01:00,855
+The shown filter will only select files that end with the h 5 extension, which is the extension of the data files.
+
+12
+00:01:01,540  --> 00:01:03,145
+Finally, click refresh.
+
+13
+00:01:03,860  --> 00:01:06,932
+Glitter will now list all the matched files that are to be processed.
+
+14
+00:01:07,619  --> 00:01:11,979
+To start the export process, press the play button to start exporting the files.
+
+15
+00:01:12,660  --> 00:01:14,293
+It will export the files one by one,
+
+16
+00:01:15,979  --> 00:01:17,735
+until all the files are exported.
+
+17
+00:01:18,419  --> 00:01:22,001
+The exported excel files can then be found in the configured directory.

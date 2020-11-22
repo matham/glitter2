@@ -1,0 +1,46 @@
+1
+00:00:00,100  --> 00:00:05,178
+Glitter supports importing c s v files that contain coded data exported by other programs.
+
+2
+00:00:05,378  --> 00:00:08,121
+Demo c s v files can be found in the source code.
+
+3
+00:00:08,820  --> 00:00:10,455
+From within the import section.
+
+4
+00:00:10,655  --> 00:00:14,207
+First, select the c s v importing mode from the drop down menu.
+
+5
+00:00:14,900  --> 00:00:21,494
+Then, select the output directory, where the glitter h 5 data files that are generated
+from the c s v files, will be created.
+
+6
+00:00:22,180  --> 00:00:26,380
+Next, select the input directory containing the c s v files to process.
+
+7
+00:00:27,100  --> 00:00:37,695
+This directory should optionally contain the video files that was used to generate the c s v files.
+Glitter needs these video files if the input c s v files do not contain data for all video frames.
+
+8
+00:00:38,380  --> 00:00:43,428
+Then, select a filter with which to select the c s v files in that directory and sub-directories.
+
+9
+00:00:43,628  --> 00:00:47,428
+The shown filter will only select files that end with the c s v extension.
+
+10
+00:00:48,140  --> 00:00:49,745
+Finally, click refresh.
+
+11
+00:00:50,460  --> 00:00:55,787
+Glitter will now list all the matched files and they are ready to be processed as described in the
+main import guide.

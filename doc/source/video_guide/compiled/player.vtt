@@ -1,0 +1,48 @@
+WEBVTT
+
+00:00.100 --> 00:04.988
+Once a video file is open, you can play or control the player, using the mouse or the keyboard.
+
+00:09.219 --> 00:12.152
+To play the currently open video, press the play button.
+
+00:12.860 --> 00:15.643
+Or press again, to toggle between paused and playing.
+
+00:16.340 --> 00:19.971
+The space-bar key can also be used to toggle between playing and paused.
+
+00:24.180 --> 00:33.917
+If the player didn't play all video frames, for example if some frames have been skipped,
+the indicator will show this. To be able to export the data correctly, all frames must
+have been played.
+
+00:34.620 --> 00:40.625
+Once all frames have played, the indicator shows that no frames are missing and that
+the data can be safely exported.
+
+00:44.860 --> 00:46.921
+Drag the slider to change the video playing speed
+
+00:47.620 --> 00:50.083
+or write the exact speed in frames per second.
+
+00:50.779 --> 00:55.977
+Alternatively, use the up and down keyboard arrows to control the speed without having to use the mouse.
+
+00:58.660 --> 01:01.463
+Notice that the slider is logarithmic over its range.
+
+01:04.859 --> 01:15.485
+When the lowest speed is selected, the player will enter frame by frame mode. In frame by frame mode, to
+move to the next video frame, press the right arrow on the keyboard. This allows more accurate coding.
+
+01:19.699 --> 01:26.573
+Drag the slider in the seek bar, to seek in the video to the closest seek point.
+The right and left arrow keys can also be used to seek.
+
+01:26.773 --> 01:31.263
+In frame by frame mode, the right arrow key is used to advance the video by one frame.
+
+01:35.499 --> 01:38.692
+Zoom the video with the zoom slider and zoom or zoom out buttons.

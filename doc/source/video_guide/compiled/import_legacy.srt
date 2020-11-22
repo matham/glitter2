@@ -1,0 +1,38 @@
+1
+00:00:00,100  --> 00:00:08,530
+Glitter supports importing legacy glitter files. These are files created by much
+older versions of glitter that cannot be opened directly by the current version of glitter.
+
+2
+00:00:09,219  --> 00:00:10,855
+From within the import section.
+
+3
+00:00:11,055  --> 00:00:14,467
+First, select the legacy importing mode from the drop down menu.
+
+4
+00:00:15,179  --> 00:00:21,694
+Then, select the output directory, where the glitter h 5 data files that are generated
+from the legacy files, will be created.
+
+5
+00:00:22,380  --> 00:00:26,440
+Next, select the input directory containing the legacy files to process.
+
+6
+00:00:27,140  --> 00:00:32,078
+then, select the filter with which to select the legacy files in that directory and sub-directories.
+
+7
+00:00:32,278  --> 00:00:36,029
+The shown filter will only select files that end with the h 5 extension.
+
+8
+00:00:36,740  --> 00:00:38,345
+Finally, click refresh.
+
+9
+00:00:39,060  --> 00:00:44,387
+Glitter will now list all the matched files and they are ready to be processed as described in the
+main import guide.

@@ -1,0 +1,42 @@
+WEBVTT
+
+00:00.100 --> 00:06.485
+The calibration tool, allows calibrating the video size in pixels, to the real-world size
+of the objects in the video.
+
+00:06.685 --> 00:13.638
+This, for example, allows computing the real world speed from video speed. By converting
+pixel measurements to meter measurements.
+
+00:14.340 --> 00:17.442
+The pixels per meter metadata is exported with the raw data.
+
+00:18.140 --> 00:20.963
+To show the calibration tool, press the ruler button.
+
+00:21.660 --> 00:25.351
+This will show two points that can be adjusted to a known real world distance.
+
+00:26.060 --> 00:29.172
+For example, the corners are known to be eighteen inches apart.
+
+00:29.860 --> 00:31.844
+Then, press the calibration settings button,
+
+00:32.540 --> 00:33.686
+to show the settings.
+
+00:34.380 --> 00:35.110
+In the distance field,
+
+00:35.820 --> 00:39.002
+enter the real-world distance between the points, in millimeter.
+
+00:39.700 --> 00:41.475
+Finally, press the save button
+
+00:42.180 --> 00:43.777
+To compute, display, and save,
+
+00:44.460 --> 00:46.664
+the pixels per meter for the video file.

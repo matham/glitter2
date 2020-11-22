@@ -1,0 +1,102 @@
+1
+00:00:00,100  --> 00:00:04,599
+Glitter lets you code behaviors, and lets you track the position of objects in a video file.
+
+2
+00:00:05,300  --> 00:00:07,901
+To begin, browse for a video file with the browse button.
+
+3
+00:00:08,620  --> 00:00:10,136
+and select a video file.
+
+4
+00:00:10,819  --> 00:00:12,894
+This will open the video file in glitter.
+
+5
+00:00:17,100  --> 00:00:22,607
+When data is coded with glitter, it stores the coded data, in a h 5 file right next to the video file.
+
+6
+00:00:23,300  --> 00:00:29,076
+If the data file already exists, glitter will open the data file. Otherwise it will create a new data file.
+
+7
+00:00:29,276  --> 00:00:33,047
+This data file is later used when computing and exporting statistics.
+
+8
+00:00:33,740  --> 00:00:41,491
+Glitter also creates a temporary file, in which the data is saved periodically, in
+case of a program crash before the data is explicitly saved.
+
+9
+00:00:42,180  --> 00:00:47,587
+Once a file is opened, the full path to the video and data file currently open is shown in the title bar.
+
+10
+00:00:51,820  --> 00:00:54,192
+To save all unsaved data, to the h 5 file
+
+11
+00:00:54,900  --> 00:00:56,086
+press the save button
+
+12
+00:00:56,780  --> 00:00:58,944
+or, hit the control s keyboard key.
+
+13
+00:00:59,660  --> 00:01:06,563
+To check whether data is unsaved.
+The presence of an asterisk in the title bar indicates that some of the data is currently unsaved.
+
+14
+00:01:07,259  --> 00:01:11,050
+Additionally, a prompt is shown before closing, if data is unsaved.
+
+15
+00:01:15,259  --> 00:01:18,751
+Glitter supports additional data operations through the drop-down menu.
+
+16
+00:01:19,460  --> 00:01:20,582
+It supports saving normally,
+
+17
+00:01:21,300  --> 00:01:26,787
+as well as saving any changes to a new h 5 file, leaving the currently open data file unchanged.
+
+18
+00:01:27,500  --> 00:01:33,096
+It can open a video and data file in read only mode. Such that no changes can be saved to that file.
+
+19
+00:01:33,780  --> 00:01:37,334
+It can remove any unsaved changes and reset to the last saved state
+
+20
+00:01:38,020  --> 00:01:40,434
+or close the currently open file altogether.
+
+21
+00:01:41,140  --> 00:01:46,906
+It can import all the channels metadata from an existing data file, without also importing the coded channel data.
+
+22
+00:01:47,620  --> 00:01:51,470
+To facilitate sharing a template with all the channels, without the channel data.
+
+23
+00:01:51,670  --> 00:01:56,180
+The channels metadata can be exported to a special yaml file and shared with others.
+
+24
+00:01:56,900  --> 00:01:59,713
+Others can then import these channels from the yaml file.
+
+25
+00:02:00,420  --> 00:02:07,533
+As a convenience, the most recent yaml template imported is listed in the menu.
+And it can be imported again without having to browse for it.

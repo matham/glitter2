@@ -1,0 +1,97 @@
+WEBVTT
+
+00:00.100 --> 00:09.418
+Event channels help code the occurrence of events, during video frames. For example, it could code when the animal is
+sniffing at the left nose port, or that the animal is currently rearing.
+
+00:09.618 --> 00:18.258
+The coded data can later be exported as raw data or summarized. For example, it can export
+the total duration the animal was sniffing, or the number of rearing events.
+
+00:22.800 --> 00:23.618
+To add an event channel,
+
+00:24.300 --> 00:25.476
+click on the event plus button,
+
+00:26.167 --> 00:27.802
+and a new channel will be created.
+
+00:28.467 --> 00:29.659
+To configure the event channel
+
+00:30.334 --> 00:31.218
+press the settings button,
+
+00:31.934 --> 00:34.068
+this will open the configuration window.
+
+00:34.768 --> 00:37.481
+To change the name, replace it with a new unique name.
+
+00:39.668 --> 00:42.052
+Delete the channel, by pressing the trash button.
+
+00:46.235 --> 00:52.989
+While the video is playing, to code that an event is currently occurring, press the channel button or
+press the keyboard key configured for the channel.
+
+01:05.435 --> 01:09.884
+A unique keyboard key can be assigned to each channel. For example, the letter s.
+
+01:10.602 --> 01:15.749
+That key can then be used to code the channel, instead of
+pressing the channel button manually, with the mouse.
+
+01:16.436 --> 01:19.249
+The keyboard key can be used to code in one of two modes.
+
+01:19.936 --> 01:29.932
+In the first, the channel will be coded as active while the key is held down. In the second, pressing the key
+down once, will mark all subsequent frames as active, until the key is pressed again.
+
+01:30.603 --> 01:35.082
+The coded preview highlights the video frames that have been coded as active, for each channel.
+
+01:39.270 --> 01:43.200
+If a mistake was made, channel data can be erased in one of three ways.
+
+01:43.904 --> 01:47.694
+In the first, press the erase button while playing over the frames to be cleared.
+
+01:50.371 --> 01:52.316
+Notice the erase button being pressed!
+
+01:58.105 --> 01:59.626
+The second, is to select the channel
+
+02:03.339 --> 02:06.321
+and press the keyboard delete key while playing over the frames.
+
+02:09.339 --> 02:12.579
+Finally, you can clear the whole channel, by pressing the clear data button
+
+02:13.306 --> 02:15.121
+and all the channel data is cleared.
+
+02:19.306 --> 02:25.172
+Sometimes, it may be desired, to exclusively code only one channel from a group of channels as active, for any frame.
+
+02:25.372 --> 02:25.903
+To achieve this,
+
+02:26.573 --> 02:31.112
+set the group to the same value for all the channels in the group. For example, sniff.
+
+02:34.807 --> 02:40.134
+Then, when the non-sniffing channel is coded, the sniffing channel is automatically
+cleared at that timestamp.
+
+02:46.507 --> 02:48.189
+To duplicate a channel and all its data,
+
+02:48.907 --> 02:50.266
+click on the duplicate channel button,
+
+02:50.941 --> 02:53.464
+and the channel will be duplicated, identically.

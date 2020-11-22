@@ -1,0 +1,41 @@
+WEBVTT
+
+00:00.100 --> 00:05.646
+Glitter supports importing t x t files that contain coded data exported by the Clever System program.
+
+00:05.846 --> 00:08.580
+Demo t x t files can be found in the source code.
+
+00:09.299 --> 00:10.935
+From within the import section.
+
+00:11.135 --> 00:14.836
+First, select the Clever System importing mode from the drop down menu.
+
+00:15.540 --> 00:22.304
+Next, select the output directory, where the glitter h 5 data files that are generated
+from the t x t files, will be created.
+
+00:23.020 --> 00:27.110
+Then, select the input directory containing the t x t files to process.
+
+00:27.820 --> 00:36.150
+This directory must also contain the video files used to generate the t x t files, because
+the video files are needed by glitter to generate the h 5 files.
+
+00:36.860 --> 00:42.047
+Next, select the filter with which to select the t x t files in that directory and sub-directories.
+
+00:42.247 --> 00:46.078
+The shown filter will only select files that end with the t x t extension.
+
+00:46.780 --> 00:48.385
+Finally, click refresh.
+
+00:49.100 --> 00:54.427
+Glitter will now list all the matched files and they are ready to be processed as described in the
+main import guide.
+
+00:54.627 --> 01:05.023
+Only the t c r files should be selected, because they contain the data. However, the t c g files
+should also be in that directory, if they exist, because they will then be used to import the zones.

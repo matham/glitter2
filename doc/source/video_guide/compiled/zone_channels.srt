@@ -1,0 +1,87 @@
+1
+00:00:02,100  --> 00:00:08,564
+Zone channels code the position of static objects in the video. For example, it could code the position of
+odors to be sniffed.
+
+2
+00:00:08,764  --> 00:00:17,584
+The coded data can later be exported as raw data or summarized. For example, it can export
+the area of the zone, or the duration the animal was in the zone, if coded.
+
+3
+00:00:21,306  --> 00:00:27,311
+Much of the channel management for zone channels, is the same as for event channels.
+Please see the event channel guide.
+
+4
+00:00:27,511  --> 00:00:31,272
+However, unlike event channels, zone channels are added by drawing them.
+
+5
+00:00:35,473  --> 00:00:37,766
+To draw a zone, first enable showing the zones,
+
+6
+00:00:38,473  --> 00:00:40,368
+then, enable editing the zones.
+
+7
+00:00:41,073  --> 00:00:45,921
+The type of zone created, is controlled by the zone mode selected. The default is freeform.
+
+8
+00:00:46,640  --> 00:00:47,907
+To draw a freeform polygon,
+
+9
+00:00:48,607  --> 00:00:50,831
+drag the mouse over the area to enclose.
+
+10
+00:00:56,307  --> 00:00:57,782
+To draw a more precise polygon,
+
+11
+00:00:58,474  --> 00:01:03,731
+place polygon vertices by pressing the mouse on each point. To finish, double click the mouse.
+
+12
+00:01:03,931  --> 00:01:11,354
+The zone can be edited by slow-pressing a vertex and dragging it. The overall zone can be dragged,
+when not editing it, by dragging the first point.
+
+13
+00:01:26,608  --> 00:01:27,281
+To draw an ellipse,
+
+14
+00:01:27,975  --> 00:01:32,703
+drop the ellipse center with the mouse. Then, edit it, by dragging the points on the radius.
+
+15
+00:01:41,542  --> 00:01:42,148
+To draw a circle,
+
+16
+00:01:42,842  --> 00:01:47,690
+drop the circle center with the mouse. Then, edit it, by dragging the point on the radius.
+
+17
+00:02:01,609  --> 00:02:02,561
+To place a single point,
+
+18
+00:02:03,243  --> 00:02:06,894
+drop the point with the mouse. It can be edited, by dragging the point.
+
+19
+00:02:21,510  --> 00:02:24,802
+The zones can be hidden or shown, by toggling the display button.
+
+20
+00:02:25,510  --> 00:02:26,487
+To either show them.
+
+21
+00:02:27,177  --> 00:02:27,954
+Or hide them

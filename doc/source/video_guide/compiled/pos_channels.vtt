@@ -1,0 +1,44 @@
+WEBVTT
+
+00:02.100 --> 00:08.734
+Position channels code the position of objects across video frames. For example, it could code the center
+or nose of the animal.
+
+00:08.934 --> 00:16.865
+The coded data can later be exported as raw data or summarized. For example, it can export
+the mean speed of the animal, or the mean distance to a point.
+
+00:20.588 --> 00:26.783
+Much of the channel management for position channels, is the same as for event channels.
+Please see the event channel guide.
+
+00:30.955 --> 00:33.179
+To code a channel, first select the channel.
+
+00:33.855 --> 00:36.019
+Now the channel can be coded with the mouse.
+
+00:36.722 --> 00:41.760
+A position channel can also be selected with an assigned keyboard key, such as n in this example.
+
+00:42.422 --> 00:50.283
+Once selected, while the video is playing, follow the position of the object with the mouse pressed down. This
+will code the position for the current video frames.
+
+01:27.489 --> 01:31.309
+The recent position history of the tracked object can be shown, if enabled.
+
+01:31.989 --> 01:34.991
+Press the history button to show or hide the position history.
+
+01:41.689 --> 01:45.020
+Normally, the player will continuously show new frames to code.
+
+01:45.723 --> 01:47.737
+However, by setting the frame rate to the minimum,
+
+01:48.423 --> 01:53.989
+the player shows a single frame, and only advances to the next frame, when the mouse is pressed to code the frame.
+
+01:54.189 --> 01:55.975
+This allows more accurate coding.
