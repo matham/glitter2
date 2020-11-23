@@ -1,0 +1,253 @@
+1
+00:00:00,100  --> 00:00:12,142
+Glitter supports computing statistics from the glitter coded data. It can compute
+for example, the number of events of an event channel or the mean speed of a
+position channel. The summery data can then be batch exported to an excel file.
+
+2
+00:00:12,860  --> 00:00:15,044
+Here's an example summary excel file.
+
+3
+00:00:18,740  --> 00:00:22,471
+From the main page, click export view, to switch to the export page.
+
+4
+00:00:23,180  --> 00:00:25,947
+Once in the export view page, you can generate the summaries
+
+5
+00:00:26,660  --> 00:00:29,004
+by selecting that mode from the dropdown menu.
+
+6
+00:00:29,700  --> 00:00:33,470
+Following are the overall steps to export the data, with some of them optional.
+
+7
+00:00:39,700  --> 00:00:46,743
+All files in the batch to be processed, must contain similar data channels. Otherwise,
+they must be exported in separate batches.
+
+8
+00:00:47,460  --> 00:00:57,965
+Any one file from the batch, must initially be selected as a template. This template file
+will be used to create summary measures using the channel names in the file and then applied
+to all the files in the batch.
+
+9
+00:00:58,165  --> 00:00:59,462
+Select this file here.
+
+10
+00:01:01,700  --> 00:01:05,161
+Also select the excel file where all the data will be exported to.
+
+11
+00:01:08,380  --> 00:01:12,140
+Many measures accept parameters, such as a threshold or a start time.
+
+12
+00:01:12,340  --> 00:01:17,109
+Some of these parameters can be given global default values shared across all measures
+that use them.
+
+13
+00:01:17,820  --> 00:01:22,648
+This section lists all these optional parameters as well as an explanation for each parameter.
+
+14
+00:01:23,339  --> 00:01:30,253
+For example, the end parameter can be set to 2. Then, only the first two seconds of the
+video will be used in the data summaries.
+
+15
+00:01:30,939  --> 00:01:35,988
+Other parameters are specific to individual measures and cannot be given global default values.
+
+16
+00:01:36,699  --> 00:01:39,952
+This section lists all these parameters and an explanation for them.
+
+17
+00:01:43,179  --> 00:01:47,639
+Some measures require intermediate data channels, in addition to the user-coded channels.
+
+18
+00:01:47,839  --> 00:01:59,133
+For example, to compute the total time the animal's nose was in a zone. We can create an intermediate
+event channel from the nose position channel and the zone channel. This channel would be active whenever
+the nose is in the zone.
+
+19
+00:01:59,333  --> 00:02:04,620
+Then, for example, we can compute with the intermediate channel, the number of
+times the nose entered the zone.
+
+20
+00:02:05,339  --> 00:02:08,023
+This section lets you create these intermediate channels.
+
+21
+00:02:08,739  --> 00:02:14,925
+To add a measure channel. First select the type of channel from which it will be created.
+For example, a position channel.
+
+22
+00:02:15,619  --> 00:02:17,335
+Then select the measure to create
+
+23
+00:02:18,019  --> 00:02:21,741
+For example, the position channel is in a zone measure, mentioned above.
+
+24
+00:02:22,459  --> 00:02:24,285
+And click the plus button to create it.
+
+25
+00:02:24,980  --> 00:02:27,374
+Now, we will need to configure the channel.
+
+26
+00:02:28,060  --> 00:02:31,571
+From the populated list of position channel names in the template file.
+
+27
+00:02:32,260  --> 00:02:35,152
+Select a channel. For example the spiral channel.
+
+28
+00:02:35,859  --> 00:02:37,418
+Then, expand the channel options,
+
+29
+00:02:38,100  --> 00:02:39,821
+to show the documentation for the channel,
+
+30
+00:02:41,540  --> 00:02:44,103
+as well as to configure any channel parameters.
+
+31
+00:02:44,820  --> 00:02:46,734
+For example, from the list of zone channels
+
+32
+00:02:47,420  --> 00:02:49,185
+select and add the circle channel.
+
+33
+00:02:49,899  --> 00:02:55,766
+The intermediate channel will now create an event channel that is active,
+whenever the spiral channel is within the circle zone.
+
+34
+00:02:56,459  --> 00:02:59,273
+Finally, give the new intermediate channel a unique name.
+
+35
+00:03:02,500  --> 00:03:07,089
+Glitter supports computing and exporting many common summary measures for all channel types.
+
+36
+00:03:07,289  --> 00:03:15,899
+For example, we can export the mean speed of a position channel, the number of active periods
+and total active duration of an event channel, or the total area of a zone channel.
+
+37
+00:03:16,580  --> 00:03:19,043
+This section lets you create these summary measures.
+
+38
+00:03:19,740  --> 00:03:24,329
+To add a measure. Select the type of channel to which it will be applied and the specific measure.
+
+39
+00:03:25,020  --> 00:03:26,845
+And click the plus button to create it.
+
+40
+00:03:27,540  --> 00:03:32,119
+This measure will compute the total duration that the specified event channel was coded as active.
+
+41
+00:03:32,820  --> 00:03:36,250
+Next, we need to select the channels for which we will compute this in the report.
+
+42
+00:03:36,940  --> 00:03:39,902
+It will be computed for both the spiral and event channels.
+
+43
+00:03:40,620  --> 00:03:45,059
+You can also optionally add an ID to the measure that will be included with the measure in the report.
+
+44
+00:03:45,740  --> 00:03:49,850
+Finally, you can further configure the measure or read the measure documentation.
+
+45
+00:03:52,540  --> 00:03:54,894
+Next, we will select and add another measure.
+
+46
+00:03:55,580  --> 00:03:59,869
+This measure computes the mean distance between a position channel and the center of a zone.
+
+47
+00:04:00,580  --> 00:04:02,498
+From the pre-populated position channel list,
+
+48
+00:04:03,180  --> 00:04:05,614
+we will compute this measure for the spiral channel.
+
+49
+00:04:06,300  --> 00:04:09,273
+For the zone channel parameter, from the data file's list of zones,
+
+50
+00:04:09,980  --> 00:04:11,645
+we will select the circle zone.
+
+51
+00:04:11,845  --> 00:04:16,883
+Therefore, this measure will compute the mean distance between the
+spiral channel and the center of the circle.
+
+52
+00:04:17,580  --> 00:04:21,600
+You can further read the measure documentation, or set the optional parameters.
+
+53
+00:04:26,820  --> 00:04:30,341
+Once we configured the measures, we can select the files in the batch.
+
+54
+00:04:30,541  --> 00:04:34,083
+First, select the input directory with the data files to process.
+
+55
+00:04:34,780  --> 00:04:39,568
+Then, select a filter with which to select the data files in that directory and sub-directories.
+
+56
+00:04:39,768  --> 00:04:45,535
+The shown filter will only select files that end with the h 5 extension, which is the extension of the data files.
+
+57
+00:04:46,220  --> 00:04:47,825
+Finally, click refresh.
+
+58
+00:04:48,540  --> 00:04:51,612
+Glitter will now list all the matched files that are to be processed.
+
+59
+00:04:52,300  --> 00:04:57,138
+To start the export process, press the play button to start exporting data from the files.
+
+60
+00:04:57,820  --> 00:05:01,331
+Then, the exported data will be found in the configured excel file.
