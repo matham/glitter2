@@ -24,7 +24,9 @@ To install https://matham.github.io/glitter2/installation.html
     :alt: Github action status
 
 
-Development note: The video guide is generated from metadata by `narakeet <narakeet.com/>`_ and
+-------
+
+*Development note*: The video guide is generated from metadata by `narakeet <narakeet.com/>`_ and
 hosted on `YouTube <https://matham.github.io/glitter2/guide.html>`_.
 The images and video are not included in the master branch because they are big and once included
 cannot be removed from history, resulting in a very large repo.
