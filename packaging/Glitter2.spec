@@ -22,14 +22,14 @@ kwargs['hiddenimports'].extend([
     'numpy.random.common', 'numpy.random.bounded_integers',
     'numpy.random.entropy', 'plyer.platforms.win.filechooser',
     'plyer.facades.filechooser', 'kivy.core.window.window_info',
-    '_ruamel_yaml', 'ruamel.yaml.main'])
+    '_ruamel_yaml'])
 
 
 a = Analysis(['../glitter2/run_app.py'],
              pathex=['.'],
              datas=base_kivy_app.get_pyinstaller_datas() + glitter2.get_pyinstaller_datas() + [
                  (join(dirname(nixio.info.__file__), 'info.json'), 'nixio')] + [
-                 (ruamel.yaml.__file__, 'ruamel/yaml')],
+                 (join(dirname(ruamel.yaml.__file__), '*.py'), 'ruamel/yaml')],
              hookspath=hookspath(),
              runtime_hooks=runtime_hooks(),
              win_no_prefer_redirects=False,
