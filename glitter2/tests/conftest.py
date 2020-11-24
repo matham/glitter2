@@ -1,0 +1,153 @@
+import os
+import pytest
+import trio
+import time
+from pathlib import Path
+import gc
+import weakref
+from collections import defaultdict
+import shutil
+import logging
+from typing import Type, List
+from glitter2.tests.app import Glitter2TestApp
+
+os.environ['KIVY_USE_DEFAULTCONFIG'] = '1'
+
+file_count = defaultdict(int)
+
+examples_dir = Path(__file__).parent.parent.parent.joinpath('examples')
+
+
+@pytest.fixture()
+def temp_file(tmp_path):
+    def temp_file_gen(fname: str) -> Path:
+        i = file_count[fname]
+        file_count[fname] += 1
+
+        root, ext = os.path.splitext(fname)
+        return tmp_path / '{}_{}{}'.format(root, i, ext)
+
+    return temp_file_gen
+
+
+@pytest.fixture(scope='session')
+def app_list():
+    apps = []
+
+    yield apps
+
+    gc.collect()
+    alive_apps = []
+    for i, (app, request) in enumerate(apps[1:-1]):
+        app = app()
+        request = request()
+        if request is None:
+            request = '<dead request>'
+
+        if app is not None:
+            alive_apps.append((app, request))
+            logging.error(
+                'Memory leak: failed to release app for test ' + repr(request))
+
+            # import objgraph
+            # objgraph.show_backrefs(
+            #     [app], filename=r'E:\backrefs{}.png'.format(i), max_depth=50,
+            #     too_many=1)
+            # objgraph.show_chain(
+            #     objgraph.find_backref_chain(
+            #         last_app(), objgraph.is_proper_module),
+            #     filename=r'E:\chain.png')
+
+    assert not len(alive_apps), 'Memory leak: failed to release all apps'
+
+
+@pytest.fixture()
+async def glitter_app(
+        request, nursery, temp_file, tmp_path, tmp_path_factory, app_list):
+    ts0 = time.perf_counter()
+    from kivy.core.window import Window
+    from kivy.context import Context
+    from kivy.clock import ClockBase
+    from kivy.animation import Animation
+    from kivy.base import stopTouchApp
+    from kivy.factory import FactoryBase, Factory
+    from kivy.lang.builder import BuilderBase, Builder
+    from kivy.logger import LoggerHistory
+
+    context = Context(init=False)
+    context['Clock'] = ClockBase(async_lib='trio')
+    # context['Factory'] = FactoryBase.create_from(Factory)
+    # have to make sure all app files are imported before this because
+    # globally read kv files will not be loaded again in the new builder,
+    # except if manually loaded, which we don't do
+    # context['Builder'] = BuilderBase.create_from(Builder)
+    context.push()
+
+    Window.create_window()
+    Window.register()
+    Window.initialized = True
+    Window.canvas.clear()
+
+    from kivy.clock import Clock
+    Clock._max_fps = 0
+
+    app = Glitter2TestApp(
+        yaml_config_path=str(temp_file('config.yaml')),
+        data_path=str(tmp_path))
+
+    try:
+        app.set_async_lib('trio')
+        nursery.start_soon(app.async_run)
+
+        ts = time.perf_counter()
+        while not app.app_has_started:
+            await trio.sleep(.1)
+            if time.perf_counter() - ts >= 120:
+                raise TimeoutError()
+
+        await app.wait_clock_frames(5)
+
+        ts1 = time.perf_counter()
+        yield weakref.proxy(app)
+        ts2 = time.perf_counter()
+
+        stopTouchApp()
+
+        ts = time.perf_counter()
+        while not app.app_has_stopped:
+            await trio.sleep(.1)
+            if time.perf_counter() - ts >= 40:
+                raise TimeoutError()
+
+    finally:
+        stopTouchApp()
+        for anim in list(Animation._instances):
+            anim._unregister()
+        app.clean_up()
+        for child in Window.children[:]:
+            Window.remove_widget(child)
+
+        context.pop()
+        del context
+        LoggerHistory.clear_history()
+
+    app_list.append((weakref.ref(app), weakref.ref(request)))
+
+    ts3 = time.perf_counter()
+    print(ts1 - ts0, ts2 - ts1, ts3 - ts2)
+
+
+@pytest.fixture()
+def coded_data_file(temp_file):
+    src = examples_dir.joinpath('video_data.h5')
+    target = temp_file('video.h5')
+    shutil.copy(src, target)
+    return target
+
+
+@pytest.fixture()
+def sample_video_file(temp_file):
+    src = examples_dir.joinpath('video.mp4')
+    target = temp_file('video.mp4')
+    shutil.copy(src, target)
+    return target

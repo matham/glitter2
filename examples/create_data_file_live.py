@@ -22,6 +22,7 @@ data_file.init_new_file()
 # read all the frame timestamps and video metadata from the video file, this
 # may take some time as all the frames are read
 timestamps, video_metadata = GlitterPlayer.get_file_data(video_file)
+data_file.video_metadata_dict = video_metadata
 t0 = timestamps[0]
 width, height = video_metadata['src_vid_size']
 center_x = width / 2.
