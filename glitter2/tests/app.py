@@ -78,7 +78,7 @@ class Glitter2TestApp(Glitter2App, UnitKivyApp):
     def check_close(self):
         return True
 
-    def handle_exception(self, msg, exc_info=None,level='error', *largs):
+    def handle_exception(self, msg, exc_info=None, level='error', *largs):
         super().handle_exception(msg, exc_info, level, *largs)
 
         if isinstance(exc_info, str):
