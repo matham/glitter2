@@ -19,8 +19,8 @@ kwargs['hiddenimports'].extend([
     'ffpyplayer.player.player', 'ffpyplayer.player.queue',
     'numpy.random.common', 'numpy.random.bounded_integers',
     'numpy.random.entropy', 'plyer.platforms.win.filechooser',
-    'plyer.facades.filechooser', 'kivy.core.window.window_info', 'ruamel.yaml',
-    'ruamel.yaml.main'])
+    'plyer.facades.filechooser', 'kivy.core.window.window_info',
+    '_ruamel_yaml'])
 
 
 a = Analysis(['../glitter2/run_app.py'],

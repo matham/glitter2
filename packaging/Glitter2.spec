@@ -20,8 +20,8 @@ kwargs['hiddenimports'].extend([
     'ffpyplayer.player.player', 'ffpyplayer.player.queue',
     'numpy.random.common', 'numpy.random.bounded_integers',
     'numpy.random.entropy', 'plyer.platforms.win.filechooser',
-    'plyer.facades.filechooser', 'kivy.core.window.window_info', 'ruamel.yaml',
-    'ruamel.yaml.main'])
+    'plyer.facades.filechooser', 'kivy.core.window.window_info',
+    '_ruamel_yaml'])
 
 
 a = Analysis(['../glitter2/run_app.py'],
@@ -32,7 +32,7 @@ a = Analysis(['../glitter2/run_app.py'],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
              cipher=block_cipher,
-             noarchive=os.environ.get('FILERS_NOARCHIVE', '0') == '1',
+             noarchive=os.environ.get('GLITTER2_NOARCHIVE', '0') == '1',
              **kwargs)
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
@@ -41,7 +41,7 @@ exe = EXE(pyz,
           [],
           exclude_binaries=True,
           name='Glitter2',
-          debug=os.environ.get('FILERS_NOARCHIVE', '0') == '1',
+          debug=os.environ.get('GLITTER2_NOARCHIVE', '0') == '1',
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
