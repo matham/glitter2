@@ -89,7 +89,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip virtualenv wheel setuptools
-        python -m pip install https://github.com/pyinstaller/pyinstaller/archive/develop.zip
+        # https://github.com/pyinstaller/pyinstaller/issues/5338
+        python -m pip install https://github.com/pyinstaller/pyinstaller/archive/cf6e363bcc66170d0ad526f2743654737e7d8a9e.zip
         python -c "import os, PyInstaller; os.remove(os.path.join(os.path.dirname(PyInstaller.__file__), 'hooks', 'hook-kivy.py'))"
         python -m pip install kivy --pre --no-deps --index-url  https://kivy.org/downloads/simple/
         python -m pip install kivy[base] --pre --extra-index-url  https://kivy.org/downloads/simple/
