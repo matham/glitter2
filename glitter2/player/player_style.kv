@@ -158,6 +158,9 @@
                     do_collide_after_children: True
                     size_hint: None, None
                     size: image_display.size
+                    on_scale:
+                        app.channel_controller.set_graphics_scale(self.scale)
+                        app.ruler.set_graphics_scale(self.scale)
                     ImageDisplayWidgetManager:
                         on_kv_post:
                             app.image_display_manager = self.__self__

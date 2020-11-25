@@ -12,6 +12,7 @@ from math import sqrt
 
 from kivy.properties import NumericProperty, ObjectProperty, StringProperty, \
     BooleanProperty, ListProperty, DictProperty
+from kivy.metrics import dp
 from kivy.event import EventDispatcher
 from kivy.graphics import Color, Line, Point
 
@@ -90,6 +91,8 @@ class ChannelController(EventDispatcher):
     show_zone_drawing = BooleanProperty(True)
 
     _last_timestamp = None
+
+    graphics_scale = 1
 
     def __init__(self, app, **kwargs):
         super(ChannelController, self).__init__(**kwargs)
@@ -359,6 +362,14 @@ class ChannelController(EventDispatcher):
             return True
         return False
 
+    def set_graphics_scale(self, scale):
+        scale = self.graphics_scale = max(1., 1 / scale)
+
+        for channel in self.pos_channels:
+            channel.update_graphics_scale(scale)
+        for channel in self.zone_channels:
+            channel.update_graphics_scale(scale)
+
 
 class ChannelBase(EventDispatcher):
     """Base class for all the channels.
@@ -596,33 +607,59 @@ class PosChannel(TemporalChannel):
     def track_config_props_changes(self):
         super(PosChannel, self).track_config_props_changes()
 
+        controller = self.channel_controller
+        scale = controller.graphics_scale
         name = f'pos_graphics_point_{id(self)}'
-        canvas = self.channel_controller.zone_painter.canvas
+        canvas = controller.zone_painter.canvas
         r, g, b = self.color_gl
 
         canvas.add(Color(1 - r, 1 - g, 1 - b, 1, group=name))
-        line = self._current_point_back_graphics = Line(width=2, group=name)
+        line = self._current_point_back_graphics = Line(
+            width=dp(2) * scale, group=name)
         canvas.add(line)
 
         canvas.add(Color(r, g, b, 1, group=name))
-        point = self._current_point_graphics = Point(pointsize=4, group=name)
+        point = self._current_point_graphics = Point(
+            pointsize=dp(3) * scale, group=name)
         canvas.add(point)
 
+    def update_graphics_scale(self, scale):
+        circle = self._current_point_back_graphics
+        if circle is not None:
+            circle.width = dp(2) * scale
+
+            if circle.points:
+                x, y = self.current_value
+                circle.circle = x, y, dp(3) * scale + 2
+
+        if self._current_point_graphics is not None:
+            self._current_point_graphics.pointsize = dp(3) * scale
+
+        if self._tail_line_graphics is not None:
+            self._tail_line_graphics.width = dp(2) * scale
+
+        if self._tail_line_end_graphics is not None:
+            self._tail_line_end_graphics.width = dp(2) * scale
+
     def _display_line_graphics(self, *args):
+        controller = self.channel_controller
         if self.display_line:
+            scale = controller.graphics_scale
             name = f'pos_graphics_line_{id(self)}'
-            canvas = self.channel_controller.zone_painter.canvas
+            canvas = controller.zone_painter.canvas
 
             canvas.add(Color(*self.color_gl, 1, group=name))
-            line = self._tail_line_graphics = Line(width=2, group=name)
+            line = self._tail_line_graphics = Line(
+                width=dp(2) * scale, group=name)
             canvas.add(line)
-            line = self._tail_line_end_graphics = Line(width=2, group=name)
+            line = self._tail_line_end_graphics = Line(
+                width=dp(2) * scale, group=name)
             canvas.add(line)
 
             self.update_line_graphics()
         else:
             self._tail_line_graphics = None
-            self.channel_controller.zone_painter.canvas.remove_group(
+            controller.zone_painter.canvas.remove_group(
                 f'pos_graphics_line_{id(self)}')
 
     def clear_pos_graphics(self):
@@ -698,7 +735,8 @@ class PosChannel(TemporalChannel):
                 line_end.points = []
         else:
             p.points = [x, y]
-            circle.circle = x, y, 8
+            circle.circle = \
+                x, y, dp(3) * self.channel_controller.graphics_scale + 2
             if line_end is not None:
                 points = line_end.points
                 if points:
@@ -805,6 +843,12 @@ class ZoneChannel(ChannelBase):
         self.fbind('shape_highlighted', self.manage_zone_highlighted_display)
         self.fbind('pos_channels_highlighted', self._update_shape_highlighted)
 
+        controller = self.channel_controller
+        shape = self.shape
+        if shape is not None:
+            shape.line_width = dp(1) * controller.graphics_scale
+            shape.pointsize = dp(3) * controller.graphics_scale
+
     def _update_shape_highlighted(self, *args):
         self.shape_highlighted = bool(self.pos_channels_highlighted)
 
@@ -815,9 +859,14 @@ class ZoneChannel(ChannelBase):
 
     def apply_config_property(self, name, value):
         if name == 'shape_config':
-            painter = self.channel_controller.zone_painter
+            controller = self.channel_controller
+            painter = controller.zone_painter
             self.shape = shape = painter.create_shape_from_state(
                 value, add=False)
+
+            shape.line_width = dp(1) * controller.graphics_scale
+            shape.pointsize = dp(3) * controller.graphics_scale
+
             shape.channel = self
             painter.add_shape(shape)
         else:
@@ -834,6 +883,12 @@ class ZoneChannel(ChannelBase):
         self._collider = None
         self.clear_zone_area_instructions()
         self.manage_zone_highlighted_display()
+
+    def update_graphics_scale(self, scale):
+        shape = self.shape
+        if shape is not None:
+            shape.line_width = dp(1) * scale
+            shape.pointsize = dp(3) * scale
 
     def manage_zone_highlighted_display(self, *args):
         if self.channel_controller.show_zone_drawing and (
@@ -946,6 +1001,8 @@ class Ruler(EventDispatcher):
     """Can be zero.
     """
 
+    graphics_scale = 1
+
     def __init__(self, **kwargs):
         super(Ruler, self).__init__(**kwargs)
         self.fbind('point_1', self._update_point_1_graphics)
@@ -962,22 +1019,25 @@ class Ruler(EventDispatcher):
         r, g, b = 1, 0, 153 / 255
         r_back, g_back, b_back = 242 / 255, 1, 0
         name = 'glitter2_ruler'
+        scale = self.graphics_scale
 
         with canvas:
             Color(r_back, g_back, b_back, 1, group=name)
-            c1 = self.point_1_circle = Line(width=2, group=name)
+            c1 = self.point_1_circle = Line(width=dp(2) * scale, group=name)
             Color(r, g, b, 1, group=name)
-            p1 = self.point_1_center = Point(pointsize=2, group=name)
+            p1 = self.point_1_center = Point(
+                pointsize=dp(2) * scale, group=name)
 
             Color(r_back, g_back, b_back, 1, group=name)
-            c2 = self.point_2_circle = Line(width=2, group=name)
+            c2 = self.point_2_circle = Line(width=dp(2) * scale, group=name)
             Color(r, g, b, 1, group=name)
-            p2 = self.point_2_center = Point(pointsize=2, group=name)
+            p2 = self.point_2_center = Point(
+                pointsize=dp(2) * scale, group=name)
 
         p1.points = [x1, y1]
-        c1.circle = x1, y1, 8
+        c1.circle = x1, y1, dp(8) * scale
         p2.points = [x2, y2]
-        c2.circle = x2, y2, 8
+        c2.circle = x2, y2, dp(8) * scale
 
         # make sure graphics was created first
         self.point_1 = x1, y1
@@ -998,17 +1058,34 @@ class Ruler(EventDispatcher):
         if self.point_1_circle is None:
             return
 
+        scale = self.graphics_scale
         x, y = self.point_1
         self.point_1_center.points = [x, y]
-        self.point_1_circle.circle = x, y, 8
+        self.point_1_circle.circle = x, y, dp(8) * scale
 
     def _update_point_2_graphics(self, *args):
         if self.point_2_circle is None:
             return
 
+        scale = self.graphics_scale
         x, y = self.point_2
         self.point_2_center.points = [x, y]
-        self.point_2_circle.circle = x, y, 8
+        self.point_2_circle.circle = x, y, dp(8) * scale
+
+    def set_graphics_scale(self, scale):
+        scale = self.graphics_scale = max(1., 1 / scale)
+        if self.canvas is None:
+            return
+
+        self.point_1_circle.width = dp(2) * scale
+        self.point_2_circle.width = dp(2) * scale
+        self.point_1_center.pointsize = dp(2) * scale
+        self.point_2_center.pointsize = dp(2) * scale
+
+        x, y = self.point_1
+        self.point_1_circle.circle = x, y, dp(8) * scale
+        x, y = self.point_2
+        self.point_2_circle.circle = x, y, dp(8) * scale
 
     def update_pixels_per_meter(self):
         if not self.point_distance_mm:
