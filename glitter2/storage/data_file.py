@@ -1231,7 +1231,8 @@ class TemporalDataChannelBase(DataChannelBase):
         if mask is None:
             self.data_array[:] = data
         else:
-            self.data_array[mask, :] = data
+            # workaround for https://github.com/h5py/h5py/issues/1750
+            self.data_array[mask.nonzero()[0]] = data
 
     def get_timestamp_value(self, t: float) -> Any:
         """Returns the value of the data array for the given timestamp ``t``.
