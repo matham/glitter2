@@ -196,7 +196,7 @@
     size_hint_y: None
     size_hint_min_x: self.minimum_width
     height: self.minimum_height
-    spacing: '10dp'
+    disabled: bool(app.export_manager.thread_has_job)
     BoxLayout:
         size_hint_y: None
         height: self.minimum_height
@@ -206,7 +206,6 @@
             text: 'Select import operation:'
             bold: True
         SizedFlatSpinner:
-            disabled: bool(app.export_manager.thread_has_job)
             id: batch_mode
             text_autoupdate: True
             values: ['Create data file from legacy Glitter H5 files', 'Create/append data files from CleverSys TXT files', 'Create/append data files from csv XYT files']

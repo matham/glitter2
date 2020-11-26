@@ -836,7 +836,8 @@ class ExportManager(EventDispatcher):
                 ('update_source_item', (item.item_index, item.get_gui_data())))
             if item.status != 'done':
                 queue_put(('increment', (self, 'num_failed_files', 1)))
-            queue_put(('increment', (self, 'num_processed_files', 1)))
+            else:
+                queue_put(('increment', (self, 'num_processed_files', 1)))
             queue_put(('increment', (self, 'processed_size', item.file_size)))
 
             if item.exception is not None:
