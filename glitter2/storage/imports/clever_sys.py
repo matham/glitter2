@@ -215,14 +215,14 @@ def _parse_clever_sys_file(fh):
 
     if not data:
         raise ValueError('No frame data in the file')
-    if start_frame > data[0][0]:
+    if start_frame != data[0][0]:
         raise ValueError(
-            f'Expected smallest frame to be at least "{start_frame}", but '
-            f'got "{data[0][0]}"')
-    if end_frame < data[-1][0]:
+            f'Expected first frame to be "{start_frame}", but '
+            f'got "{data[0][0]}" instead')
+    if end_frame != data[-1][0]:
         raise ValueError(
-            f'Expected largest frame to be at most "{end_frame}", but '
-            f'got "{data[-1][0]}"')
+            f'Expected last frame to be "{end_frame}", but '
+            f'got "{data[-1][0]}" instead')
 
     return data, metadata
 
