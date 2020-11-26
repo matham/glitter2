@@ -49,6 +49,7 @@
             FlatDivider:
                 color: app.theme.divider
             FlatImageToggleButton:
+                test_name: 'play_button'
                 disabled: app.player.player_state not in ('playing', 'finished', 'paused')
                 source: 'flat_play.png' if self.state == 'normal' else 'flat_pause.png'
                 flat_color: app.theme.accent

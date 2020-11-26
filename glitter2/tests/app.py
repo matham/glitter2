@@ -37,8 +37,9 @@ async def replace_text(app, text_widget, new_text):
     await app.wait_clock_frames(2)
 
 
-async def touch_widget(app, widget):
-    async for _ in app.do_touch_down_up(widget=widget):
+async def touch_widget(app, widget, pos=None, duration=.2):
+    async for _ in app.do_touch_down_up(
+            widget=widget, pos=pos, duration=duration):
         pass
     await app.wait_clock_frames(2)
 

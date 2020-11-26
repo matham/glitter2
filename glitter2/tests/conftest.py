@@ -111,6 +111,9 @@ async def glitter_app(
         yield weakref.proxy(app)
         ts2 = time.perf_counter()
 
+        app.storage_controller.has_unsaved = False
+        app.storage_controller.config_changed = False
+
         stopTouchApp()
 
         ts = time.perf_counter()

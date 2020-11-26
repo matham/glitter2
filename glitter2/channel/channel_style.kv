@@ -105,6 +105,7 @@
             size_hint_x: None
             width: self.minimum_width
             FlatImageToggleButton:
+                test_name: 'show_zones'
                 id: hide_shapes
                 scale_down_color: True
                 state: 'normal'
@@ -121,6 +122,7 @@
             FlatDivider:
                 color: app.theme.divider
             FlatImageToggleButton:
+                test_name: 'edit_zones'
                 id: edit_zones
                 disabled: hide_shapes.state == 'normal'
                 scale_down_color: True
@@ -143,6 +145,7 @@
                     flat_color: app.theme.accent
                     on_state: app.image_display_manager.zone_painter.draw_mode = 'point' if self.state == 'down' else 'none'
                 FlatImageToggleButton:
+                    test_name: 'paint_circle'
                     group: 'paint'
                     scale_down_color: True
                     source: 'flat_circle.png'
@@ -232,6 +235,7 @@
                 pos: self.pos
                 size: self.size
     TrackFlatToggleButton:
+        test_name: 'event_state_button'
         center_texture: True
         padding: ('5dp', '5dp')
         flat_color: app.theme.text_primary
@@ -270,6 +274,7 @@
     spacing: '2dp'
     selection_button: selection_button
     FlatImageToggleButton:
+        test_name: 'pos_selection_button'
         id: selection_button
         source: 'reorder-horizontal.png'
         flat_color: list(root.channel.color_gl) + [1]

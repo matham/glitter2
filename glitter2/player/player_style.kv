@@ -26,6 +26,7 @@
                 text: app.player.get_play_rate_text(app.player.play_rate)
                 input_filter: 'float'
             TickSlider:
+                test_name: 'rate_slider'
                 id: rate_slider
                 orientation: 'vertical'
                 size_hint_min_y: '100dp'
@@ -183,6 +184,7 @@
                             do_translation: False, False
                             do_rotation: False
                         PosChannelPainter:
+                            test_name: 'pos_painter'
                             id: pos_channel_painter
                             size_hint: None, None
                             size: image_display.size

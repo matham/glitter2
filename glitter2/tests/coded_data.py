@@ -17,9 +17,11 @@ def get_rounded_list(data, decimals=2):
 
 
 def get_timestamps(first_timestamp_repeated=False):
-    timestamps = np.arange(250) * .04 + .04
     if first_timestamp_repeated:
+        timestamps = np.arange(250) * .04 + .04
         timestamps[0] = timestamps[1]
+    else:
+        timestamps = (np.arange(250) * .04 + .04)[1:]
     return timestamps
 
 
