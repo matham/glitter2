@@ -160,7 +160,15 @@ def _set_data_from_mapped_video_timestamps(
     timestamps_mapping = map_timestamps_to_timestamps(
         timestamps, np.asarray(data_file.timestamps))
 
+    index_map = data_file.timestamp_data_map
+    n = len(data_file.timestamps)
+
     for channel_type, channels in [('event', events), ('pos', pos)]:
+        if channel_type == 'event':
+            data_arr = np.zeros(n, dtype=np.uint8)
+        else:
+            data_arr = np.zeros((n, 2))
+
         for name, data in channels.items():
             name = fix_name(name, names)
             names.add(name)
@@ -168,13 +176,18 @@ def _set_data_from_mapped_video_timestamps(
             channel = data_file.create_channel(channel_type)
             channel.channel_config_dict = {'name': name}
 
+            mask = np.zeros(n, dtype=np.bool)
             for i in range(len(timestamps)):
                 t = timestamps[i]
                 if t not in timestamps_mapping:
                     continue
 
                 for val in timestamps_mapping[t]:
-                    channel.set_timestamp_value(val, data[i])
+                    _, idx = index_map[val]
+                    mask[idx] = True
+                    data_arr[idx] = data[i]
+
+            channel.set_channel_data(data_arr[mask], mask)
 
 
 def _set_data_from_src_timestamps(data_file: DataFile, events, pos, names):
