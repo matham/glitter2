@@ -202,7 +202,8 @@ class SummeryStatsExporter(FileProcessBase):
 
     def finish_process(self):
         results = list(chain(*self.results))
-        pathlib.Path(self.export_filename).parent.mkdir(parents=True)
+        if not pathlib.Path(self.export_filename).parent.exists():
+            pathlib.Path(self.export_filename).parent.mkdir(parents=True)
         FileDataAnalysis.export_computed_data_summary(
             self.export_filename, results)
 
@@ -231,7 +232,8 @@ class RawDataExporter(FileProcessBase):
             filename = root.joinpath(
                 src.filename.relative_to(
                     src.source_root)).with_suffix('.xlsx')
-            filename.parent.mkdir(parents=True)
+            if not filename.parent.exists():
+                filename.parent.mkdir(parents=True)
             data_file.export_raw_data_to_excel(
                 str(filename), dump_zone_collider=self.dump_zone_collider)
 
