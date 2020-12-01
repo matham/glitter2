@@ -124,6 +124,6 @@ def check_channel_data(
 
     from kivy_garden.painter import PaintCircle
     assert isinstance(shape, PaintCircle)
-    print(shape.center, shape.radius)
-    assert shape.center == [176.0, 99.0]
+    x, y = shape.center
+    assert [round(x), round(y)] == [176.0, 99.0]
     assert shape.radius == 82.5
