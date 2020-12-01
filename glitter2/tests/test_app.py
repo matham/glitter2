@@ -41,7 +41,7 @@ async def add_circle(glitter_app: Glitter2TestApp):
     radius = zone_metadata['shape_config']['radius']
 
     pos_painter = glitter_app.resolve_widget().down(test_name='pos_painter')()
-    await touch_widget(glitter_app, pos_painter, pos=center)
+    await touch_widget(glitter_app, pos_painter, pos=center, duration=0)
 
     zone = glitter_app.channel_controller.zone_channels[0]
     zone.name = channel_names[2]

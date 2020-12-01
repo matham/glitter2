@@ -9,6 +9,9 @@ from collections import defaultdict
 import shutil
 import logging
 from typing import Type, List
+import nixio
+
+from glitter2.storage.data_file import DataFile
 from glitter2.tests.app import Glitter2TestApp
 
 os.environ['KIVY_USE_DEFAULTCONFIG'] = '1'
@@ -154,3 +157,16 @@ def sample_video_file(temp_file):
     target = temp_file('video.mp4')
     shutil.copy(src, target)
     return target
+
+
+@pytest.fixture()
+def raw_data_file(sample_video_file):
+    data_filename = str(sample_video_file.with_suffix('.h5'))
+
+    nix_file = nixio.File.open(data_filename, nixio.FileMode.Overwrite)
+    data_file = DataFile(nix_file=nix_file)
+    data_file.init_new_file()
+
+    yield data_file
+
+    nix_file.close()
