@@ -611,6 +611,7 @@ class FileDataAnalysis:
         d.update(metadata)
         self.channels_metadata[name] = d
         self.event_channels_data[name] = data
+        self.normalized_names_map[name.lower()] = name
 
     def add_pos_channel(self, name: str, data: np.ndarray, metadata: dict):
         if name in self.channels_metadata:
@@ -620,6 +621,7 @@ class FileDataAnalysis:
         d.update(metadata)
         self.channels_metadata[name] = d
         self.pos_channels_data[name] = data
+        self.normalized_names_map[name.lower()] = name
 
     def add_zone_channel(self, name: str, shape: PaintShape, metadata: dict):
         if name in self.channels_metadata:
@@ -629,6 +631,7 @@ class FileDataAnalysis:
         d.update(metadata)
         self.channels_metadata[name] = d
         self.zone_channels_shapes[name] = shape
+        self.normalized_names_map[name.lower()] = name
 
     def normalized_name(self, name):
         normalized_name = name.lower()
@@ -685,14 +688,6 @@ class AnalysisChannel:
 
     def normalized_name(self, name):
         return self.analysis_object.normalized_name(name)
-
-    def compute_named_statistics(self, stat_options: Dict[str, dict]) -> List:
-        res = []
-        for stat, kwargs in stat_options.items():
-            f = getattr(self, f'compute_{stat}')
-            res.append(f(**kwargs))
-
-        return res
 
     @classmethod
     def spec_get_compute_variables(

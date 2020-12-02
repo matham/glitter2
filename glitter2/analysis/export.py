@@ -33,7 +33,9 @@ from glitter2.storage.imports.clever_sys import read_clever_sys_file, \
     add_clever_sys_data_to_file
 from glitter2.storage.imports.csv import read_csv, add_csv_data_to_file
 
-__all__ = ('SourceFile', 'ExportManager')
+__all__ = (
+    'SourceFile', 'FileProcessBase', 'SummeryStatsExporter', 'RawDataExporter',
+    'LegacyFileReader', 'CleverSysImporter', 'CSVImporter', 'ExportManager')
 
 
 class SourceFile:
