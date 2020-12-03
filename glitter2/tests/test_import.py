@@ -2,7 +2,7 @@ from glitter2.analysis import FileDataAnalysis
 from glitter2.tests.coded_data import check_metadata, check_channel_data
 
 
-def test_export_coded_data_stats(sample_csv_data_file):
+def test_import_csv(sample_csv_data_file):
     from glitter2.analysis.export import CSVImporter, SourceFile
 
     hf_file = sample_csv_data_file.parent.joinpath('video.h5')

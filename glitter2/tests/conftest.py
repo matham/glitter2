@@ -28,7 +28,9 @@ def temp_file(tmp_path):
         file_count[fname] += 1
 
         root, ext = os.path.splitext(fname)
-        return tmp_path / '{}_{}{}'.format(root, i, ext)
+        if (tmp_path / fname).exists():
+            return tmp_path / '{}_{}{}'.format(root, i, ext)
+        return tmp_path / fname
 
     return temp_file_gen
 
@@ -166,7 +168,7 @@ def sample_csv_data_file(temp_file):
     shutil.copy(src_video, target_video)
 
     src_csv = examples_dir.joinpath('video_data.csv')
-    target_csv = temp_file('video_data.csv')
+    target_csv = target_video.with_name(src_csv.name)
     shutil.copy(src_csv, target_csv)
     return target_csv
 
