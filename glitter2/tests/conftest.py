@@ -160,6 +160,18 @@ def sample_video_file(temp_file):
 
 
 @pytest.fixture()
+def sample_csv_data_file(temp_file):
+    src_video = examples_dir.joinpath('video.mp4')
+    target_video = temp_file('video.mp4')
+    shutil.copy(src_video, target_video)
+
+    src_csv = examples_dir.joinpath('video_data.csv')
+    target_csv = temp_file('video_data.csv')
+    shutil.copy(src_csv, target_csv)
+    return target_csv
+
+
+@pytest.fixture()
 def raw_data_file(sample_video_file):
     data_filename = str(sample_video_file.with_suffix('.h5'))
 

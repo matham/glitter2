@@ -117,8 +117,8 @@ def check_channel_data(
 
     # pos channel
     pos = get_pos_data(timestamps)
-    src_pos = get_rounded_list(analysis.pos_channels_data[channel_names[1]], 3)
-    assert get_rounded_list(pos, 3) == src_pos
+    src_pos = get_rounded_list(analysis.pos_channels_data[channel_names[1]], 1)
+    assert get_rounded_list(pos, 1) == src_pos
 
     shape = analysis.zone_channels_shapes[channel_names[2]]
 

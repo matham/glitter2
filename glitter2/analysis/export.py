@@ -300,8 +300,10 @@ class CleverSysImporter(FileProcessBase):
                 raise ValueError(
                     f"Could not find {video_metadata['video_file']}")
 
-        target_filename = pathlib.Path(self.output_files_root).joinpath(
-            video_file.relative_to(video_file.parts[0])).with_suffix('.h5')
+        target_filename = pathlib.Path(
+            self.output_files_root).joinpath(
+                src.filename.relative_to(src.source_root).with_name(
+                    video_file.with_suffix('.h5').name))
 
         if not target_filename.parent.exists():
             target_filename.parent.mkdir(parents=True)
@@ -350,8 +352,10 @@ class CSVImporter(FileProcessBase):
             if not video_file.exists():
                 raise ValueError(f"Could not find {metadata['filename']}")
 
-        target_filename = pathlib.Path(self.output_files_root).joinpath(
-            video_file.relative_to(video_file.parts[0])).with_suffix('.h5')
+        target_filename = pathlib.Path(
+            self.output_files_root).joinpath(
+                src.filename.relative_to(src.source_root).with_name(
+                    video_file.with_suffix('.h5').name))
 
         if not target_filename.parent.exists():
             target_filename.parent.mkdir(parents=True)

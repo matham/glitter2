@@ -24,8 +24,6 @@ def _parse_pos(header, data, i, width, height):
             f'"pos:{name}:y" at columns ({i}, {i + 1})')
 
     state = np.array([data[i], data[i + 1]], dtype=np.float).T
-    # flip y-axis
-    state[:, 1] = height - state[:, 1]
     return name, state
 
 
@@ -117,9 +115,10 @@ def read_csv(filename: str):
             raise ValueError(f'Could not find {key} in the metadata')
     width = metadata['video_width'] = float(metadata['video_width'])
     height = metadata['video_height'] = float(metadata['video_height'])
+    metadata['pixels_per_meter'] = float(metadata['pixels_per_meter'])
     if 'saw_all_timestamps' in metadata:
         metadata['saw_all_timestamps'] = \
-            metadata['saw_all_timestamps'] in ('true', 'TRUE')
+            metadata['saw_all_timestamps'] in ('true', 'TRUE', 'True')
 
     timestamps = np.array(data[2], dtype=np.float64)
 
