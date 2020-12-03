@@ -35,7 +35,8 @@ from glitter2.storage.imports.csv import read_csv, add_csv_data_to_file
 
 __all__ = (
     'SourceFile', 'FileProcessBase', 'SummeryStatsExporter', 'RawDataExporter',
-    'LegacyFileReader', 'CleverSysImporter', 'CSVImporter', 'ExportManager')
+    'LegacyGlitterImporter', 'CleverSysImporter', 'CSVImporter',
+    'ExportManager')
 
 
 class SourceFile:
@@ -295,10 +296,12 @@ class CleverSysImporter(FileProcessBase):
 
         video_file = pathlib.Path(video_metadata['video_file'])
         if not video_file.exists():
-            video_file = src.filename.parent.joinpath(video_file.name)
+            video_file = src.filename.parent.joinpath(
+                pathlib.PurePath(video_metadata['video_file']).name)
             if not video_file.exists():
                 raise ValueError(
-                    f"Could not find {video_metadata['video_file']}")
+                    f"Could not find {video_metadata['video_file']} or "
+                    f"{video_file}")
 
         target_filename = pathlib.Path(
             self.output_files_root).joinpath(
@@ -348,9 +351,11 @@ class CSVImporter(FileProcessBase):
 
         video_file = pathlib.Path(metadata['filename'])
         if not video_file.exists():
-            video_file = src.filename.parent.joinpath(video_file.name)
+            video_file = src.filename.parent.joinpath(
+                pathlib.PurePath(metadata['filename']).name)
             if not video_file.exists():
-                raise ValueError(f"Could not find {metadata['filename']}")
+                raise ValueError(
+                    f"Could not find {metadata['filename']} or {video_file}")
 
         target_filename = pathlib.Path(
             self.output_files_root).joinpath(
