@@ -33,16 +33,16 @@ Alternatively, use the up and down keyboard arrows to control the speed without 
 00:58.660 --> 01:01.463
 Notice that the slider is logarithmic over its range.
 
-01:04.859 --> 01:15.485
+01:17.460 --> 01:28.085
 When the lowest speed is selected, the player will enter frame by frame mode. In frame by frame mode, to
 move to the next video frame, press the right arrow on the keyboard. This allows more accurate coding.
 
-01:19.699 --> 01:26.573
+01:32.300 --> 01:39.173
 Drag the slider in the seek bar, to seek in the video to the closest seek point.
 The right and left arrow keys can also be used to seek.
 
-01:26.773 --> 01:31.263
+01:39.373 --> 01:43.863
 In frame by frame mode, the right arrow key is used to advance the video by one frame.
 
-01:35.499 --> 01:38.692
+01:48.100 --> 01:51.292
 Zoom the video with the zoom slider and zoom or zoom out buttons.

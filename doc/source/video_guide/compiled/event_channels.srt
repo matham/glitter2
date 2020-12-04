@@ -9,117 +9,117 @@ The coded data can later be exported as raw data or summarized. For example, it 
 the total duration the animal was sniffing, or the number of rearing events.
 
 3
-00:00:22,800  --> 00:00:23,618
+00:00:25,100  --> 00:00:25,918
 To add an event channel,
 
 4
-00:00:24,300  --> 00:00:25,476
+00:00:26,600  --> 00:00:27,776
 click on the event plus button,
 
 5
-00:00:26,167  --> 00:00:27,802
+00:00:28,467  --> 00:00:30,102
 and a new channel will be created.
 
 6
-00:00:28,467  --> 00:00:29,659
+00:00:30,767  --> 00:00:31,959
 To configure the event channel
 
 7
-00:00:30,334  --> 00:00:31,218
+00:00:32,634  --> 00:00:33,518
 press the settings button,
 
 8
-00:00:31,934  --> 00:00:34,068
+00:00:34,234  --> 00:00:36,368
 this will open the configuration window.
 
 9
-00:00:34,768  --> 00:00:37,481
+00:00:37,068  --> 00:00:39,781
 To change the name, replace it with a new unique name.
 
 10
-00:00:39,668  --> 00:00:42,052
+00:00:41,968  --> 00:00:44,352
 Delete the channel, by pressing the trash button.
 
 11
-00:00:46,235  --> 00:00:52,989
+00:00:48,535  --> 00:00:55,289
 While the video is playing, to code that an event is currently occurring, press the channel button or
 press the keyboard key configured for the channel.
 
 12
-00:01:05,435  --> 00:01:09,884
+00:01:10,035  --> 00:01:14,484
 A unique keyboard key can be assigned to each channel. For example, the letter s.
 
 13
-00:01:10,602  --> 00:01:15,749
+00:01:15,202  --> 00:01:20,349
 That key can then be used to code the channel, instead of
 pressing the channel button manually, with the mouse.
 
 14
-00:01:16,436  --> 00:01:19,249
+00:01:21,036  --> 00:01:23,849
 The keyboard key can be used to code in one of two modes.
 
 15
-00:01:19,936  --> 00:01:29,932
+00:01:24,536  --> 00:01:34,532
 In the first, the channel will be coded as active while the key is held down. In the second, pressing the key
 down once, will mark all subsequent frames as active, until the key is pressed again.
 
 16
-00:01:30,603  --> 00:01:35,082
+00:01:35,203  --> 00:01:39,682
 The coded preview highlights the video frames that have been coded as active, for each channel.
 
 17
-00:01:39,270  --> 00:01:43,200
+00:01:43,870  --> 00:01:47,800
 If a mistake was made, channel data can be erased in one of three ways.
 
 18
-00:01:43,904  --> 00:01:47,694
+00:01:48,504  --> 00:01:52,294
 In the first, press the erase button while playing over the frames to be cleared.
 
 19
-00:01:50,371  --> 00:01:52,316
+00:01:54,971  --> 00:01:56,916
 Notice the erase button being pressed!
 
 20
-00:01:58,105  --> 00:01:59,626
+00:02:07,238  --> 00:02:08,759
 The second, is to select the channel
 
 21
-00:02:03,339  --> 00:02:06,321
+00:02:12,472  --> 00:02:15,454
 and press the keyboard delete key while playing over the frames.
 
 22
-00:02:09,339  --> 00:02:12,579
+00:02:17,906  --> 00:02:21,146
 Finally, you can clear the whole channel, by pressing the clear data button
 
 23
-00:02:13,306  --> 00:02:15,121
+00:02:21,873  --> 00:02:23,688
 and all the channel data is cleared.
 
 24
-00:02:19,306  --> 00:02:25,172
+00:02:27,873  --> 00:02:33,739
 Sometimes, it may be desired, to exclusively code only one channel from a group of channels as active, for any frame.
 
 25
-00:02:25,372  --> 00:02:25,903
+00:02:33,939  --> 00:02:34,470
 To achieve this,
 
 26
-00:02:26,573  --> 00:02:31,112
-set the group to the same value for all the channels in the group. For example, sniff.
+00:02:35,140  --> 00:02:40,387
+set the group to the same value for every channel in the group. For example, add sniff to all channels.
 
 27
-00:02:34,807  --> 00:02:40,134
+00:02:44,107  --> 00:02:49,434
 Then, when the non-sniffing channel is coded, the sniffing channel is automatically
 cleared at that timestamp.
 
 28
-00:02:46,507  --> 00:02:48,189
+00:02:55,174  --> 00:02:56,856
 To duplicate a channel and all its data,
 
 29
-00:02:48,907  --> 00:02:50,266
+00:02:57,574  --> 00:02:58,933
 click on the duplicate channel button,
 
 30
-00:02:50,941  --> 00:02:53,464
+00:02:59,608  --> 00:03:02,131
 and the channel will be duplicated, identically.

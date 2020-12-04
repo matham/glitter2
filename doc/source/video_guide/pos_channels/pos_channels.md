@@ -7,8 +7,7 @@ subtitles: embed
 
 (video:
   file: draw_pos.mp4
-  sync: loop
-  segment: 00:02 - 00:13)
+  sync: trim)
 
 (pause: 2)
 
@@ -72,10 +71,18 @@ A position channel can also be selected with an assigned keyboard key, such as n
 
 ---
 
-![](draw_pos.mp4)
+(video:
+  file: draw_pos.mp4
+  segment: 00:00 - 00:15)
 
-Once selected, while the video is playing, follow the position of the object with the mouse pressed down. This
-will code the position for the current video frames.
+Once selected, while the video is playing, follow the position of the nose with the mouse pressed down. This
+will code the nose position for the current video frames.
+
+---
+
+![](draw_pos2.mp4)
+
+Select the center channel to then code the position of the mouse center.
 
 ---
 
