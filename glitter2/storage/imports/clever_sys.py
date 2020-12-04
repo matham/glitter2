@@ -11,6 +11,7 @@ from kivy_garden.painter import PaintCircle, PaintPolygon
 
 from glitter2.utils import fix_name
 from glitter2.storage.imports import map_frame_rate_to_timestamps
+from glitter2.storage.data_file import DataFile
 
 __all__ = (
     'read_clever_sys_file', 'compute_calibration',
@@ -256,7 +257,7 @@ def compute_calibration(calibration):
 
 
 def add_clever_sys_data_to_file(
-        data_file, data, video_metadata, zones, calibration):
+        data_file: DataFile, data, video_metadata, zones, calibration):
     calibration_set, pixels_per_meter = compute_calibration(calibration)
     background_file = video_metadata['background_file']
 
@@ -273,9 +274,10 @@ def add_clever_sys_data_to_file(
     assert estimated_end - 1 <= video_metadata['end'] \
         <= estimated_end + 1
 
+    timestamps = np.asarray(data_file.timestamps)
+
     timestamps_mapping = map_frame_rate_to_timestamps(
-        np.asarray(data_file.timestamps), rate, video_metadata['from'],
-        video_metadata['to'])
+        timestamps, rate, video_metadata['from'], video_metadata['to'])
 
     # track names to not have duplicates
     names = set()
@@ -295,13 +297,23 @@ def add_clever_sys_data_to_file(
     nose_channel.channel_config_dict = {'name': name}
     names.add(name)
 
+    index_map = data_file.timestamp_data_map
+    mask = np.zeros(len(timestamps), dtype=np.bool)
+    center = np.zeros((len(timestamps), 2))
+    nose = np.zeros((len(timestamps), 2))
+
     for frame, center_x, center_y, nose_x, nose_y in data:
         if frame not in timestamps_mapping:
             continue
 
         for t in timestamps_mapping[frame]:
-            center_channel.set_timestamp_value(t, [center_x, center_y])
-            nose_channel.set_timestamp_value(t, [nose_x, nose_y])
+            _, i = index_map[t]
+            mask[i] = True
+            center[i, :] = center_x, center_y
+            nose[i, :] = nose_x, nose_y
+
+    center_channel.set_channel_data(center[mask, :], mask)
+    nose_channel.set_channel_data(nose[mask, :], mask)
 
     for zone in zones:
         channel = data_file.create_channel('zone')

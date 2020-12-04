@@ -33,7 +33,10 @@ from glitter2.storage.imports.clever_sys import read_clever_sys_file, \
     add_clever_sys_data_to_file
 from glitter2.storage.imports.csv import read_csv, add_csv_data_to_file
 
-__all__ = ('SourceFile', 'ExportManager')
+__all__ = (
+    'SourceFile', 'FileProcessBase', 'SummeryStatsExporter', 'RawDataExporter',
+    'LegacyGlitterImporter', 'CleverSysImporter', 'CSVImporter',
+    'ExportManager')
 
 
 class SourceFile:
@@ -202,7 +205,8 @@ class SummeryStatsExporter(FileProcessBase):
 
     def finish_process(self):
         results = list(chain(*self.results))
-        pathlib.Path(self.export_filename).parent.mkdir(parents=True)
+        if not pathlib.Path(self.export_filename).parent.exists():
+            pathlib.Path(self.export_filename).parent.mkdir(parents=True)
         FileDataAnalysis.export_computed_data_summary(
             self.export_filename, results)
 
@@ -231,7 +235,8 @@ class RawDataExporter(FileProcessBase):
             filename = root.joinpath(
                 src.filename.relative_to(
                     src.source_root)).with_suffix('.xlsx')
-            filename.parent.mkdir(parents=True)
+            if not filename.parent.exists():
+                filename.parent.mkdir(parents=True)
             data_file.export_raw_data_to_excel(
                 str(filename), dump_zone_collider=self.dump_zone_collider)
 
@@ -255,7 +260,9 @@ class LegacyGlitterImporter(FileProcessBase):
         if not target_filename.parent.exists():
             target_filename.parent.mkdir(parents=True)
         if target_filename.exists():
-            raise ValueError(f'"{target_filename}" already exists')
+            raise ValueError(
+                f'"{target_filename}" already exists and legacy upgrading '
+                f'does not support appending')
 
         legacy_reader = LegacyFileReader()
         nix_file = nix.File.open(
@@ -271,9 +278,14 @@ class CleverSysImporter(FileProcessBase):
 
     output_files_root: str = ''
 
-    def __init__(self, output_files_root='', **kwargs):
+    import_append_if_file_exists = False
+
+    def __init__(
+            self, output_files_root='', import_append_if_file_exists=False,
+            **kwargs):
         super().__init__(**kwargs)
         self.output_files_root = output_files_root
+        self.import_append_if_file_exists = import_append_if_file_exists
 
         if not output_files_root:
             raise ValueError('No export path specified for imported H5 files')
@@ -284,16 +296,24 @@ class CleverSysImporter(FileProcessBase):
 
         video_file = pathlib.Path(video_metadata['video_file'])
         if not video_file.exists():
-            video_file = src.filename.parent.joinpath(video_file.name)
+            video_file = src.filename.parent.joinpath(
+                pathlib.PurePath(video_metadata['video_file']).name)
             if not video_file.exists():
                 raise ValueError(
-                    f"Could not find {video_metadata['video_file']}")
+                    f"Could not find {video_metadata['video_file']} or "
+                    f"{video_file}")
 
-        target_filename = pathlib.Path(self.output_files_root).joinpath(
-            video_file.relative_to(video_file.parts[0])).with_suffix('.h5')
+        target_filename = pathlib.Path(
+            self.output_files_root).joinpath(
+                src.filename.relative_to(src.source_root).with_name(
+                    video_file.with_suffix('.h5').name))
 
         if not target_filename.parent.exists():
             target_filename.parent.mkdir(parents=True)
+
+        if not self.import_append_if_file_exists and target_filename.exists():
+            raise ValueError(
+                f'"{target_filename}" already exists, skipping file')
 
         w = video_metadata['width']
         h = video_metadata['height']
@@ -313,9 +333,14 @@ class CSVImporter(FileProcessBase):
 
     output_files_root: str = ''
 
-    def __init__(self, output_files_root='', **kwargs):
+    import_append_if_file_exists = False
+
+    def __init__(
+            self, output_files_root='', import_append_if_file_exists=False,
+            **kwargs):
         super().__init__(**kwargs)
         self.output_files_root = output_files_root
+        self.import_append_if_file_exists = import_append_if_file_exists
 
         if not output_files_root:
             raise ValueError('No export path specified for imported H5 files')
@@ -326,15 +351,23 @@ class CSVImporter(FileProcessBase):
 
         video_file = pathlib.Path(metadata['filename'])
         if not video_file.exists():
-            video_file = src.filename.parent.joinpath(video_file.name)
+            video_file = src.filename.parent.joinpath(
+                pathlib.PurePath(metadata['filename']).name)
             if not video_file.exists():
-                raise ValueError(f"Could not find {metadata['filename']}")
+                raise ValueError(
+                    f"Could not find {metadata['filename']} or {video_file}")
 
-        target_filename = pathlib.Path(self.output_files_root).joinpath(
-            video_file.relative_to(video_file.parts[0])).with_suffix('.h5')
+        target_filename = pathlib.Path(
+            self.output_files_root).joinpath(
+                src.filename.relative_to(src.source_root).with_name(
+                    video_file.with_suffix('.h5').name))
 
         if not target_filename.parent.exists():
             target_filename.parent.mkdir(parents=True)
+
+        if not self.import_append_if_file_exists and target_filename.exists():
+            raise ValueError(
+                f'"{target_filename}" already exists, skipping file')
 
         w = metadata['video_width']
         h = metadata['video_height']
@@ -427,6 +460,8 @@ class ExportManager(EventDispatcher):
     spec: Optional[AnalysisSpec] = None
 
     currently_open_temp_h5_file: Optional[pathlib.Path] = None
+
+    import_append_if_file_exists = False
 
     def __init__(self, **kwargs):
         super(ExportManager, self).__init__(**kwargs)
@@ -774,6 +809,7 @@ class ExportManager(EventDispatcher):
         trigger = self.trigger_run_in_kivy
         mode = self.batch_mode
         export_mode = self.batch_export_mode
+        import_append_if_file_exists = self.import_append_if_file_exists
 
         if mode == 'export_raw':
             processor = RawDataExporter(
@@ -789,10 +825,12 @@ class ExportManager(EventDispatcher):
                     output_files_root=self.generated_file_output_path)
             elif export_mode == 'cleversys':
                 processor = CleverSysImporter(
-                    output_files_root=self.generated_file_output_path)
+                    output_files_root=self.generated_file_output_path,
+                    import_append_if_file_exists=import_append_if_file_exists)
             elif export_mode == 'csv':
                 processor = CSVImporter(
-                    output_files_root=self.generated_file_output_path)
+                    output_files_root=self.generated_file_output_path,
+                    import_append_if_file_exists=import_append_if_file_exists)
             else:
                 assert False, export_mode
 
@@ -811,7 +849,8 @@ class ExportManager(EventDispatcher):
                 ('update_source_item', (item.item_index, item.get_gui_data())))
             if item.status != 'done':
                 queue_put(('increment', (self, 'num_failed_files', 1)))
-            queue_put(('increment', (self, 'num_processed_files', 1)))
+            else:
+                queue_put(('increment', (self, 'num_processed_files', 1)))
             queue_put(('increment', (self, 'processed_size', item.file_size)))
 
             if item.exception is not None:

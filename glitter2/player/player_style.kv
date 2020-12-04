@@ -26,6 +26,7 @@
                 text: app.player.get_play_rate_text(app.player.play_rate)
                 input_filter: 'float'
             TickSlider:
+                test_name: 'rate_slider'
                 id: rate_slider
                 orientation: 'vertical'
                 size_hint_min_y: '100dp'
@@ -116,13 +117,14 @@
                     pos_hint: {'pos': (0, 0)}
                     xmin: 0
                     xmax: app.player.duration
-                    x_ticks_major: 10 ** max(0, math.floor(math.log10(app.player.duration / 5))) if app.player.duration > 1 else 1
+                    x_ticks_major: seek_slider.compute_ticks_spacing(self, self.width, app.player.duration)
                     x_ticks_minor: 5
                     x_grid_label: True
                     draw_border: False
                     _with_stencilbuffer: False
                     label_options: {'color': (0, 0, 0, 1)}
                 SeekSlider:
+                    id: seek_slider
                     disabled: app.player.player_state not in ('playing', 'finished', 'paused')
                     padding: 0
                     disabled: not app.player.filename
@@ -158,6 +160,9 @@
                     do_collide_after_children: True
                     size_hint: None, None
                     size: image_display.size
+                    on_scale:
+                        app.channel_controller.set_graphics_scale(self.scale)
+                        app.ruler.set_graphics_scale(self.scale)
                     ImageDisplayWidgetManager:
                         on_kv_post:
                             app.image_display_manager = self.__self__
@@ -180,6 +185,7 @@
                             do_translation: False, False
                             do_rotation: False
                         PosChannelPainter:
+                            test_name: 'pos_painter'
                             id: pos_channel_painter
                             size_hint: None, None
                             size: image_display.size

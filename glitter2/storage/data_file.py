@@ -1212,6 +1212,28 @@ class TemporalDataChannelBase(DataChannelBase):
         """
         raise NotImplementedError
 
+    def set_channel_data(
+            self, data: Union[list, np.ndarray],
+            mask: Optional[np.ndarray] = None):
+        """Changes the values of the data array (optionally masked).
+
+        Must have :attr:`saw_all_timestamps` before this can be used.
+
+        Number of items in data must be the same as the number of true
+        elements in mask, if provided.
+        """
+        self.data_file.pad_channel_to_num_frames_interval(self)
+        if not self.data_file.saw_all_timestamps:
+            raise TypeError(
+                'Cannot set the data at once when missing timestamps')
+
+        self.data_file.unsaved_callback()
+        if mask is None:
+            self.data_array[:] = data
+        else:
+            # workaround for https://github.com/h5py/h5py/issues/1750
+            self.data_array[mask.nonzero()[0]] = data
+
     def get_timestamp_value(self, t: float) -> Any:
         """Returns the value of the data array for the given timestamp ``t``.
         """
@@ -1227,18 +1249,6 @@ class TemporalDataChannelBase(DataChannelBase):
         src_data_arrays = self.data_arrays
         for key, target_arr in channel.data_arrays.items():
             target_arr[:] = src_data_arrays[key]
-
-    def set_channel_data(self, data: Union[list, np.ndarray]):
-        self.data_file.pad_channel_to_num_frames_interval(self)
-        data_file = self.data_file
-
-        if not data_file.saw_all_timestamps:
-            raise TypeError(
-                "Cannot set all the channel data at once if we haven't seen "
-                "all the timestamps of the video file")
-
-        data_file.unsaved_callback()
-        self.data_array[:] = data
 
 
 class EventChannelData(TemporalDataChannelBase):

@@ -8,6 +8,8 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   guide.rst
+
    installation.rst
 
    app.rst

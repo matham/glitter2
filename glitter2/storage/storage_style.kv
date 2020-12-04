@@ -11,6 +11,7 @@
         flat_color: app.theme.accent
         on_release: app.open_filechooser(callback=app.storage_controller.get_filebrowser_callback(app.storage_controller.ui_open_file, clear_data=True), target=app.storage_controller.root_path, title='Open video or H5 file', filters=['*.mkv;*.mp4;*.avi', '*.h5', '*.*'])
     FlatImageButton:
+        test_name: 'save_button'
         scale_down_color: True
         source: 'flat_save.png'
         flat_color: app.theme.accent

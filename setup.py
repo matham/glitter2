@@ -37,7 +37,8 @@ setup(
     ],
     extras_require={
         'dev': ['pytest>=3.6', 'pytest-cov', 'flake8', 'sphinx-rtd-theme',
-                'coveralls', 'trio', 'pytest-trio', 'pyinstaller'],
+                'coveralls', 'trio', 'pytest-trio', 'pyinstaller',
+                'xlrd >= 1.0.0'],
     },
     package_data={'glitter2': ['*.kv', '**/*.kv']},
     project_urls={

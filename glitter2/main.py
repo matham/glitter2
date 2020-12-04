@@ -314,6 +314,9 @@ class Glitter2App(BaseKivyApp):
             self.dump_app_settings_to_file()
             self.export_manager.stop()
 
+        if self.player is not None:
+            self.player.close_file()
+
 
 def run_app():
     """The function that starts the GUI and the entry point for
