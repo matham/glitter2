@@ -174,6 +174,24 @@ def sample_csv_data_file(temp_file):
 
 
 @pytest.fixture()
+def sample_clever_sys_data_file(temp_file):
+    src_video = examples_dir.joinpath('video.mp4')
+    target_video = temp_file('video.mp4')
+    shutil.copy(src_video, target_video)
+
+    data_dir = examples_dir.joinpath('data')
+    shutil.copy(
+        data_dir.joinpath('CleverSys_1_TCG.TXT'),
+        target_video.with_name('CleverSys_1_TCG.TXT')
+    )
+
+    src_txt = data_dir.joinpath('CleverSys_1_TCR.TXT')
+    target_txt = target_video.with_name(src_txt.name)
+    shutil.copy(src_txt, target_txt)
+    return target_txt
+
+
+@pytest.fixture()
 def raw_data_file(sample_video_file):
     data_filename = str(sample_video_file.with_suffix('.h5'))
 

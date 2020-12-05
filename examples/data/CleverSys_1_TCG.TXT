@@ -1,0 +1,24 @@
+Arena 1:
+
+
+Calibration Martrix:
+
+1.000000    0.000000    0.000000
+0.000000    1.000000    0.000000
+
+ZoneNum = 1
+
+
+Zone 1:
+Type Circle(Center-Radius):
+Center(176, 99) Radius(82.5)
+
+AreaNum = 2
+
+
+Area 1:
+Background: Zones()
+
+Area 2:
+CenterArea: Zones(1)
+

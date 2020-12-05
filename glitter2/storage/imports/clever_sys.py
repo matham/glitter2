@@ -61,6 +61,12 @@ _clever_sys_zone_circle_3p_regex = re.compile(
     r'Center\(([0-9.]+), ([0-9.]+)\) Radius\(([0-9.]+)\)'
 )
 
+_clever_sys_zone_circle_regex = re.compile(
+    'Zone ([0-9.]+):[\n\r]+'
+    'Type Circle\\(Center-Radius\\):[\n\r]+'
+    r'Center\(([0-9.]+), ([0-9.]+)\) Radius\(([0-9.]+)\)'
+)
+
 _clever_sys_area_regex = re.compile(
     'Area ([0-9.]+):[\n\r]+'
     r'(.+): Zones\(([0-9,]*)\)'
@@ -71,6 +77,15 @@ def _parse_clever_sys_zones(zone_items, height):
     zones = {}
     for zone in zone_items:
         m = re.match(_clever_sys_zone_circle_3p_regex, zone)
+        if m is not None:
+            shape = PaintCircle.create_shape(
+                [float(m.group(2)), height - float(m.group(3))],
+                float(m.group(4)))
+            zones[int(m.group(1))] = {
+                'shape_config': shape.get_state(), 'name': 'Channel'}
+            continue
+
+        m = re.match(_clever_sys_zone_circle_regex, zone)
         if m is not None:
             shape = PaintCircle.create_shape(
                 [float(m.group(2)), height - float(m.group(3))],
