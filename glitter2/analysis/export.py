@@ -296,8 +296,10 @@ class CleverSysImporter(FileProcessBase):
 
         video_file = pathlib.Path(video_metadata['video_file'])
         if not video_file.exists():
+            # linux and windows paths can both be parsed with PureWindowsPath,
+            # but not with PurePosixPath, which fails on windows path
             video_file = src.filename.parent.joinpath(
-                pathlib.PurePath(video_metadata['video_file']).name)
+                pathlib.PureWindowsPath(video_metadata['video_file']).name)
             if not video_file.exists():
                 raise ValueError(
                     f"Could not find {video_metadata['video_file']} or "
@@ -351,8 +353,10 @@ class CSVImporter(FileProcessBase):
 
         video_file = pathlib.Path(metadata['filename'])
         if not video_file.exists():
+            # linux and windows paths can both be parsed with PureWindowsPath,
+            # but not with PurePosixPath, which fails on windows path
             video_file = src.filename.parent.joinpath(
-                pathlib.PurePath(metadata['filename']).name)
+                pathlib.PureWindowsPath(metadata['filename']).name)
             if not video_file.exists():
                 raise ValueError(
                     f"Could not find {metadata['filename']} or {video_file}")
