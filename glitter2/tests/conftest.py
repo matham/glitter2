@@ -167,7 +167,7 @@ def sample_csv_data_file(temp_file):
     target_video = temp_file('video.mp4')
     shutil.copy(src_video, target_video)
 
-    src_csv = examples_dir.joinpath('video_data.csv')
+    src_csv = examples_dir.joinpath('data').joinpath('video_data.csv')
     target_csv = target_video.with_name(src_csv.name)
     shutil.copy(src_csv, target_csv)
     return target_csv
