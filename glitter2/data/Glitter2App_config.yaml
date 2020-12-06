@@ -4,6 +4,7 @@ channels:
   pos_channels_time_tail: 2
 export:
   generated_file_output_path: ''
+  raw_dump_zone_collider: true
   root_raw_data_export_path: ''
   source: ''
   source_match_suffix: '*.h5'
@@ -14,4 +15,6 @@ player:
 storage:
   backup_interval: 5.0
   compression: Auto
+  last_filename: ''
+  last_filename_summary: ''
   root_path: ''
