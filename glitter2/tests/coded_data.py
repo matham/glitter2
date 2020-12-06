@@ -66,18 +66,19 @@ def get_zone_metadata():
 
 def check_metadata(
         analysis: FileDataAnalysis, pixels_per_meter=0,
-        video_filename='video.mp4'):
+        video_filename='video.mp4', restricted=False):
     assert analysis.metadata['ffpyplayer_version']
     assert analysis.metadata['glitter2_version']
     assert analysis.metadata['pixels_per_meter'] == pixels_per_meter
     assert analysis.metadata['saw_all_timestamps']
 
-    assert analysis.video_metadata['src_pix_fmt']
-    assert analysis.video_metadata['file_size']
+    if not restricted:
+        assert analysis.video_metadata['src_pix_fmt']
+        assert analysis.video_metadata['file_size']
+        assert analysis.video_metadata['frame_rate'] == [25, 1]
     assert analysis.video_metadata['filename_head']
     assert analysis.video_metadata['src_vid_size'] == [352, 198]
     assert analysis.video_metadata['duration'] == 10.0
-    assert analysis.video_metadata['frame_rate'] == [25, 1]
     assert analysis.video_metadata['filename_tail'] == video_filename
 
 

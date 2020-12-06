@@ -192,6 +192,18 @@ def sample_clever_sys_data_file(temp_file):
 
 
 @pytest.fixture()
+def sample_legacy_data_file(temp_file):
+    src_video = examples_dir.joinpath('video.mp4')
+    target_video = temp_file('video.mp4')
+    shutil.copy(src_video, target_video)
+
+    src_h5 = examples_dir.joinpath('data').joinpath('video_legacy.h5')
+    target_h5 = target_video.with_name('video.h5')
+    shutil.copy(src_h5, target_h5)
+    return target_h5
+
+
+@pytest.fixture()
 def raw_data_file(sample_video_file):
     data_filename = str(sample_video_file.with_suffix('.h5'))
 
