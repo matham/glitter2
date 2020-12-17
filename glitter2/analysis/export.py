@@ -68,11 +68,12 @@ class SourceFile:
         self.file_size = filename.stat().st_size
 
     def get_gui_data(self):
+        status = self.status or ('skipping' if self.skip else '(no status)')
         return {
             'filename.text': str(self.filename),
             'file_size.text': pretty_space(self.file_size),
             'skip.state': 'down' if self.skip else 'normal',
-            'status.text': self.status or '(no status)',
+            'status.text': status,
             'result': self.result,
             'source_obj': self,
         }
@@ -80,7 +81,7 @@ class SourceFile:
     def pre_process(self):
         self.exception = None
         self.result = ''
-        self.status = ''
+        self.status = 'running'
 
     def post_process(self, e=None):
         if e is None:
@@ -683,6 +684,7 @@ class ExportManager(EventDispatcher):
                 if msg == 'set_skip':
                     obj, skip = value
                     obj.skip = skip
+                    obj.status = ''
                     kivy_queue_put(
                         ('update_source_item',
                          (obj.item_index, obj.get_gui_data()))
@@ -847,6 +849,9 @@ class ExportManager(EventDispatcher):
                 trigger()
                 continue
 
+            item.status = 'running'
+            queue_put(
+                ('update_source_item', (item.item_index, item.get_gui_data())))
             processor.process_file(item)
 
             queue_put(
