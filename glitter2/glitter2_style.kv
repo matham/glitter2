@@ -159,6 +159,14 @@
     flat_color: app.theme.text_primary
 
 
+<MinSizeYMaxXFlatLabel@FlatLabel>:
+    size_hint_x: None
+    width: max(self.texture_size[0], self.width) if self.texture_size[0] else 10
+    size_hint_min_y: self.texture_size[1]
+    center_texture: True
+    flat_color: app.theme.text_primary
+
+
 <MinSizeYFlatLabel@FlatLabel>:
     size_hint_x: None
     width: self.texture_size[0]

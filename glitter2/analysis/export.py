@@ -490,7 +490,7 @@ class ExportManager(EventDispatcher):
                     self.elapsed_time / self.fraction_done
             else:
                 self.total_estimated_time = 0
-        # self.fbind('elapsed_time', _update_total_estimated_time)
+        self.fbind('elapsed_time', _update_total_estimated_time)
         self.fbind('fraction_done', _update_total_estimated_time)
 
         self.kivy_thread_queue = Queue()
@@ -545,8 +545,10 @@ class ExportManager(EventDispatcher):
         self.num_files = 0
         self.total_size = 0
         self.num_processed_files = 0
+        self.processed_size = 0
         self.num_skipped_files = 0
         self.num_failed_files = 0
+        self.elapsed_time = 0
         if self.recycle_view is not None:
             self.recycle_view.data = []
 
@@ -610,6 +612,7 @@ class ExportManager(EventDispatcher):
         self.num_skipped_files = 0
         self._start_processing_time = 0
         self.num_failed_files = 0
+        self.elapsed_time = 0
 
         self.spec = None
         if self.batch_mode == 'export_stats':
@@ -751,6 +754,8 @@ class ExportManager(EventDispatcher):
                     self.num_processed_files = 0
                     self.num_skipped_files = 0
                     self.num_failed_files = 0
+                    self.elapsed_time = 0
+                    self.processed_size = 0
                     self.source_contents = contents
                     self.recycle_view.data = gui_data
                 elif msg == 'update_source_items':
@@ -797,7 +802,10 @@ class ExportManager(EventDispatcher):
             [(self, 'num_files', num_files), (self, 'total_size', total_size),
              (self, 'num_processed_files', 0),
              (self, 'num_skipped_files', skipped),
-             (self, 'num_failed_files', 0)]
+             (self, 'num_failed_files', 0),
+             (self, 'elapsed_time', 0),
+             (self, 'processed_size', 0),
+             ]
         ))
         self.trigger_run_in_kivy()
 

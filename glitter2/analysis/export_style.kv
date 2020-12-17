@@ -1,4 +1,5 @@
 #:import pretty_space base_kivy_app.utils.pretty_space
+#:import pretty_time base_kivy_app.utils.pretty_time
 #:import Factory kivy.factory.Factory
 #:import NoTransition kivy.uix.screenmanager.NoTransition
 
@@ -338,6 +339,14 @@
             on_release:
                 if self.state == 'down': app.export_manager.request_process_files()
                 if self.state == 'normal': app.export_manager.stop_op = True
+        MinSizeYMaxXFlatLabel:
+            text: pretty_time(app.export_manager.elapsed_time)
+        MinSizeYFlatLabel:
+            text: '/'
+        MinSizeYMaxXFlatLabel:
+            text: pretty_time(app.export_manager.total_estimated_time)
+        MinSizeYMaxXFlatLabel:
+            text: '({}%)'.format(int(app.export_manager.fraction_done * 100))
         Widget
         FlatButton:
             disabled: bool(app.export_manager.thread_has_job)
