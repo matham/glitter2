@@ -38,7 +38,7 @@ setup(
     extras_require={
         'dev': ['pytest>=3.6', 'pytest-cov', 'flake8', 'sphinx-rtd-theme',
                 'coveralls', 'trio', 'pytest-trio', 'pyinstaller',
-                'xlrd >= 1.0.0'],
+                'openpyxl'],
     },
     package_data={'glitter2': ['*.kv', '**/*.kv']},
     project_urls={
