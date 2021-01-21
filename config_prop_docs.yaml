@@ -1,0 +1,10 @@
+glitter2.player.GlitterPlayer:
+  seek_duration:
+  - How many seconds to seek from a right/left arrow button.
+  - '    '
+  - ''
+more_kivy_app.app.MoreKivyApp:
+  inspect:
+  - Enables GUI inspection. If True, it is activated by hitting ctrl-e in
+  - the GUI.
+  - ''

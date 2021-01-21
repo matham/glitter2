@@ -1,0 +1,61 @@
+GLITTER2 Config
+===============
+
+The following are the configuration options provided by the app. It can be configured by changing appropriate values in the ``config.yaml`` settings file. The options default to the default value of the classes for each of the options.
+
+`inspect`:
+ Default value::
+
+  false
+
+ Enables GUI inspection. If True, it is activated by hitting ctrl-e in
+ the GUI.
+
+
+storage
+-------
+
+
+player
+------
+
+
+export
+------
+
+`generated_file_output_path`:
+ Default value::
+
+  ''
+
+
+`raw_dump_zone_collider`:
+ Default value::
+
+  true
+
+
+`root_raw_data_export_path`:
+ Default value::
+
+  ''
+
+
+`source`:
+
+`source_match_suffix`:
+ Default value::
+
+  '*.h5'
+
+
+`stats_export_path`:
+ Default value::
+
+  ''
+
+
+
+channels
+--------
+
