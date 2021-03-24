@@ -29,11 +29,11 @@ setup(
     ],
     packages=find_packages(),
     install_requires=[
-        'base_kivy_app', 'ffpyplayer', 'kivy', 'nixio==1.5.0b4',
-        'numpy', 'h5py', 'kivy_garden.graph>=0.4.0',
-        'kivy_garden.tickmarker>=3.0.0', 'kivy_garden.painter~=0.2.2',
+        'base_kivy_app~=0.1.1', 'ffpyplayer', 'kivy~=2.0.0', 'nixio==1.5.0b4',
+        'numpy', 'h5py', 'kivy_garden.graph~=0.4.0',
+        'kivy_garden.tickmarker~=3.0.0', 'kivy_garden.painter~=0.2.4',
         'kivy_garden.collider~=0.1.1', 'tables', 'pandas', 'xlsxwriter',
-        'tree-config', 'more_kivy_app'
+        'tree-config~=0.1.1'
     ],
     extras_require={
         'dev': ['pytest>=3.6', 'pytest-cov', 'flake8', 'sphinx-rtd-theme',

@@ -39,12 +39,6 @@ jobs:
         /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1280x720x24 -ac +extension GLX
 
         python3 -m pip install --upgrade pip virtualenv wheel setuptools
-        python3 -m pip install kivy --pre --no-deps --index-url  https://kivy.org/downloads/simple/
-        python3 -m pip install kivy[base] --pre --extra-index-url https://kivy.org/downloads/simple/
-        python3 -m pip install https://github.com/kivy-garden/painter/archive/master.zip
-        python3 -m pip install https://github.com/matham/more-kivy-app/archive/master.zip
-        python3 -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
-        python3 -m pip install --upgrade nixio==1.5.0b4 --pre
     - name: Install project
       run: python3 -m pip install -e .[dev]
     - name: Make wheel
@@ -90,15 +84,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip virtualenv wheel setuptools
-        # https://github.com/pyinstaller/pyinstaller/issues/5338
-        python -m pip install https://github.com/pyinstaller/pyinstaller/archive/cf6e363bcc66170d0ad526f2743654737e7d8a9e.zip
         python -c "import os, PyInstaller; os.remove(os.path.join(os.path.dirname(PyInstaller.__file__), 'hooks', 'hook-kivy.py'))"
-        python -m pip install kivy --pre --no-deps --index-url  https://kivy.org/downloads/simple/
-        python -m pip install kivy[base] --pre --extra-index-url  https://kivy.org/downloads/simple/
-        python -m pip install https://github.com/kivy-garden/painter/archive/master.zip
-        python -m pip install https://github.com/matham/more-kivy-app/archive/master.zip
-        python -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
-        python -m pip install --upgrade nixio==1.5.0b4 --pre
         python -m pip install -e .[dev]
     - name: Make PyInstaller app
       run: |
@@ -135,7 +121,7 @@ jobs:
         git clone https://github.com/kivy/kivy-sdk-packager.git
         cd kivy-sdk-packager/osx
 
-        curl -O -L https://kivy.org/downloads/ci/osx/app/Kivy.dmg
+        curl -O -L https://github.com/kivy/kivy/releases/download/2.0.0/Kivy.dmg
         hdiutil attach Kivy.dmg -mountroot .
 
         cp -R Kivy/Kivy.app Glitter2.app
@@ -145,10 +131,6 @@ jobs:
         source activate
         popd
 
-        python -m pip install https://github.com/kivy-garden/painter/archive/master.zip
-        python -m pip install https://github.com/matham/more-kivy-app/archive/master.zip
-        python -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
-        python -m pip install --upgrade nixio==1.5.0b4 --pre
         python -m pip install .
     - name: Finalize Glitter bundle
       run: |
@@ -198,13 +180,6 @@ jobs:
           KIVY_DOC: 1
       run: |
         python3 -m pip install --upgrade pip virtualenv wheel setuptools sphinx
-        python3 -m pip install kivy --pre --no-deps --index-url  https://kivy.org/downloads/simple/
-        python3 -m pip install kivy[base,dev] --pre --extra-index-url https://kivy.org/downloads/simple/
-        python3 -m pip install https://github.com/matham/tree-config/archive/master.zip
-        python3 -m pip install https://github.com/kivy-garden/painter/archive/master.zip
-        python3 -m pip install https://github.com/matham/more-kivy-app/archive/master.zip
-        python3 -m pip install https://github.com/matham/base_kivy_app/archive/master.zip
-        python3 -m pip install --upgrade nixio==1.5.0b4 --pre
 
         python3 -m pip install -e .[dev]
     - name: Generate docs
