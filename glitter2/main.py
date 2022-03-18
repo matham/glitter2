@@ -50,8 +50,8 @@ class MainView(FocusBehavior, BoxLayout):
 
     ctrl_chars = {'lctrl', 'rctrl', 'ctrl'}
 
-    def __int__(self, **kwargs):
-        super(MainView, self).__int__(**kwargs)
+    def __init__(self, **kwargs):
+        super(MainView, self).__init__(**kwargs)
         self.ctrl_chars = set()
 
     def on_focus(self, *args):

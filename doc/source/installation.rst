@@ -79,15 +79,9 @@ as in the following image, and right click on it and select Eject Glitter2:
 Installing from source
 ----------------------
 
-To install from source, first install the dependencies that need to be installed manually with::
-
-    pip install nixio==1.5.0b4 --pre
-    pip install "kivy[base]~=2.0.0rc4" --pre
-
-After installing the dependencies Glitter2 can be installed using::
+Glitter2 can be installed into a Python environment simply with::
 
     pip install glitter2
 
-to get the last release from pypi, or to get glitter2 master for the most current glitter2 version do::
-
-    pip install https://github.com/matham/glitter2/archive/master.zip
+Once installed, glitter2 can be run either with the ``glitter2`` command or by directly running
+``python glitter2/run_app.py``.

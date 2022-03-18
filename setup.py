@@ -15,7 +15,7 @@ setup(
     name='glitter2',
     version=__version__,
     author='Matthew Einhorn',
-    author_email='moiein2000@gmail.com',
+    author_email='matt@einhorn.dev',
     license='MIT',
     description=(
         'Video scoring for behavioral experiments.'),
@@ -26,10 +26,12 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
     ],
     packages=find_packages(),
     install_requires=[
-        'base_kivy_app~=0.1.1', 'ffpyplayer', 'kivy~=2.0.0', 'nixio==1.5.0b4',
+        'base_kivy_app~=0.1.1', 'ffpyplayer', 'kivy~=2.1.0', 'nixio==1.5.0b4',
         'numpy', 'h5py', 'kivy_garden.graph~=0.4.0',
         'kivy_garden.tickmarker~=3.0.0', 'kivy_garden.painter~=0.2.4',
         'kivy_garden.collider~=0.1.1', 'tables', 'pandas', 'xlsxwriter',
