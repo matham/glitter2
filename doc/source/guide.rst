@@ -25,6 +25,12 @@ Following is a video guide for each of the Glitter2 components. Or you can watch
 
 Please see the :ref:`install-glitter2` section for instructions on how to download and install Glitter2.
 
+Example video, coded H5 file, and python scripts can be found in the repository
+`examples <https://github.com/matham/glitter2/tree/master/examples>`_ directory.
+Example exported raw and summary files as well as files Glitter2 can import
+(csv, cleversys, H5 files) can be found in the
+`data <https://github.com/matham/glitter2/tree/master/examples/data>`_ sub-directory.
+
 Data file management
 ~~~~~~~~~~~~~~~~~~~~
 
