@@ -140,7 +140,7 @@ jobs:
           git clone https://github.com/kivy-garden/garden.git
           python -m build --wheel --outdir wheels --skip-dependency-check garden
 
-          pip install dist/glitter2*.whl https://github.com/matham/glitter2/releases/download/v0.1.0/tables-3.7.1.dev0-cp39-cp39-macosx_11_0_arm64.whl https://github.com/matham/glitter2/releases/download/v0.1.0/pyobjus-1.2.0-cp39-cp39-macosx_11_0_arm64.whl https://github.com/matham/glitter2/releases/download/v0.1.0/h5py-3.6.0-cp39-cp39-macosx_11_0_arm64.whl https://github.com/matham/glitter2/releases/download/v0.1.0/numexpr-2.8.2.dev1-cp39-cp39-macosx_11_0_arm64.whl --platform macosx_11_0_arm64 --only-binary=:all: --find-links wheels --target ../kivy-sdk-packager/osx/Glitter2.app/Contents/Resources/venv
+          pip install wheels/glitter2*.whl https://github.com/matham/glitter2/releases/download/v0.1.0/tables-3.7.1.dev0-cp39-cp39-macosx_11_0_arm64.whl https://github.com/matham/glitter2/releases/download/v0.1.0/pyobjus-1.2.0-cp39-cp39-macosx_11_0_arm64.whl https://github.com/matham/glitter2/releases/download/v0.1.0/h5py-3.6.0-cp39-cp39-macosx_11_0_arm64.whl https://github.com/matham/glitter2/releases/download/v0.1.0/numexpr-2.8.2.dev1-cp39-cp39-macosx_11_0_arm64.whl --platform macosx_11_0_arm64 --only-binary=:all: --find-links wheels --target ../kivy-sdk-packager/osx/Glitter2.app/Contents/Resources/venv
         else
           python -m pip install https://github.com/kivy/pyobjus/archive/refs/heads/master.zip
           python -m pip install .
