@@ -126,10 +126,10 @@ jobs:
         curl -O -L https://github.com/kivy/kivy/releases/download/2.1.0/Kivy.dmg
         hdiutil attach Kivy.dmg -mountroot .
 
-        cp -R Kivy/Kivy.app Glitter2.app
+        cp -R Kivy/Kivy.app Glitter2-${{ matrix.arch }}.app
     - name: Install Glitter pip dependencies
       run: |
-        pushd ../kivy-sdk-packager/osx/Glitter2.app/Contents/Resources/venv/bin
+        pushd ../kivy-sdk-packager/osx/Glitter2-${{ matrix.arch }}.app/Contents/Resources/venv/bin
         source activate
         popd
 
@@ -140,7 +140,7 @@ jobs:
           git clone https://github.com/kivy-garden/garden.git
           python -m build --wheel --outdir wheels --skip-dependency-check garden
 
-          pip install wheels/glitter2*.whl https://github.com/matham/glitter2/releases/download/v0.1.0/tables-3.7.1.dev0-cp39-cp39-macosx_11_0_arm64.whl https://github.com/matham/glitter2/releases/download/v0.1.0/pyobjus-1.2.0-cp39-cp39-macosx_11_0_arm64.whl https://github.com/matham/glitter2/releases/download/v0.1.0/h5py-3.6.0-cp39-cp39-macosx_11_0_arm64.whl https://github.com/matham/glitter2/releases/download/v0.1.0/numexpr-2.8.2.dev1-cp39-cp39-macosx_11_0_arm64.whl --platform macosx_11_0_arm64 --only-binary=:all: --find-links wheels --target ../kivy-sdk-packager/osx/Glitter2.app/Contents/Resources/venv
+          pip install wheels/glitter2*.whl https://github.com/matham/glitter2/releases/download/v0.1.0/tables-3.7.1.dev0-cp39-cp39-macosx_11_0_arm64.whl https://github.com/matham/glitter2/releases/download/v0.1.0/pyobjus-1.2.0-cp39-cp39-macosx_11_0_arm64.whl https://github.com/matham/glitter2/releases/download/v0.1.0/h5py-3.6.0-cp39-cp39-macosx_11_0_arm64.whl https://github.com/matham/glitter2/releases/download/v0.1.0/numexpr-2.8.2.dev1-cp39-cp39-macosx_11_0_arm64.whl --platform macosx_11_0_arm64 --only-binary=:all: --find-links wheels --target ../kivy-sdk-packager/osx/Glitter2-${{ matrix.arch }}.app/Contents/Resources/venv
         else
           python -m pip install https://github.com/kivy/pyobjus/archive/refs/heads/master.zip
           python -m pip install .
@@ -149,19 +149,19 @@ jobs:
       run: |
         cd ../kivy-sdk-packager/osx
 
-        pushd Glitter2.app/Contents/Resources/
+        pushd Glitter2-${{ matrix.arch }}.app/Contents/Resources/
         ln -s ./venv/bin/glitter2 yourapp
         popd
 
-        ./fix-bundle-metadata.sh Glitter2.app -n Glitter2 -v "0.1.1.dev0" -a "Matthew Einhorn, CPL Lab" -o \
+        ./fix-bundle-metadata.sh Glitter2-${{ matrix.arch }}.app -n Glitter2 -v "0.1.1.dev0" -a "Matthew Einhorn, CPL Lab" -o \
             "org.cpl.glitter2" -i "../../glitter2/doc/source/images/glitter2_icon.png"
-        ./cleanup-app.sh Glitter2.app
+        ./cleanup-app.sh Glitter2-${{ matrix.arch }}.app
 
-        ./relocate.sh Glitter2.app
+        ./relocate.sh Glitter2-${{ matrix.arch }}.app
     - name: Create dmg
       run: |
         pushd ../kivy-sdk-packager/osx
-        ./create-osx-dmg.sh Glitter2.app Glitter2-${{ matrix.arch }}
+        ./create-osx-dmg.sh Glitter2-${{ matrix.arch }}.app Glitter2-${{ matrix.arch }}
         popd
 
         mkdir osx_app
