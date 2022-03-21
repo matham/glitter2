@@ -86,6 +86,7 @@ jobs:
         python -c "import os, PyInstaller; os.remove(os.path.join(os.path.dirname(PyInstaller.__file__), 'hooks', 'hook-kivy.py'))"
         python -m pip install -e .[dev]
     - name: Make PyInstaller app
+      if: ${{ false }}
       run: |
         cd packaging
         python -m PyInstaller Glitter2_exe.spec
