@@ -5,7 +5,6 @@ The main module that provides the app that runs the GUI.
 """
 from os.path import join, dirname
 from typing import Iterable, List, Dict, Set
-from ffpyplayer.pic import Image
 
 from kivy.lang import Builder
 from kivy.factory import Factory
@@ -15,6 +14,7 @@ from kivy.uix.widget import Widget
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.behaviors.focus import FocusBehavior
 from kivy.clock import Clock
+from ffpyplayer.pic import Image
 
 import kivy_garden.graph
 import kivy_garden.tickmarker

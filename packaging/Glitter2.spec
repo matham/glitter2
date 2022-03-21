@@ -10,6 +10,19 @@ from os.path import dirname, join
 from kivy.tools.packaging.pyinstaller_hooks import get_deps_minimal, \
     get_deps_all, hookspath, runtime_hooks
 import nixio.info
+import tables
+import pathlib
+import sys
+
+
+tables_root = pathlib.Path(dirname(sys.modules['tables'].__file__))
+tables_datas = []
+for f in tables_root.glob('*.dll'):
+    tables_datas.append((str(f), str(f.relative_to(tables_root.parent).parent)))
+tables_libs = tables_root.parent.joinpath('tables.libs')
+for f in tables_libs.glob('*'):
+    tables_datas.append((str(f), str(f.relative_to(tables_libs.parent).parent)))
+
 
 kwargs = get_deps_minimal(video=None, audio=None, camera=None)
 kwargs['hiddenimports'].extend([
@@ -27,7 +40,7 @@ kwargs['hiddenimports'].extend([
 a = Analysis(['../glitter2/run_app.py'],
              pathex=['.'],
              datas=base_kivy_app.get_pyinstaller_datas() + glitter2.get_pyinstaller_datas() + [
-                 (join(dirname(nixio.info.__file__), 'info.json'), 'nixio')],
+                 (join(dirname(nixio.info.__file__), 'info.json'), 'nixio')] + tables_datas,
              hookspath=hookspath(),
              runtime_hooks=runtime_hooks(),
              win_no_prefer_redirects=False,
