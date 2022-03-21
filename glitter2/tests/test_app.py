@@ -58,7 +58,7 @@ async def test_code_data_in_gui(
     from os.path import isdir, expanduser
     print(
         sample_video_file, data_file, glitter_app.storage_controller.root_path,
-        isdir(glitter_app.storage_controller), expanduser('~'))
+        isdir(glitter_app.storage_controller.root_path), expanduser('~'))
     assert get_contents(sample_video_file) == {sample_video_file.name}
     glitter_app.storage_controller.ui_open_file(str(sample_video_file))
 
