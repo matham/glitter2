@@ -40,6 +40,7 @@ class Glitter2TestApp(Glitter2App, UnitKivyApp):
         if isinstance(exc_info, str):
             self.get_logger().error(msg)
             self.get_logger().error(exc_info)
+            raise Exception(msg)
         elif exc_info is not None:
             tp, value, tb = exc_info
             try:

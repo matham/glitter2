@@ -52,8 +52,9 @@ async def add_circle(glitter_app: Glitter2TestApp):
 
 
 async def test_code_data_in_gui(
-        glitter_app: Glitter2TestApp, sample_video_file):
+        glitter_app: Glitter2TestApp, sample_video_file, tmp_path):
     last_frame = None
+    glitter_app.storage_controller.root_path = str(tmp_path)
     data_file = sample_video_file.with_suffix('.h5')
     from os.path import isdir, expanduser, join
     print(
