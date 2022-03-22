@@ -82,6 +82,13 @@ jobs:
         python-version: 3.x
     - name: Install dependencies
       run: |
+        ls "${env:ProgramFiles(x86)}\Windows Kits\10\bin\x64"
+        ls "${env:ProgramFiles(x86)}\Windows Kits\10\bin\x86"
+        $sdkVers = "10.0.22000.0", "10.0.20348.0", "10.0.19041.0", "10.0.17763.0"
+        Foreach ($ver in $sdkVers)
+        {
+            ls "${env:ProgramFiles(x86)}\Windows Kits\10\bin\${ver}\x64"
+        }
         python -m pip install --upgrade pip virtualenv wheel setuptools
         python -c "import os, PyInstaller; os.remove(os.path.join(os.path.dirname(PyInstaller.__file__), 'hooks', 'hook-kivy.py'))"
         python -m pip install -e .[dev]
