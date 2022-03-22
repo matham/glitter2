@@ -52,16 +52,10 @@ async def add_circle(glitter_app: Glitter2TestApp):
 
 
 async def test_code_data_in_gui(
-        glitter_app: Glitter2TestApp, sample_video_file, tmp_path):
+        glitter_app: Glitter2TestApp, sample_video_file):
     last_frame = None
-    glitter_app.storage_controller.root_path = str(tmp_path)
     data_file = sample_video_file.with_suffix('.h5')
-    from os.path import isdir, expanduser, join
-    print(
-        sample_video_file, data_file, glitter_app.storage_controller.root_path,
-        isdir(glitter_app.storage_controller.root_path), expanduser('~'))
-    with open(join(expanduser('~'), 'test'), 'w') as fh:
-        fh.write('test')
+
     assert get_contents(sample_video_file) == {sample_video_file.name}
     glitter_app.storage_controller.ui_open_file(str(sample_video_file))
 

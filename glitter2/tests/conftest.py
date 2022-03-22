@@ -20,6 +20,8 @@ file_count = defaultdict(int)
 
 examples_dir = Path(__file__).parent.parent.parent.joinpath('examples')
 
+video_count = 0
+
 
 @pytest.fixture()
 def temp_file(tmp_path):
@@ -155,9 +157,11 @@ def coded_data_file(temp_file):
 
 @pytest.fixture()
 def sample_video_file(temp_file):
+    global video_count
     src = examples_dir.joinpath('video.mp4')
-    target = temp_file('video.mp4')
+    target = temp_file(f'video-{video_count}.mp4')
     shutil.copy(src, target)
+    video_count += 1
     return target
 
 
