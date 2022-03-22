@@ -440,6 +440,11 @@ class StorageController(EventDispatcher):
         self.write_changes_to_autosave()
         filename = filename or self.filename
         if filename:
+            print('copying:', self.backup_filename, filename)
+            import os.path
+            if exists(filename):
+                os.unlink(filename)
+                print('deleted')
             copy2(self.backup_filename, filename)
             self.has_unsaved = False
 
