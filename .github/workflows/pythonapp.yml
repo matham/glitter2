@@ -96,8 +96,8 @@ jobs:
       run: |
         $encodedBytes = [System.Convert]::FromBase64String($env:PFX_CONTENT)
         Set-Content cert.pfx -Value $encodedBytes -AsByteStream
-        $sign = $(get-childitem "${env:ProgramFiles(x86)}\Windows Kits"\10\bin\*\x64\signtool.exe | Select-Object -first 1)
-        "$sign" sign /f cert.pfx /p "$env:PFX_PASSWORD" /fd SHA256 packaging/dist/Glitter2.exe
+        $sign = $(get-childitem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" | Select-Object -first 1)
+        & "$sign" sign /f cert.pfx /p "$env:PFX_PASSWORD" /fd SHA256 packaging/dist/Glitter2.exe
     - name: Upload app as artifact
       uses: actions/upload-artifact@v2
       with:
