@@ -344,8 +344,8 @@ class DataFile:
 
         data_map = self.timestamp_data_map = {}
         for i, timestamps in timestamps_arrays.items():
-            for t_index, val in enumerate(timestamps):
-                data_map[val[0]] = i, t_index
+            for t_index, val in enumerate(np.asarray(timestamps)):
+                data_map[val] = i, t_index
 
         self._populate_timestamp_intervals()
 
@@ -797,7 +797,7 @@ class DataFile:
 
         start_index = len(arr1)
         arr1.append(arr2)
-        for i, t in enumerate(arr2, start_index):
+        for i, t in enumerate(np.asarray(arr2), start_index):
             timestamp_data_map[t] = arr_num1, i
         del self.nix_file.blocks['timestamps'].data_arrays[arr2.name]
         del timestamps_arrays[arr_num2]

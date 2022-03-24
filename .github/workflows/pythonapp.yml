@@ -97,7 +97,7 @@ jobs:
         $encodedBytes = [System.Convert]::FromBase64String($env:PFX_CONTENT)
         Set-Content cert.pfx -Value $encodedBytes -AsByteStream
         $sign = $(get-childitem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe" | Select-Object -first 1)
-        & "$sign" sign /f cert.pfx /p "$env:PFX_PASSWORD" /fd SHA256 /t "http://timestamp.sectigo.com" /td SHA256 packaging/dist/Glitter2.exe
+        & "$sign" sign /f cert.pfx /p "$env:PFX_PASSWORD" /fd SHA256 /t "http://timestamp.sectigo.com" packaging/dist/Glitter2.exe
         Remove-Item cert.pfx
     - name: Upload app as artifact
       uses: actions/upload-artifact@v2
@@ -154,7 +154,7 @@ jobs:
           curl -sLO https://github.com/matham/glitter2/releases/download/v0.1.0/numexpr-2.8.2.dev1-cp39-cp39-macosx_11_0_arm64.whl
           popd
 
-          pip install wheels/glitter2*.whl --platform macosx_11_0_arm64 --only-binary=:all: --find-links wheels --target ../kivy-sdk-packager/osx/Glitter2.app/Contents/Resources/venv/lib/python*/site-packages
+          pip install wheels/*.whl --platform macosx_11_0_arm64 --only-binary=:all: --find-links wheels --target ../kivy-sdk-packager/osx/Glitter2.app/Contents/Resources/venv/lib/python*/site-packages
           mv ../kivy-sdk-packager/osx/Glitter2.app/Contents/Resources/venv/lib/python*/site-packages/bin/* ../kivy-sdk-packager/osx/Glitter2.app/Contents/Resources/venv/bin
         else
           python -m pip install https://github.com/kivy/pyobjus/archive/refs/heads/master.zip
