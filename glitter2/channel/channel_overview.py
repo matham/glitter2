@@ -60,9 +60,12 @@ class ChannelStateViewerController:
         self.compute_overview()
 
     def add_channel(
-            self, channel, data_channel: TemporalDataChannelBase
+            self, channel, data_channel: TemporalDataChannelBase,
+            channel_type: str
     ) -> 'ChannelStateViewer':
-        viewer = ChannelStateViewer(controller=self, data_channel=data_channel)
+        viewer = ChannelStateViewer(
+            controller=self, data_channel=data_channel,
+            channel_type=channel_type)
         self.channels[channel] = viewer
 
         self.update_channel_config(channel)
@@ -176,7 +179,11 @@ class ChannelStateViewerController:
 
         # each channel is a line of data of height h surrounded above and
         # below by whitespace of height sep
-        for i, viewer in enumerate(reversed(list(channels.values()))):
+
+        viewers = list(reversed(list(channels.values())))
+        event_viewer = [v for v in viewers if v.channel_type == 'event']
+        pos_viewer = [v for v in viewers if v.channel_type == 'pos']
+        for i, viewer in enumerate(pos_viewer + event_viewer):
             # bottom of the whitespace below the channel
             sep_bottom = i * (pixel_sep + pixel_h)
             data_bottom = sep_bottom + pixel_sep
@@ -189,6 +196,8 @@ class ChannelStateViewerController:
 
 
 class ChannelStateViewer:
+
+    channel_type: str = ''
 
     data_channel: TemporalDataChannelBase = None
 
@@ -214,10 +223,11 @@ class ChannelStateViewer:
 
     current_timestamp: float = None
 
-    def __init__(self, controller, data_channel, **kwargs):
+    def __init__(self, controller, data_channel, channel_type, **kwargs):
         super().__init__(**kwargs)
         self.controller = controller
         self.data_channel = data_channel
+        self.channel_type = channel_type
         self.num_timestamps_modified_per_pixel = []
 
     def compute_modified_timestamps_count(

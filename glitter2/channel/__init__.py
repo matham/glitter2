@@ -175,7 +175,7 @@ class ChannelController(EventDispatcher):
                 channel.set_current_timestamp(last_ts)
             # now display it in the overview
             channel.overview_channel = self.overview_controller.add_channel(
-                channel, data_channel)
+                channel, data_channel, channel_type)
 
             channel.fbind('keyboard_key', self._track_key)
             self._track_key()
