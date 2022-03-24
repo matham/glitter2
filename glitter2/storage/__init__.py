@@ -64,6 +64,7 @@ import os
 from tempfile import NamedTemporaryFile
 from shutil import copy2
 from functools import partial
+from contextlib import contextmanager
 import h5py
 
 from kivy.event import EventDispatcher
@@ -352,11 +353,27 @@ class StorageController(EventDispatcher):
         self.write_changes_to_autosave()
         self.saw_all_timestamps = self.data_file.saw_all_timestamps
 
+    @contextmanager
+    def cycle_file(self):
+        """Closes and reopens the h5 file that was just closed, assuming no
+        changes occurred to the file meanwhile.
+        """
+        if self.nix_file is None:
+            yield
+            return
+
+        self.nix_file.close()
+        yield
+        self.nix_file = nix.File.open(
+            self.backup_filename, nix.FileMode.ReadWrite,
+            compression=self.nix_compression)
+        self.data_file.reopen_file(self.nix_file)
+
     def close_file(self, force_remove_autosave=False):
         """Closes without saving the data. But if data was unsaved, it leaves
         the backup file unchanged.
         """
-        if self.nix_file:
+        if self.nix_file is not None:
             self.nix_file.close()
             self.nix_file = None
             self.data_file = None
@@ -440,8 +457,8 @@ class StorageController(EventDispatcher):
         self.write_changes_to_autosave()
         filename = filename or self.filename
         if filename:
-            from shutil import copyfile
-            copyfile(self.backup_filename, filename)
+            with self.cycle_file():
+                copy2(self.backup_filename, filename)
             self.has_unsaved = False
 
     def write_changes_to_autosave(self, *largs, scheduled=False):

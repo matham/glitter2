@@ -33,7 +33,7 @@ def _unsaved_callback():
     pass
 
 
-class DataFile(object):
+class DataFile:
     """Data file interface to the NixIO file that stores the video file
     annotated data.
 
@@ -302,7 +302,30 @@ class DataFile(object):
 
         self.unsaved_callback()
 
-    def _read_timestamps_from_file(self):
+    def reopen_file(self, nix_file: nix.File):
+        """Repopulates the data links with the provided file.
+
+        Used to reopen a nix file that has been closed after
+        :class:`DataFile` is initialized if no changes occurred to the file.
+        """
+        self.nix_file = nix_file
+
+        self.app_config_section = self.nix_file.sections['app_config']
+
+        data_config = self.nix_file.sections['data_config']
+        self.video_metadata_section = data_config.sections['video_metadata']
+
+        self._read_timestamps_from_file(reopen=True)
+
+        for block in nix_file.blocks:
+            if block.name == 'timestamps':
+                continue
+
+            cls_type, _, n = block.name.split('_')
+            items: List[DataChannelBase] = getattr(self, f'{cls_type}_channels')
+            items[int(n)].reopen_file(block)
+
+    def _read_timestamps_from_file(self, reopen=False):
         """Reads the timestamps arrays into the properties.
         """
         timestamps_block = self.nix_file.blocks['timestamps']
@@ -315,10 +338,14 @@ class DataFile(object):
             n = int(data_array.name.split('_')[-1])
             timestamps_arrays[n] = data_array
 
+        if reopen:
+            # no need to re-read the data, it didn't change
+            return
+
         data_map = self.timestamp_data_map = {}
         for i, timestamps in timestamps_arrays.items():
             for t_index, val in enumerate(timestamps):
-                data_map[val] = i, t_index
+                data_map[val[0]] = i, t_index
 
         self._populate_timestamp_intervals()
 
@@ -1026,7 +1053,7 @@ class DataFile(object):
         return float(timestamps[k - 1])
 
 
-class DataChannelBase(object):
+class DataChannelBase:
     """Base class for data channels stored in a :class:`DataFile`.
     """
 
@@ -1064,13 +1091,21 @@ class DataChannelBase(object):
         self.metadata = block.metadata
         self.data_file = data_file
 
+    def reopen_file(self, block: nix.Block):
+        """Repopulates the data links from the provided block.
+
+        Used after re-opening an unchanged nix file.
+        """
+        self.block = block
+        self.metadata = block.metadata
+
     def create_initial_data(self):
         """Creates whatever initial data structures are needed for storing the
         channel data.
         """
         raise NotImplementedError
 
-    def read_initial_data(self):
+    def read_initial_data(self, reopen=False):
         """Reads the channel data previously written to the file.
         """
         raise NotImplementedError
@@ -1135,6 +1170,10 @@ class TemporalDataChannelBase(DataChannelBase):
         super().__init__(**kwargs)
         self.data_arrays = {}
 
+    def reopen_file(self, block: nix.Block):
+        super().reopen_file(block)
+        self.read_initial_data(reopen=True)
+
     def create_initial_data(self):
         self.data_file.unsaved_callback()
 
@@ -1155,9 +1194,9 @@ class TemporalDataChannelBase(DataChannelBase):
         """
         raise NotImplementedError
 
-    def read_initial_data(self):
+    def read_initial_data(self, reopen=False):
         block = self.block
-        data_arrays = self.data_arrays
+        data_arrays = self.data_arrays = {}
 
         data_array = self.data_array = block.data_arrays[0]
         data_arrays[0] = data_array
@@ -1399,7 +1438,7 @@ class ZoneChannelData(DataChannelBase):
     def create_initial_data(self):
         pass
 
-    def read_initial_data(self):
+    def read_initial_data(self, reopen=False):
         pass
 
 
