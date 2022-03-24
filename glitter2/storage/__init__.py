@@ -440,7 +440,8 @@ class StorageController(EventDispatcher):
         self.write_changes_to_autosave()
         filename = filename or self.filename
         if filename:
-            copy2(self.backup_filename, filename)
+            from shutil import copyfile
+            copyfile(self.backup_filename, filename)
             self.has_unsaved = False
 
     def write_changes_to_autosave(self, *largs, scheduled=False):

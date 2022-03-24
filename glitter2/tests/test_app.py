@@ -55,6 +55,7 @@ async def test_code_data_in_gui(
         glitter_app: Glitter2TestApp, sample_video_file):
     last_frame = None
     data_file = sample_video_file.with_suffix('.h5')
+
     assert get_contents(sample_video_file) == {sample_video_file.name}
     glitter_app.storage_controller.ui_open_file(str(sample_video_file))
 
