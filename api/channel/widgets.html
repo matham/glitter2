@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Channel widgets &mdash; Glitter2  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="&lt;no title&gt;" href="../storage/api.html" />
+    <link rel="prev" title="Data Channels" href="channel.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Glitter2
+            <img src="../../_static/glitter2_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../guide.html">Glitter2 User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../app.html">Glitter2 App</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">The Glitter2 API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../glitter2.html">Glitter2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../analysis/analysis.html">Data Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../analysis/export.html">Data Export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="channel.html">Data Channels</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Channel widgets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../storage/storage.html">Storage Controller</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../storage/data_file.html">Data file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../storage/imports/imports.html">Data import</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../storage/imports/legacy.html">Legacy Glitter file importer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../storage/imports/clever_sys.html">CleverSys Import</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../storage/imports/csv.html">CSV import</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player/player.html">Video Player</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player/widgets.html">Video Player widgets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils.html">Utilities</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Glitter2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../api.html">The Glitter2 API</a> &raquo;</li>
+          <li><a href="api.html">&lt;no title&gt;</a> &raquo;</li>
+      <li>Channel widgets</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/channel/widgets.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <span class="target" id="module-glitter2.channel.channel_widgets"></span><section id="channel-widgets">
+<h1>Channel widgets<a class="headerlink" href="#channel-widgets" title="Permalink to this headline"></a></h1>
+<p>API for all the GUI components that display channels and channel related
+objects.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.ChannelSettingsDropDown">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">glitter2.channel.channel_widgets.</span></span><span class="sig-name descname"><span class="pre">ChannelSettingsDropDown</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.channel.channel_widgets.ChannelSettingsDropDown" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">kivy.factory.FlatDropDown</span></code></p>
+<p>Widget that shows a channel’s settings as a drop down.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.ChannelWidget">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">glitter2.channel.channel_widgets.</span></span><span class="sig-name descname"><span class="pre">ChannelWidget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_display_manager</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.channel.channel_widgets.ChannelWidget" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.boxlayout.html#kivy.uix.boxlayout.BoxLayout" title="(in Kivy v2.1.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy.uix.boxlayout.BoxLayout</span></code></a></p>
+<p>Widget that displays the channel in the list of channels in the GUI.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.EventChannelWidget">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">glitter2.channel.channel_widgets.</span></span><span class="sig-name descname"><span class="pre">EventChannelWidget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_display_manager</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.channel.channel_widgets.EventChannelWidget" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#glitter2.channel.channel_widgets.ChannelWidget" title="glitter2.channel.channel_widgets.ChannelWidget"><code class="xref py py-class docutils literal notranslate"><span class="pre">glitter2.channel.channel_widgets.ChannelWidget</span></code></a></p>
+<p>The widget that displays the <a class="reference internal" href="channel.html#glitter2.channel.EventChannel" title="glitter2.channel.EventChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">glitter2.channel.EventChannel</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.ImageDisplayWidgetManager">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">glitter2.channel.channel_widgets.</span></span><span class="sig-name descname"><span class="pre">ImageDisplayWidgetManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kw</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.channel.channel_widgets.ImageDisplayWidgetManager" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.relativelayout.html#kivy.uix.relativelayout.RelativeLayout" title="(in Kivy v2.1.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy.uix.relativelayout.RelativeLayout</span></code></a></p>
+<p>Manages all the channels in the GUI and the display of the images.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.ImageDisplayWidgetManager.channel_controller">
+<span class="sig-name descname"><span class="pre">channel_controller</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="channel.html#glitter2.channel.ChannelController" title="glitter2.channel.ChannelController"><span class="pre">glitter2.channel.ChannelController</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#glitter2.channel.channel_widgets.ImageDisplayWidgetManager.channel_controller" title="Permalink to this definition"></a></dt>
+<dd><p>Set from kv automatically.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.ImageDisplayWidgetManager.create_channel_widget">
+<span class="sig-name descname"><span class="pre">create_channel_widget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="channel.html#glitter2.channel.ChannelBase" title="glitter2.channel.ChannelBase"><span class="pre">glitter2.channel.ChannelBase</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.channel.channel_widgets.ImageDisplayWidgetManager.create_channel_widget" title="Permalink to this definition"></a></dt>
+<dd><p>Called after the channel is ready.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>channel</strong> – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.PosChannelPainter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">glitter2.channel.channel_widgets.</span></span><span class="sig-name descname"><span class="pre">PosChannelPainter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.channel.channel_widgets.PosChannelPainter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.widget.html#kivy.uix.widget.Widget" title="(in Kivy v2.1.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy.uix.widget.Widget</span></code></a></p>
+<p>Widget that draws the time based position for
+<a class="reference internal" href="channel.html#glitter2.channel.PosChannel" title="glitter2.channel.PosChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">PosChannel</span></code></a>.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.PosChannelPainter.on_touch_down">
+<span class="sig-name descname"><span class="pre">on_touch_down</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">touch</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.channel.channel_widgets.PosChannelPainter.on_touch_down" title="Permalink to this definition"></a></dt>
+<dd><p>Receive a touch down event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><cite>touch</cite>: <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.input.motionevent.html#kivy.input.motionevent.MotionEvent" title="(in Kivy v2.1.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">MotionEvent</span></code></a> class</dt><dd><p>Touch received. The touch is in parent coordinates. See
+<a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.relativelayout.html#module-kivy.uix.relativelayout" title="(in Kivy v2.1.0)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">relativelayout</span></code></a> for a discussion on
+coordinate systems.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>bool
+If True, the dispatching of the touch event will stop.
+If False, the event will continue to be dispatched to the rest
+of the widget tree.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.PosChannelPainter.on_touch_move">
+<span class="sig-name descname"><span class="pre">on_touch_move</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">touch</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.channel.channel_widgets.PosChannelPainter.on_touch_move" title="Permalink to this definition"></a></dt>
+<dd><p>Receive a touch move event. The touch is in parent coordinates.</p>
+<p>See <a class="reference internal" href="#glitter2.channel.channel_widgets.PosChannelPainter.on_touch_down" title="glitter2.channel.channel_widgets.PosChannelPainter.on_touch_down"><code class="xref py py-meth docutils literal notranslate"><span class="pre">on_touch_down()</span></code></a> for more information.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.PosChannelPainter.on_touch_up">
+<span class="sig-name descname"><span class="pre">on_touch_up</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">touch</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.channel.channel_widgets.PosChannelPainter.on_touch_up" title="Permalink to this definition"></a></dt>
+<dd><p>Receive a touch up event. The touch is in parent coordinates.</p>
+<p>See <a class="reference internal" href="#glitter2.channel.channel_widgets.PosChannelPainter.on_touch_down" title="glitter2.channel.channel_widgets.PosChannelPainter.on_touch_down"><code class="xref py py-meth docutils literal notranslate"><span class="pre">on_touch_down()</span></code></a> for more information.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.PosChannelWidget">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">glitter2.channel.channel_widgets.</span></span><span class="sig-name descname"><span class="pre">PosChannelWidget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_display_manager</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.channel.channel_widgets.PosChannelWidget" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#glitter2.channel.channel_widgets.ChannelWidget" title="glitter2.channel.channel_widgets.ChannelWidget"><code class="xref py py-class docutils literal notranslate"><span class="pre">glitter2.channel.channel_widgets.ChannelWidget</span></code></a></p>
+<p>The widget that displays the <a class="reference internal" href="channel.html#glitter2.channel.PosChannel" title="glitter2.channel.PosChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">glitter2.channel.PosChannel</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.ShowMoreBehavior">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">glitter2.channel.channel_widgets.</span></span><span class="sig-name descname"><span class="pre">ShowMoreBehavior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.channel.channel_widgets.ShowMoreBehavior" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Behavior that displays or hides the <a class="reference internal" href="#glitter2.channel.channel_widgets.ShowMoreBehavior.more" title="glitter2.channel.channel_widgets.ShowMoreBehavior.more"><code class="xref py py-attr docutils literal notranslate"><span class="pre">more</span></code></a> widget when
+<a class="reference internal" href="#glitter2.channel.channel_widgets.ShowMoreBehavior.show_more" title="glitter2.channel.channel_widgets.ShowMoreBehavior.show_more"><code class="xref py py-attr docutils literal notranslate"><span class="pre">show_more</span></code></a> is set to True or False respectively.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.ShowMoreBehavior.more">
+<span class="sig-name descname"><span class="pre">more</span></span><a class="headerlink" href="#glitter2.channel.channel_widgets.ShowMoreBehavior.more" title="Permalink to this definition"></a></dt>
+<dd><p>The widget to display as a child of the instance when <a class="reference internal" href="#glitter2.channel.channel_widgets.ShowMoreBehavior.show_more" title="glitter2.channel.channel_widgets.ShowMoreBehavior.show_more"><code class="xref py py-attr docutils literal notranslate"><span class="pre">show_more</span></code></a>
+is True.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.ShowMoreBehavior.show_more">
+<span class="sig-name descname"><span class="pre">show_more</span></span><a class="headerlink" href="#glitter2.channel.channel_widgets.ShowMoreBehavior.show_more" title="Permalink to this definition"></a></dt>
+<dd><p>Whether the <a class="reference internal" href="#glitter2.channel.channel_widgets.ShowMoreBehavior.more" title="glitter2.channel.channel_widgets.ShowMoreBehavior.more"><code class="xref py py-attr docutils literal notranslate"><span class="pre">more</span></code></a> widget is displayed as a child of this
+instance or removed.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.TrackPressingButtonBehavior">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">glitter2.channel.channel_widgets.</span></span><span class="sig-name descname"><span class="pre">TrackPressingButtonBehavior</span></span><a class="headerlink" href="#glitter2.channel.channel_widgets.TrackPressingButtonBehavior" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A button that keeps track whether it’s currently being pressed.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.ZoneChannelWidget">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">glitter2.channel.channel_widgets.</span></span><span class="sig-name descname"><span class="pre">ZoneChannelWidget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_display_manager</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.channel.channel_widgets.ZoneChannelWidget" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#glitter2.channel.channel_widgets.ChannelWidget" title="glitter2.channel.channel_widgets.ChannelWidget"><code class="xref py py-class docutils literal notranslate"><span class="pre">glitter2.channel.channel_widgets.ChannelWidget</span></code></a></p>
+<p>The widget that displays the <a class="reference internal" href="channel.html#glitter2.channel.ZoneChannel" title="glitter2.channel.ZoneChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">glitter2.channel.ZoneChannel</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.ZonePainter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">glitter2.channel.channel_widgets.</span></span><span class="sig-name descname"><span class="pre">ZonePainter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.channel.channel_widgets.ZonePainter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://kivy-garden.github.io/painter/flower.html#kivy_garden.painter.PaintCanvasBehavior" title="(in Painter)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy_garden.painter.PaintCanvasBehavior</span></code></a>, <a class="reference external" href="https://kivy.org/doc/stable/api-kivy.uix.widget.html#kivy.uix.widget.Widget" title="(in Kivy v2.1.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">kivy.uix.widget.Widget</span></code></a></p>
+<p>Painter class for drawing zones in the GUI.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.ZonePainter.add_shape">
+<span class="sig-name descname"><span class="pre">add_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.channel.channel_widgets.ZonePainter.add_shape" title="Permalink to this definition"></a></dt>
+<dd><p>Add the shape to <code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes</span></code> and to the painter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>shape</strong> – <code class="xref py py-class docutils literal notranslate"><span class="pre">PaintShape</span></code> instance to add.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A bool indicating whether the shape was successfully added.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.ZonePainter.create_shape_with_touch">
+<span class="sig-name descname"><span class="pre">create_shape_with_touch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">touch</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.channel.channel_widgets.ZonePainter.create_shape_with_touch" title="Permalink to this definition"></a></dt>
+<dd><p>Called internally whenever the user has done something with a
+touch such that the controller wants to create a new
+<code class="xref py py-class docutils literal notranslate"><span class="pre">PaintShape</span></code> to be added to the painter.</p>
+<p>This should return a new <code class="xref py py-class docutils literal notranslate"><span class="pre">PaintShape</span></code> instance that will be
+added to the painter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>touch</strong> – The touch that caused this call.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A new <code class="xref py py-class docutils literal notranslate"><span class="pre">PaintShape</span></code> instance to be added.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.ZonePainter.deselect_shape">
+<span class="sig-name descname"><span class="pre">deselect_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.channel.channel_widgets.ZonePainter.deselect_shape" title="Permalink to this definition"></a></dt>
+<dd><p>De-selects the shape and removes it from <code class="xref py py-attr docutils literal notranslate"><span class="pre">selected_shapes</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>shape</strong> – <code class="xref py py-class docutils literal notranslate"><span class="pre">PaintShape</span></code> instance to de-select.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A bool indicating whether the shape was successfully
+de-selected.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.ZonePainter.remove_shape">
+<span class="sig-name descname"><span class="pre">remove_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.channel.channel_widgets.ZonePainter.remove_shape" title="Permalink to this definition"></a></dt>
+<dd><p>Removes the shape from the painter and from <code class="xref py py-attr docutils literal notranslate"><span class="pre">shapes</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>shape</strong> – <code class="xref py py-class docutils literal notranslate"><span class="pre">PaintShape</span></code> instance to remove.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A bool indicating whether the shape was successfully removed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.channel.channel_widgets.ZonePainter.select_shape">
+<span class="sig-name descname"><span class="pre">select_shape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shape</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.channel.channel_widgets.ZonePainter.select_shape" title="Permalink to this definition"></a></dt>
+<dd><p>Selects the shape and adds it to <code class="xref py py-attr docutils literal notranslate"><span class="pre">selected_shapes</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>shape</strong> – <code class="xref py py-class docutils literal notranslate"><span class="pre">PaintShape</span></code> instance to select.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A bool indicating whether the shape was successfully selected.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="channel.html" class="btn btn-neutral float-left" title="Data Channels" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../storage/api.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Matthew Einhorn.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

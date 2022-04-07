@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data file &mdash; Glitter2  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="&lt;no title&gt;" href="imports/api.html" />
+    <link rel="prev" title="Storage Controller" href="storage.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Glitter2
+            <img src="../../_static/glitter2_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../guide.html">Glitter2 User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../app.html">Glitter2 App</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">The Glitter2 API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../glitter2.html">Glitter2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../analysis/analysis.html">Data Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../analysis/export.html">Data Export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../channel/channel.html">Data Channels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../channel/widgets.html">Channel widgets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="storage.html">Storage Controller</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Data file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="imports/imports.html">Data import</a></li>
+<li class="toctree-l2"><a class="reference internal" href="imports/legacy.html">Legacy Glitter file importer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="imports/clever_sys.html">CleverSys Import</a></li>
+<li class="toctree-l2"><a class="reference internal" href="imports/csv.html">CSV import</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player/player.html">Video Player</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../player/widgets.html">Video Player widgets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../utils.html">Utilities</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Glitter2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../api.html">The Glitter2 API</a> &raquo;</li>
+          <li><a href="api.html">&lt;no title&gt;</a> &raquo;</li>
+      <li>Data file</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/api/storage/data_file.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <span class="target" id="module-glitter2.storage.data_file"></span><section id="data-file">
+<h1>Data file<a class="headerlink" href="#data-file" title="Permalink to this headline"></a></h1>
+<p>Data channel methods, unless specified should not be called directly.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataChannelBase">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">glitter2.storage.data_file.</span></span><span class="sig-name descname"><span class="pre">DataChannelBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">nixio.block.Block</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#glitter2.storage.data_file.DataFile" title="glitter2.storage.data_file.DataFile"><span class="pre">glitter2.storage.data_file.DataFile</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.DataChannelBase" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Base class for data channels stored in a <a class="reference internal" href="#glitter2.storage.data_file.DataFile" title="glitter2.storage.data_file.DataFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFile</span></code></a>.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataChannelBase.block">
+<span class="sig-name descname"><span class="pre">block</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">nixio.block.Block</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataChannelBase.block" title="Permalink to this definition"></a></dt>
+<dd><p>The block containing the channel data.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataChannelBase.channel_config_dict">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">channel_config_dict</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataChannelBase.channel_config_dict" title="Permalink to this definition"></a></dt>
+<dd><p>Reads/writes the channel metadata from the <strong>current</strong> NixIO file
+into/from a dict.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This property reads/writes to the file when accessed.</p>
+</div>
+<p>See <a class="reference internal" href="#glitter2.storage.data_file.DataFile.set_file_data" title="glitter2.storage.data_file.DataFile.set_file_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">DataFile.set_file_data()</span></code></a> for the metadata requirements
+if setting manually outside the GUI.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataChannelBase.copy_data">
+<span class="sig-name descname"><span class="pre">copy_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#glitter2.storage.data_file.DataChannelBase" title="glitter2.storage.data_file.DataChannelBase"><span class="pre">glitter2.storage.data_file.DataChannelBase</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.TemporalDataChannelBase" title="glitter2.storage.data_file.TemporalDataChannelBase"><span class="pre">glitter2.storage.data_file.TemporalDataChannelBase</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.EventChannelData" title="glitter2.storage.data_file.EventChannelData"><span class="pre">glitter2.storage.data_file.EventChannelData</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.PosChannelData" title="glitter2.storage.data_file.PosChannelData"><span class="pre">glitter2.storage.data_file.PosChannelData</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.ZoneChannelData" title="glitter2.storage.data_file.ZoneChannelData"><span class="pre">glitter2.storage.data_file.ZoneChannelData</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.DataChannelBase.copy_data" title="Permalink to this definition"></a></dt>
+<dd><p>Copies this channel’s data, if any, into the given channel.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataChannelBase.create_initial_data">
+<span class="sig-name descname"><span class="pre">create_initial_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.DataChannelBase.create_initial_data" title="Permalink to this definition"></a></dt>
+<dd><p>Creates whatever initial data structures are needed for storing the
+channel data.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataChannelBase.data_file">
+<span class="sig-name descname"><span class="pre">data_file</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.DataFile" title="glitter2.storage.data_file.DataFile"><span class="pre">glitter2.storage.data_file.DataFile</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataChannelBase.data_file" title="Permalink to this definition"></a></dt>
+<dd><p>The <a class="reference internal" href="#glitter2.storage.data_file.DataFile" title="glitter2.storage.data_file.DataFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFile</span></code></a> this channel belongs to.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataChannelBase.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">nixio.section.Section</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataChannelBase.metadata" title="Permalink to this definition"></a></dt>
+<dd><p>The metadata section that stores the channel metadata.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataChannelBase.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataChannelBase.name" title="Permalink to this definition"></a></dt>
+<dd><p>The name of the channel in the file. This is not the user facing name,
+but rather the internal NixIO name of the <a class="reference internal" href="#glitter2.storage.data_file.DataChannelBase.block" title="glitter2.storage.data_file.DataChannelBase.block"><code class="xref py py-attr docutils literal notranslate"><span class="pre">block</span></code></a> containing the
+channel.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataChannelBase.num">
+<span class="sig-name descname"><span class="pre">num</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataChannelBase.num" title="Permalink to this definition"></a></dt>
+<dd><p>The unique number used to identify the channel as stored in
+<a class="reference internal" href="#glitter2.storage.data_file.DataFile.event_channels" title="glitter2.storage.data_file.DataFile.event_channels"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DataFile.event_channels</span></code></a>, <a class="reference internal" href="#glitter2.storage.data_file.DataFile.pos_channels" title="glitter2.storage.data_file.DataFile.pos_channels"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DataFile.pos_channels</span></code></a>, or
+<a class="reference internal" href="#glitter2.storage.data_file.DataFile.zone_channels" title="glitter2.storage.data_file.DataFile.zone_channels"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DataFile.zone_channels</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataChannelBase.read_initial_data">
+<span class="sig-name descname"><span class="pre">read_initial_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reopen</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.DataChannelBase.read_initial_data" title="Permalink to this definition"></a></dt>
+<dd><p>Reads the channel data previously written to the file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataChannelBase.reopen_file">
+<span class="sig-name descname"><span class="pre">reopen_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">nixio.block.Block</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.DataChannelBase.reopen_file" title="Permalink to this definition"></a></dt>
+<dd><p>Repopulates the data links from the provided block.</p>
+<p>Used after re-opening an unchanged nix file.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">glitter2.storage.data_file.</span></span><span class="sig-name descname"><span class="pre">DataFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nix_file:</span> <span class="pre">nixio.file.File</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unsaved_callback=&lt;function</span> <span class="pre">_unsaved_callback&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.DataFile" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Data file interface to the NixIO file that stores the video file
+annotated data.</p>
+<p>Data for the timestamps and all channels are similarly stored in a
+list of arrays. See <a class="reference internal" href="#glitter2.storage.data_file.DataFile.timestamps_arrays" title="glitter2.storage.data_file.DataFile.timestamps_arrays"><code class="xref py py-attr docutils literal notranslate"><span class="pre">timestamps_arrays</span></code></a> for details.</p>
+<p>Once a file is opened with <a class="reference internal" href="#glitter2.storage.data_file.DataFile.open_file" title="glitter2.storage.data_file.DataFile.open_file"><code class="xref py py-meth docutils literal notranslate"><span class="pre">open_file()</span></code></a>, the <code class="docutils literal notranslate"><span class="pre">notify_xxx</span></code> form a
+state machine and must be called as appropriate.</p>
+<p>Specifically, the first timestamp added from the video file with
+<a class="reference internal" href="#glitter2.storage.data_file.DataFile.notify_add_timestamp" title="glitter2.storage.data_file.DataFile.notify_add_timestamp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">notify_add_timestamp()</span></code></a> must be the very first frame’s timestamp and
+it must be followed by a call to <a class="reference internal" href="#glitter2.storage.data_file.DataFile.notify_saw_first_timestamp" title="glitter2.storage.data_file.DataFile.notify_saw_first_timestamp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">notify_saw_first_timestamp()</span></code></a>.</p>
+<p>Then each frame must be read sequentially with no skipping. If a frame is
+skipped at any time, e.g. by seeking, before we add the new timestamp
+with <a class="reference internal" href="#glitter2.storage.data_file.DataFile.notify_add_timestamp" title="glitter2.storage.data_file.DataFile.notify_add_timestamp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">notify_add_timestamp()</span></code></a>, you must call
+<a class="reference internal" href="#glitter2.storage.data_file.DataFile.notify_interrupt_timestamps" title="glitter2.storage.data_file.DataFile.notify_interrupt_timestamps"><code class="xref py py-meth docutils literal notranslate"><span class="pre">notify_interrupt_timestamps()</span></code></a> to indicate the seek.</p>
+<p>Whenever we read the last timestamp (even if we skipped some intermediate
+timestamps, e.g. due to a seek) <a class="reference internal" href="#glitter2.storage.data_file.DataFile.notify_saw_last_timestamp" title="glitter2.storage.data_file.DataFile.notify_saw_last_timestamp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">notify_saw_last_timestamp()</span></code></a> must
+called after adding that timestamp with <a class="reference internal" href="#glitter2.storage.data_file.DataFile.notify_add_timestamp" title="glitter2.storage.data_file.DataFile.notify_add_timestamp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">notify_add_timestamp()</span></code></a>.</p>
+<p>If we have seen the first and last timestamp and each consecutive pair of
+timestamps were seen with no <a class="reference internal" href="#glitter2.storage.data_file.DataFile.notify_interrupt_timestamps" title="glitter2.storage.data_file.DataFile.notify_interrupt_timestamps"><code class="xref py py-meth docutils literal notranslate"><span class="pre">notify_interrupt_timestamps()</span></code></a> between
+them, that’s when we consider having seen all frames and
+<a class="reference internal" href="#glitter2.storage.data_file.DataFile.saw_all_timestamps" title="glitter2.storage.data_file.DataFile.saw_all_timestamps"><code class="xref py py-attr docutils literal notranslate"><span class="pre">saw_all_timestamps</span></code></a> is automatically set to the True and
+<a class="reference internal" href="#glitter2.storage.data_file.DataFile.timestamps" title="glitter2.storage.data_file.DataFile.timestamps"><code class="xref py py-attr docutils literal notranslate"><span class="pre">timestamps</span></code></a> becomes the singular timestamps array.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.app_config_dict">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">app_config_dict</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataFile.app_config_dict" title="Permalink to this definition"></a></dt>
+<dd><p>Reads/writes the app config data into/from a dict.</p>
+<p>It does not include the channel config data, just the application
+config. The app config can be generated most simply from
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">get_app_config_data()</span></code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This property reads/writes to the file when accessed.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.app_config_section">
+<span class="sig-name descname"><span class="pre">app_config_section</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">nixio.section.Section</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataFile.app_config_section" title="Permalink to this definition"></a></dt>
+<dd><p>Stores the overall application configuration that was used with
+this video file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.condition_timestamp">
+<span class="sig-name descname"><span class="pre">condition_timestamp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.condition_timestamp" title="Permalink to this definition"></a></dt>
+<dd><p>If timestamp <code class="docutils literal notranslate"><span class="pre">t</span></code> is within a interval of seen timestamps in
+<a class="reference internal" href="#glitter2.storage.data_file.DataFile.timestamps_arrays" title="glitter2.storage.data_file.DataFile.timestamps_arrays"><code class="xref py py-attr docutils literal notranslate"><span class="pre">timestamps_arrays</span></code></a>, it returns the closest seen timestamp to
+<code class="docutils literal notranslate"><span class="pre">t</span></code>. Otherwise it returns None indicating the timestamp is outside
+of any timestamps interval.</p>
+<p>When reading timestamps from the video file, different systems may
+read slightly different timestamps. Conditioning the timestamp before
+use ensures identical behavior when re-opening files on different
+systems.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.create_channel">
+<span class="sig-name descname"><span class="pre">create_channel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#glitter2.storage.data_file.DataChannelBase" title="glitter2.storage.data_file.DataChannelBase"><span class="pre">glitter2.storage.data_file.DataChannelBase</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.TemporalDataChannelBase" title="glitter2.storage.data_file.TemporalDataChannelBase"><span class="pre">glitter2.storage.data_file.TemporalDataChannelBase</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.EventChannelData" title="glitter2.storage.data_file.EventChannelData"><span class="pre">glitter2.storage.data_file.EventChannelData</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.PosChannelData" title="glitter2.storage.data_file.PosChannelData"><span class="pre">glitter2.storage.data_file.PosChannelData</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.ZoneChannelData" title="glitter2.storage.data_file.ZoneChannelData"><span class="pre">glitter2.storage.data_file.ZoneChannelData</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.create_channel" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a channel of the given type.</p>
+<p>Can be one of <code class="docutils literal notranslate"><span class="pre">'event'</span></code>, <code class="docutils literal notranslate"><span class="pre">'pos'</span></code>, or <code class="docutils literal notranslate"><span class="pre">'zone'</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.delete_channel">
+<span class="sig-name descname"><span class="pre">delete_channel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.delete_channel" title="Permalink to this definition"></a></dt>
+<dd><p>Deletes the channel corresponding to the ID as stored in
+<a class="reference internal" href="#glitter2.storage.data_file.DataFile.event_channels" title="glitter2.storage.data_file.DataFile.event_channels"><code class="xref py py-attr docutils literal notranslate"><span class="pre">event_channels</span></code></a>, <a class="reference internal" href="#glitter2.storage.data_file.DataFile.pos_channels" title="glitter2.storage.data_file.DataFile.pos_channels"><code class="xref py py-attr docutils literal notranslate"><span class="pre">pos_channels</span></code></a>, or <a class="reference internal" href="#glitter2.storage.data_file.DataFile.zone_channels" title="glitter2.storage.data_file.DataFile.zone_channels"><code class="xref py py-attr docutils literal notranslate"><span class="pre">zone_channels</span></code></a>.</p>
+<p>The channel ID is stored in <a class="reference internal" href="#glitter2.storage.data_file.DataChannelBase.num" title="glitter2.storage.data_file.DataChannelBase.num"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DataChannelBase.num</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.duplicate_channel">
+<span class="sig-name descname"><span class="pre">duplicate_channel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#glitter2.storage.data_file.DataChannelBase" title="glitter2.storage.data_file.DataChannelBase"><span class="pre">glitter2.storage.data_file.DataChannelBase</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.TemporalDataChannelBase" title="glitter2.storage.data_file.TemporalDataChannelBase"><span class="pre">glitter2.storage.data_file.TemporalDataChannelBase</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.EventChannelData" title="glitter2.storage.data_file.EventChannelData"><span class="pre">glitter2.storage.data_file.EventChannelData</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.PosChannelData" title="glitter2.storage.data_file.PosChannelData"><span class="pre">glitter2.storage.data_file.PosChannelData</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.ZoneChannelData" title="glitter2.storage.data_file.ZoneChannelData"><span class="pre">glitter2.storage.data_file.ZoneChannelData</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#glitter2.storage.data_file.DataChannelBase" title="glitter2.storage.data_file.DataChannelBase"><span class="pre">glitter2.storage.data_file.DataChannelBase</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.TemporalDataChannelBase" title="glitter2.storage.data_file.TemporalDataChannelBase"><span class="pre">glitter2.storage.data_file.TemporalDataChannelBase</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.EventChannelData" title="glitter2.storage.data_file.EventChannelData"><span class="pre">glitter2.storage.data_file.EventChannelData</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.PosChannelData" title="glitter2.storage.data_file.PosChannelData"><span class="pre">glitter2.storage.data_file.PosChannelData</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.ZoneChannelData" title="glitter2.storage.data_file.ZoneChannelData"><span class="pre">glitter2.storage.data_file.ZoneChannelData</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.duplicate_channel" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a new channel with the same type and with the same data and
+metadata as the given channel and returns the new channel.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">name</span></code> key’s value in each channel’s metadata should be unique
+across all channels, so the name value should be changed afterwards.
+E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">new_channel</span> <span class="o">=</span> <span class="n">data_file</span><span class="o">.</span><span class="n">duplicate_channel</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
+<span class="n">metadata</span> <span class="o">=</span> <span class="n">new_channel</span><span class="o">.</span><span class="n">channel_config_dict</span>
+<span class="n">metadata</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;new name&#39;</span>
+<span class="n">new_channel</span><span class="o">.</span><span class="n">channel_config_dict</span> <span class="o">=</span> <span class="n">metadata</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.event_channels">
+<span class="sig-name descname"><span class="pre">event_channels</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.EventChannelData" title="glitter2.storage.data_file.EventChannelData"><span class="pre">glitter2.storage.data_file.EventChannelData</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataFile.event_channels" title="Permalink to this definition"></a></dt>
+<dd><p>Map of all the <a class="reference internal" href="#glitter2.storage.data_file.EventChannelData" title="glitter2.storage.data_file.EventChannelData"><code class="xref py py-class docutils literal notranslate"><span class="pre">EventChannelData</span></code></a> instances.</p>
+<p>Maps a globally unique ID, associated with the channel to the
+<a class="reference internal" href="#glitter2.storage.data_file.EventChannelData" title="glitter2.storage.data_file.EventChannelData"><code class="xref py py-class docutils literal notranslate"><span class="pre">EventChannelData</span></code></a> instance.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.ffpyplayer_version">
+<span class="sig-name descname"><span class="pre">ffpyplayer_version</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataFile.ffpyplayer_version" title="Permalink to this definition"></a></dt>
+<dd><p>The ffpyplayer version used to create the file originally. Read only.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.get_channel_from_id">
+<span class="sig-name descname"><span class="pre">get_channel_from_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#glitter2.storage.data_file.DataChannelBase" title="glitter2.storage.data_file.DataChannelBase"><span class="pre">glitter2.storage.data_file.DataChannelBase</span></a></span></span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.get_channel_from_id" title="Permalink to this definition"></a></dt>
+<dd><p>Given the unique channel ID as it’s stored in
+<a class="reference internal" href="#glitter2.storage.data_file.DataFile.event_channels" title="glitter2.storage.data_file.DataFile.event_channels"><code class="xref py py-attr docutils literal notranslate"><span class="pre">event_channels</span></code></a>, <a class="reference internal" href="#glitter2.storage.data_file.DataFile.pos_channels" title="glitter2.storage.data_file.DataFile.pos_channels"><code class="xref py py-attr docutils literal notranslate"><span class="pre">pos_channels</span></code></a>, or <a class="reference internal" href="#glitter2.storage.data_file.DataFile.zone_channels" title="glitter2.storage.data_file.DataFile.zone_channels"><code class="xref py py-attr docutils literal notranslate"><span class="pre">zone_channels</span></code></a>
+it returns the corresponding channel.</p>
+<p>The channel ID is stored in <a class="reference internal" href="#glitter2.storage.data_file.DataChannelBase.num" title="glitter2.storage.data_file.DataChannelBase.num"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DataChannelBase.num</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.get_file_glitter2_version">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_file_glitter2_version</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.get_file_glitter2_version" title="Permalink to this definition"></a></dt>
+<dd><p>Gets the glitter version used to create the nixio file.</p>
+<p>If the file or data is invalid, returns None.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.get_file_video_metadata">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_file_video_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.get_file_video_metadata" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the video metadata dictionary of the nixio file.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.glitter2_version">
+<span class="sig-name descname"><span class="pre">glitter2_version</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataFile.glitter2_version" title="Permalink to this definition"></a></dt>
+<dd><p>The glitter version used to create the file originally. Read only.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.has_content">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">has_content</span></span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.has_content" title="Permalink to this definition"></a></dt>
+<dd><p>Returns whether any video timestamps has yet been added to the file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.init_new_file">
+<span class="sig-name descname"><span class="pre">init_new_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.init_new_file" title="Permalink to this definition"></a></dt>
+<dd><p>Initializes a newly created empty NixIO file with all the required
+data structures.</p>
+<p>Typically it’s used e.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">nix_file</span> <span class="o">=</span> <span class="n">nixio</span><span class="o">.</span><span class="n">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">nixio</span><span class="o">.</span><span class="n">FileMode</span><span class="o">.</span><span class="n">Overwrite</span><span class="p">)</span>
+<span class="n">data_file</span> <span class="o">=</span> <span class="n">DataFile</span><span class="p">(</span><span class="n">nix_file</span><span class="o">=</span><span class="n">nix_file</span><span class="p">)</span>
+<span class="n">data_file</span><span class="o">.</span><span class="n">init_new_file</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method automatically class <a class="reference internal" href="#glitter2.storage.data_file.DataFile.open_file" title="glitter2.storage.data_file.DataFile.open_file"><code class="xref py py-meth docutils literal notranslate"><span class="pre">open_file()</span></code></a>.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.is_end_timestamp">
+<span class="sig-name descname"><span class="pre">is_end_timestamp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.is_end_timestamp" title="Permalink to this definition"></a></dt>
+<dd><p>Returns whether the timestamp is the last timestamp of a interval.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.nix_file">
+<span class="sig-name descname"><span class="pre">nix_file</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">nixio.file.File</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataFile.nix_file" title="Permalink to this definition"></a></dt>
+<dd><p>NixIO data file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.notify_add_timestamp">
+<span class="sig-name descname"><span class="pre">notify_add_timestamp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.notify_add_timestamp" title="Permalink to this definition"></a></dt>
+<dd><p>Adds the next timestamp to the file.</p>
+<p>We assume that this is called frame by frame with no skipping unless
+<a class="reference internal" href="#glitter2.storage.data_file.DataFile.notify_interrupt_timestamps" title="glitter2.storage.data_file.DataFile.notify_interrupt_timestamps"><code class="xref py py-meth docutils literal notranslate"><span class="pre">notify_interrupt_timestamps()</span></code></a> was called.</p>
+<p>Also, the timestamps <code class="docutils literal notranslate"><span class="pre">t</span></code> must be either outside any existing
+timestamp interval, in which case the timestamp must have been unseen
+before. Or, if it is within an existing interval, the timestamps must
+have been seen before. In both cases, the timestamp must be larger or
+equal than the first timestamp.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>t</strong> – the next timestamp.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The key in <a class="reference internal" href="#glitter2.storage.data_file.DataFile.timestamps_arrays" title="glitter2.storage.data_file.DataFile.timestamps_arrays"><code class="xref py py-attr docutils literal notranslate"><span class="pre">timestamps_arrays</span></code></a> containing the timestamp.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.notify_interrupt_timestamps">
+<span class="sig-name descname"><span class="pre">notify_interrupt_timestamps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.notify_interrupt_timestamps" title="Permalink to this definition"></a></dt>
+<dd><p>Must be called whenever the video is seeked and the next timestamp
+to <a class="reference internal" href="#glitter2.storage.data_file.DataFile.notify_add_timestamp" title="glitter2.storage.data_file.DataFile.notify_add_timestamp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">notify_add_timestamp()</span></code></a> may not follow the last timestamp.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.notify_saw_first_timestamp">
+<span class="sig-name descname"><span class="pre">notify_saw_first_timestamp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.notify_saw_first_timestamp" title="Permalink to this definition"></a></dt>
+<dd><p>Must be called after we saw and added the timestamp of the first
+frame of the video file. By first we mean literally the first frame of
+the video file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.notify_saw_last_timestamp">
+<span class="sig-name descname"><span class="pre">notify_saw_last_timestamp</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.notify_saw_last_timestamp" title="Permalink to this definition"></a></dt>
+<dd><p>Must be called after we saw and added the timestamp of the last
+frame of the video file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.open_file">
+<span class="sig-name descname"><span class="pre">open_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.open_file" title="Permalink to this definition"></a></dt>
+<dd><p>Loads the data from the file and initializes the instance. Can
+be called multiple times.</p>
+<p>Use after updating the file or opening an existing file. E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">nix_file</span> <span class="o">=</span> <span class="n">nixio</span><span class="o">.</span><span class="n">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">nixio</span><span class="o">.</span><span class="n">FileMode</span><span class="o">.</span><span class="n">ReadWrite</span><span class="p">)</span>
+<span class="n">data_file</span> <span class="o">=</span> <span class="n">DataFile</span><span class="p">(</span><span class="n">nix_file</span><span class="o">=</span><span class="n">nix_file</span><span class="p">)</span>
+<span class="n">data_file</span><span class="o">.</span><span class="n">upgrade_file</span><span class="p">()</span>
+<span class="n">data_file</span><span class="o">.</span><span class="n">open_file</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.pad_all_channels_to_num_frames_interval">
+<span class="sig-name descname"><span class="pre">pad_all_channels_to_num_frames_interval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">array_num</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.pad_all_channels_to_num_frames_interval" title="Permalink to this definition"></a></dt>
+<dd><p>Similar to <a class="reference internal" href="#glitter2.storage.data_file.DataFile.pad_channel_to_num_frames_interval" title="glitter2.storage.data_file.DataFile.pad_channel_to_num_frames_interval"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pad_channel_to_num_frames_interval()</span></code></a>, but for all
+the channels.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">array_num</span></code> is specified, we pad that array, other wise we use
+<code class="xref py py-attr docutils literal notranslate"><span class="pre">_last_timestamps_n</span></code> if it’s not None.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.pad_channel_to_num_frames_interval">
+<span class="sig-name descname"><span class="pre">pad_channel_to_num_frames_interval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#glitter2.storage.data_file.TemporalDataChannelBase" title="glitter2.storage.data_file.TemporalDataChannelBase"><span class="pre">glitter2.storage.data_file.TemporalDataChannelBase</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.pad_channel_to_num_frames_interval" title="Permalink to this definition"></a></dt>
+<dd><p>Pads the channel data arrays to the current number of timestamps.</p>
+<p>When adding timestamps, we don’t increase all the channels data arrays
+with each new timestamp, but only do it when the channel data is
+updated or when the file is saved etc. This increases the data
+arrays size to the timestamps size.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.pixels_per_meter">
+<span class="sig-name descname"><span class="pre">pixels_per_meter</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataFile.pixels_per_meter" title="Permalink to this definition"></a></dt>
+<dd><p>The pixels per meter of the video, if known. Read only.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.pos_channels">
+<span class="sig-name descname"><span class="pre">pos_channels</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.PosChannelData" title="glitter2.storage.data_file.PosChannelData"><span class="pre">glitter2.storage.data_file.PosChannelData</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataFile.pos_channels" title="Permalink to this definition"></a></dt>
+<dd><p>Map of all the <a class="reference internal" href="#glitter2.storage.data_file.PosChannelData" title="glitter2.storage.data_file.PosChannelData"><code class="xref py py-class docutils literal notranslate"><span class="pre">PosChannelData</span></code></a> instances.</p>
+<p>Maps a globally unique ID, associated with the channel to the
+<a class="reference internal" href="#glitter2.storage.data_file.PosChannelData" title="glitter2.storage.data_file.PosChannelData"><code class="xref py py-class docutils literal notranslate"><span class="pre">PosChannelData</span></code></a> instance.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.read_channels_config">
+<span class="sig-name descname"><span class="pre">read_channels_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.read_channels_config" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a tuple of the event, pos, and zone channel metadata.</p>
+<p>Each item is a dictionary whose keys are the channel’s unique ID
+as e.g. in <a class="reference internal" href="#glitter2.storage.data_file.DataFile.event_channels" title="glitter2.storage.data_file.DataFile.event_channels"><code class="xref py py-attr docutils literal notranslate"><span class="pre">event_channels</span></code></a> and whose values is a dict with
+the channel’s metadata.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.reopen_file">
+<span class="sig-name descname"><span class="pre">reopen_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nix_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">nixio.file.File</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.reopen_file" title="Permalink to this definition"></a></dt>
+<dd><p>Repopulates the data links with the provided file.</p>
+<p>Used to reopen a nix file that has been closed after
+<a class="reference internal" href="#glitter2.storage.data_file.DataFile" title="glitter2.storage.data_file.DataFile"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFile</span></code></a> is initialized if no changes occurred to the file.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.saw_all_timestamps">
+<span class="sig-name descname"><span class="pre">saw_all_timestamps</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataFile.saw_all_timestamps" title="Permalink to this definition"></a></dt>
+<dd><p>Whether we have seen all the timestamps of the video.</p>
+<p>If we haven’t, it’s possible there are holes in the video and
+<a class="reference internal" href="#glitter2.storage.data_file.DataFile.timestamps_arrays" title="glitter2.storage.data_file.DataFile.timestamps_arrays"><code class="xref py py-attr docutils literal notranslate"><span class="pre">timestamps_arrays</span></code></a> may have more than one array.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.set_default_video_metadata">
+<span class="sig-name descname"><span class="pre">set_default_video_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.set_default_video_metadata" title="Permalink to this definition"></a></dt>
+<dd><p>Sets the video file metadata, but only for the metadata that has
+not yet been set.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.set_file_data">
+<span class="sig-name descname"><span class="pre">set_file_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">video_file_metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">saw_all_timestamps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timestamps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event_channels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos_channels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zone_channels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.set_file_data" title="Permalink to this definition"></a></dt>
+<dd><p>Sets the data of the file at once.</p>
+<p>The video metadata and timestamps can be read most easily using
+<a class="reference internal" href="../player/player.html#glitter2.player.GlitterPlayer.get_file_data" title="glitter2.player.GlitterPlayer.get_file_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_file_data()</span></code></a>.</p>
+<p>For the channels, the metadata dict should contain a <code class="docutils literal notranslate"><span class="pre">name</span></code> keyword
+whose value is a globally unique name for the channel, unique across
+all the channels.</p>
+<p>For zone_channels, the metadata should also contain a <code class="docutils literal notranslate"><span class="pre">shape_config</span></code>
+keyword whose value is a dict with the shape metadata as given by
+<a class="reference external" href="https://kivy-garden.github.io/painter/flower.html#kivy_garden.painter.PaintShape.get_state" title="(in Painter)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_state()</span></code></a>. To create a shape,
+use <a class="reference external" href="https://kivy-garden.github.io/painter/flower.html#kivy_garden.painter.PaintShape.create_shape" title="(in Painter)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">create_shape()</span></code></a>. E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">point</span> <span class="o">=</span> <span class="n">PaintCircle</span><span class="o">.</span><span class="n">create_shape</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">circle</span> <span class="o">=</span> <span class="n">PaintCircle</span><span class="o">.</span><span class="n">create_shape</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">ellipse</span> <span class="o">=</span> <span class="n">PaintEllipse</span><span class="o">.</span><span class="n">create_shape</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mf">3.14</span><span class="p">)</span>
+<span class="n">polygon</span> <span class="o">=</span> <span class="n">PaintPolygon</span><span class="o">.</span><span class="n">create_shape</span><span class="p">(</span>
+    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">800</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">800</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">polygon_metadata</span> <span class="o">=</span> <span class="n">polygon</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>E.g. to create a new NixIO file with the timestamps of a video file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># create file</span>
+<span class="n">nix_file</span> <span class="o">=</span> <span class="n">nixio</span><span class="o">.</span><span class="n">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">nixio</span><span class="o">.</span><span class="n">FileMode</span><span class="o">.</span><span class="n">ReadWrite</span><span class="p">)</span>
+<span class="n">data_file</span> <span class="o">=</span> <span class="n">DataFile</span><span class="p">(</span><span class="n">nix_file</span><span class="o">=</span><span class="n">nix_file</span><span class="p">)</span>
+<span class="n">data_file</span><span class="o">.</span><span class="n">init_new_file</span><span class="p">()</span>
+<span class="c1"># read timestamps</span>
+<span class="n">timestamps</span><span class="p">,</span> <span class="n">metadata</span> <span class="o">=</span> <span class="n">GlitterPlayer</span><span class="o">.</span><span class="n">get_file_data</span><span class="p">(</span><span class="n">video_file</span><span class="p">)</span>
+<span class="c1"># set just the timestamps</span>
+<span class="n">data_file</span><span class="o">.</span><span class="n">set_file_data</span><span class="p">(</span>
+    <span class="n">video_file_metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">saw_all_timestamps</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">timestamps</span><span class="o">=</span><span class="p">[</span><span class="n">timestamps</span><span class="p">],</span> <span class="n">event_channels</span><span class="o">=</span><span class="p">[],</span> <span class="n">pos_channels</span><span class="o">=</span><span class="p">[],</span>
+    <span class="n">zone_channels</span><span class="o">=</span><span class="p">[])</span>
+<span class="c1"># re-load data</span>
+<span class="n">data_file</span><span class="o">.</span><span class="n">open_file</span><span class="p">()</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.set_pixels_per_meter">
+<span class="sig-name descname"><span class="pre">set_pixels_per_meter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.set_pixels_per_meter" title="Permalink to this definition"></a></dt>
+<dd><p>Sets the pixels per meter of the video file.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.timestamp_data_map">
+<span class="sig-name descname"><span class="pre">timestamp_data_map</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataFile.timestamp_data_map" title="Permalink to this definition"></a></dt>
+<dd><p>Maps timestamps to their <code class="docutils literal notranslate"><span class="pre">(key,</span> <span class="pre">index)</span></code> in <a class="reference internal" href="#glitter2.storage.data_file.DataFile.timestamps_arrays" title="glitter2.storage.data_file.DataFile.timestamps_arrays"><code class="xref py py-attr docutils literal notranslate"><span class="pre">timestamps_arrays</span></code></a>.</p>
+<p>For each known timestamp, it maps the timestamp to <code class="docutils literal notranslate"><span class="pre">(key,</span> <span class="pre">index)</span></code>,
+where <cite>key`</cite> is the key in <a class="reference internal" href="#glitter2.storage.data_file.DataFile.timestamps_arrays" title="glitter2.storage.data_file.DataFile.timestamps_arrays"><code class="xref py py-attr docutils literal notranslate"><span class="pre">timestamps_arrays</span></code></a> and <code class="docutils literal notranslate"><span class="pre">index</span></code> is the
+index in that array. Such that <code class="docutils literal notranslate"><span class="pre">k,</span> <span class="pre">i</span> <span class="pre">=</span> <span class="pre">timestamp_data_map[t];</span>
+<span class="pre">timestamps_arrays[k][i]</span> <span class="pre">==</span> <span class="pre">t</span></code>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.timestamp_intervals_end">
+<span class="sig-name descname"><span class="pre">timestamp_intervals_end</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataFile.timestamp_intervals_end" title="Permalink to this definition"></a></dt>
+<dd><p>List of <a class="reference internal" href="#glitter2.storage.data_file.DataFile.timestamps_arrays" title="glitter2.storage.data_file.DataFile.timestamps_arrays"><code class="xref py py-attr docutils literal notranslate"><span class="pre">timestamps_arrays</span></code></a> end interval timestamps sorted by
+value.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.timestamp_intervals_ordered_keys">
+<span class="sig-name descname"><span class="pre">timestamp_intervals_ordered_keys</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataFile.timestamp_intervals_ordered_keys" title="Permalink to this definition"></a></dt>
+<dd><p>The keys of the timestamp arrays form <a class="reference internal" href="#glitter2.storage.data_file.DataFile.timestamps_arrays" title="glitter2.storage.data_file.DataFile.timestamps_arrays"><code class="xref py py-attr docutils literal notranslate"><span class="pre">timestamps_arrays</span></code></a>
+sorted temporally such that the first timestamp in each array
+corresponding to the key is strictly increasing.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.timestamp_intervals_start">
+<span class="sig-name descname"><span class="pre">timestamp_intervals_start</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataFile.timestamp_intervals_start" title="Permalink to this definition"></a></dt>
+<dd><p>List of <a class="reference internal" href="#glitter2.storage.data_file.DataFile.timestamps_arrays" title="glitter2.storage.data_file.DataFile.timestamps_arrays"><code class="xref py py-attr docutils literal notranslate"><span class="pre">timestamps_arrays</span></code></a> start interval timestamps sorted by
+value.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.timestamps">
+<span class="sig-name descname"><span class="pre">timestamps</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">nixio.data_array.DataArray</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataFile.timestamps" title="Permalink to this definition"></a></dt>
+<dd><p>The first timestamps data array containing the very first timestamps of
+the video file, created when the data file is created.
+See <a class="reference internal" href="#glitter2.storage.data_file.DataFile.timestamps_arrays" title="glitter2.storage.data_file.DataFile.timestamps_arrays"><code class="xref py py-attr docutils literal notranslate"><span class="pre">timestamps_arrays</span></code></a>.</p>
+<p>If there’s only one array in <a class="reference internal" href="#glitter2.storage.data_file.DataFile.timestamps_arrays" title="glitter2.storage.data_file.DataFile.timestamps_arrays"><code class="xref py py-attr docutils literal notranslate"><span class="pre">timestamps_arrays</span></code></a>
+(e.g. after we saw all the timestamps of the video file), this is referring
+to it.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.timestamps_arrays">
+<span class="sig-name descname"><span class="pre">timestamps_arrays</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">nixio.data_array.DataArray</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataFile.timestamps_arrays" title="Permalink to this definition"></a></dt>
+<dd><p>Map of disjointed timestamps arrays representing known closed
+intervals of the video file.</p>
+<p>Consider how data is coded. We play frame after frame and the user
+annotates each frame. And as we see each timestamps in a
+strictly-increasing order, we could just have a list of timestamps and
+corresponding state that is continuously increasing by one element as we
+see a new frame.</p>
+<p>Unfortunately, a user may skip some frames by seeking ahead, thereby
+breaking continuity, because now we have missing timestamps in the middle
+and we don’t know what they are. Therefore we have a list, or mapping of
+timestamps arrays, each timestamp array represents a known interval of
+timestamps during which we didn’t seek and we have every timestamp in that
+interval.</p>
+<p>The keys of <a class="reference internal" href="#glitter2.storage.data_file.DataFile.timestamps_arrays" title="glitter2.storage.data_file.DataFile.timestamps_arrays"><code class="xref py py-attr docutils literal notranslate"><span class="pre">timestamps_arrays</span></code></a> are not meaningful, except for
+key <code class="docutils literal notranslate"><span class="pre">0</span></code> which is the same array as <a class="reference internal" href="#glitter2.storage.data_file.DataFile.timestamps" title="glitter2.storage.data_file.DataFile.timestamps"><code class="xref py py-attr docutils literal notranslate"><span class="pre">timestamps</span></code></a> and is the array
+with the first timestamps of the video.</p>
+<p>To get keys of the timestamp arrays ordered temporally, use
+<a class="reference internal" href="#glitter2.storage.data_file.DataFile.timestamp_intervals_ordered_keys" title="glitter2.storage.data_file.DataFile.timestamp_intervals_ordered_keys"><code class="xref py py-attr docutils literal notranslate"><span class="pre">timestamp_intervals_ordered_keys</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.unsaved_callback">
+<span class="sig-name descname"><span class="pre">unsaved_callback</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Callable</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataFile.unsaved_callback" title="Permalink to this definition"></a></dt>
+<dd><p>Callback that is called whenever the data file changes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.upgrade_file">
+<span class="sig-name descname"><span class="pre">upgrade_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.upgrade_file" title="Permalink to this definition"></a></dt>
+<dd><p>Upgrades file to add any missing data structures that may have
+been added in newer versions of glitter, since the file was created.</p>
+<p><a class="reference internal" href="#glitter2.storage.data_file.DataFile.open_file" title="glitter2.storage.data_file.DataFile.open_file"><code class="xref py py-meth docutils literal notranslate"><span class="pre">open_file()</span></code></a> should be called after this.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.video_metadata_dict">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">video_metadata_dict</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataFile.video_metadata_dict" title="Permalink to this definition"></a></dt>
+<dd><p>Reads/writes the video metadata from the <strong>current</strong> NixIO file
+into/from a dict.</p>
+<p>This is the metadata from
+<a class="reference internal" href="../player/player.html#glitter2.player.GlitterPlayer.get_file_data" title="glitter2.player.GlitterPlayer.get_file_data"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_file_data()</span></code></a>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This property reads/writes to the file when accessed.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.video_metadata_section">
+<span class="sig-name descname"><span class="pre">video_metadata_section</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">nixio.section.Section</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataFile.video_metadata_section" title="Permalink to this definition"></a></dt>
+<dd><p>Stores the metadata of the video file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.write_channels_config">
+<span class="sig-name descname"><span class="pre">write_channels_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event_channels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos_channels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zone_channels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.DataFile.write_channels_config" title="Permalink to this definition"></a></dt>
+<dd><p>Updates the metadata to the provided values for each channel.</p>
+<p><code class="docutils literal notranslate"><span class="pre">xxx_channels</span></code> is a dictionary whose keys are the channel’s unique ID
+as e.g. in <a class="reference internal" href="#glitter2.storage.data_file.DataFile.event_channels" title="glitter2.storage.data_file.DataFile.event_channels"><code class="xref py py-attr docutils literal notranslate"><span class="pre">event_channels</span></code></a> and whose values is a dict with
+the channel’s new metadata.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.DataFile.zone_channels">
+<span class="sig-name descname"><span class="pre">zone_channels</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.ZoneChannelData" title="glitter2.storage.data_file.ZoneChannelData"><span class="pre">glitter2.storage.data_file.ZoneChannelData</span></a><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#glitter2.storage.data_file.DataFile.zone_channels" title="Permalink to this definition"></a></dt>
+<dd><p>Map of all the <a class="reference internal" href="#glitter2.storage.data_file.ZoneChannelData" title="glitter2.storage.data_file.ZoneChannelData"><code class="xref py py-class docutils literal notranslate"><span class="pre">ZoneChannelData</span></code></a> instances.</p>
+<p>Maps a globally unique ID, associated with the channel to the
+<a class="reference internal" href="#glitter2.storage.data_file.ZoneChannelData" title="glitter2.storage.data_file.ZoneChannelData"><code class="xref py py-class docutils literal notranslate"><span class="pre">ZoneChannelData</span></code></a> instance.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.EventChannelData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">glitter2.storage.data_file.</span></span><span class="sig-name descname"><span class="pre">EventChannelData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.EventChannelData" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#glitter2.storage.data_file.TemporalDataChannelBase" title="glitter2.storage.data_file.TemporalDataChannelBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">glitter2.storage.data_file.TemporalDataChannelBase</span></code></a></p>
+<p>Channel that stores event data.</p>
+<p>For each timestamp we store a bool representing whether the event occurred
+at this timestamp.</p>
+<p>Metadata: The only required metadata is the name key (unique across all
+channels).</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.EventChannelData.create_data_array">
+<span class="sig-name descname"><span class="pre">create_data_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.EventChannelData.create_data_array" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a data array when a new timestamps interval is created.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n</strong> – The <code class="xref py py-attr docutils literal notranslate"><span class="pre">data_arrays</span></code> key to use for the array. This
+corresponds to the interval’s <code class="xref py py-attr docutils literal notranslate"><span class="pre">DatFile.timestamps_arrays</span></code>
+key.</p></li>
+<li><p><strong>count</strong> – The size of the array to create, or empty if it’s None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.EventChannelData.default_data_value">
+<span class="sig-name descname"><span class="pre">default_data_value</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">array([0],</span> <span class="pre">dtype=uint8)</span></em><a class="headerlink" href="#glitter2.storage.data_file.EventChannelData.default_data_value" title="Permalink to this definition"></a></dt>
+<dd><p>The default value used before the user modifies the data.</p>
+<p>It is False (0) for the event channel.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.EventChannelData.get_timestamp_value">
+<span class="sig-name descname"><span class="pre">get_timestamp_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#glitter2.storage.data_file.EventChannelData.get_timestamp_value" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the value of the data array for the given timestamp <code class="docutils literal notranslate"><span class="pre">t</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.EventChannelData.get_timestamps_modified_state">
+<span class="sig-name descname"><span class="pre">get_timestamps_modified_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#glitter2.storage.data_file.EventChannelData.get_timestamps_modified_state" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a dict whose keys are timestamps and values indicate whether
+the data for the timestamp has been changed from the
+<a class="reference internal" href="#glitter2.storage.data_file.EventChannelData.default_data_value" title="glitter2.storage.data_file.EventChannelData.default_data_value"><code class="xref py py-attr docutils literal notranslate"><span class="pre">default_data_value</span></code></a> (True means it’s not the default).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.EventChannelData.set_timestamp_value">
+<span class="sig-name descname"><span class="pre">set_timestamp_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.EventChannelData.set_timestamp_value" title="Permalink to this definition"></a></dt>
+<dd><p>Changes the value of the data array for the given timestamp <code class="docutils literal notranslate"><span class="pre">t</span></code>
+to <code class="docutils literal notranslate"><span class="pre">value</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.PosChannelData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">glitter2.storage.data_file.</span></span><span class="sig-name descname"><span class="pre">PosChannelData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.PosChannelData" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#glitter2.storage.data_file.TemporalDataChannelBase" title="glitter2.storage.data_file.TemporalDataChannelBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">glitter2.storage.data_file.TemporalDataChannelBase</span></code></a></p>
+<p>Channel that stores position data.</p>
+<p>For each timestamp we store a tuple of the <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> position at this
+timestamp.</p>
+<p>Metadata: The only required metadata is the name key (unique across all
+channels).</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.PosChannelData.create_data_array">
+<span class="sig-name descname"><span class="pre">create_data_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.PosChannelData.create_data_array" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a data array when a new timestamps interval is created.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n</strong> – The <code class="xref py py-attr docutils literal notranslate"><span class="pre">data_arrays</span></code> key to use for the array. This
+corresponds to the interval’s <code class="xref py py-attr docutils literal notranslate"><span class="pre">DatFile.timestamps_arrays</span></code>
+key.</p></li>
+<li><p><strong>count</strong> – The size of the array to create, or empty if it’s None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.PosChannelData.default_data_value">
+<span class="sig-name descname"><span class="pre">default_data_value</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">array([[-1.,</span> <span class="pre">-1.]])</span></em><a class="headerlink" href="#glitter2.storage.data_file.PosChannelData.default_data_value" title="Permalink to this definition"></a></dt>
+<dd><p>The default value used before the user modifies the data.</p>
+<p>It is a tuple of <code class="docutils literal notranslate"><span class="pre">(-1,</span> <span class="pre">-1)</span></code> corresponding to x and y for the position
+channel.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.PosChannelData.get_timestamp_value">
+<span class="sig-name descname"><span class="pre">get_timestamp_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#glitter2.storage.data_file.PosChannelData.get_timestamp_value" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the value of the data array for the given timestamp <code class="docutils literal notranslate"><span class="pre">t</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.PosChannelData.get_timestamps_modified_state">
+<span class="sig-name descname"><span class="pre">get_timestamps_modified_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#glitter2.storage.data_file.PosChannelData.get_timestamps_modified_state" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a dict whose keys are timestamps and values indicate whether
+the data for the timestamp has been changed from the
+<a class="reference internal" href="#glitter2.storage.data_file.PosChannelData.default_data_value" title="glitter2.storage.data_file.PosChannelData.default_data_value"><code class="xref py py-attr docutils literal notranslate"><span class="pre">default_data_value</span></code></a> (True means it’s not the default).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.PosChannelData.set_timestamp_value">
+<span class="sig-name descname"><span class="pre">set_timestamp_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.PosChannelData.set_timestamp_value" title="Permalink to this definition"></a></dt>
+<dd><p>Changes the value of the data array for the given timestamp <code class="docutils literal notranslate"><span class="pre">t</span></code>
+to <code class="docutils literal notranslate"><span class="pre">value</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.TemporalDataChannelBase">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">glitter2.storage.data_file.</span></span><span class="sig-name descname"><span class="pre">TemporalDataChannelBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.TemporalDataChannelBase" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#glitter2.storage.data_file.DataChannelBase" title="glitter2.storage.data_file.DataChannelBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">glitter2.storage.data_file.DataChannelBase</span></code></a></p>
+<p>Base class for data channels that have some kind of temporal dimension.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.TemporalDataChannelBase.copy_data">
+<span class="sig-name descname"><span class="pre">copy_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#glitter2.storage.data_file.DataChannelBase" title="glitter2.storage.data_file.DataChannelBase"><span class="pre">glitter2.storage.data_file.DataChannelBase</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.TemporalDataChannelBase" title="glitter2.storage.data_file.TemporalDataChannelBase"><span class="pre">glitter2.storage.data_file.TemporalDataChannelBase</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.EventChannelData" title="glitter2.storage.data_file.EventChannelData"><span class="pre">glitter2.storage.data_file.EventChannelData</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.PosChannelData" title="glitter2.storage.data_file.PosChannelData"><span class="pre">glitter2.storage.data_file.PosChannelData</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#glitter2.storage.data_file.ZoneChannelData" title="glitter2.storage.data_file.ZoneChannelData"><span class="pre">glitter2.storage.data_file.ZoneChannelData</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.TemporalDataChannelBase.copy_data" title="Permalink to this definition"></a></dt>
+<dd><p>Copies this channel’s data, if any, into the given channel.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.TemporalDataChannelBase.create_data_array">
+<span class="sig-name descname"><span class="pre">create_data_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.TemporalDataChannelBase.create_data_array" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a data array when a new timestamps interval is created.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n</strong> – The <a class="reference internal" href="#glitter2.storage.data_file.TemporalDataChannelBase.data_arrays" title="glitter2.storage.data_file.TemporalDataChannelBase.data_arrays"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data_arrays</span></code></a> key to use for the array. This
+corresponds to the interval’s <code class="xref py py-attr docutils literal notranslate"><span class="pre">DatFile.timestamps_arrays</span></code>
+key.</p></li>
+<li><p><strong>count</strong> – The size of the array to create, or empty if it’s None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.TemporalDataChannelBase.create_initial_data">
+<span class="sig-name descname"><span class="pre">create_initial_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.TemporalDataChannelBase.create_initial_data" title="Permalink to this definition"></a></dt>
+<dd><p>Creates whatever initial data structures are needed for storing the
+channel data.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.TemporalDataChannelBase.data_array">
+<span class="sig-name descname"><span class="pre">data_array</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">nixio.data_array.DataArray</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#glitter2.storage.data_file.TemporalDataChannelBase.data_array" title="Permalink to this definition"></a></dt>
+<dd><p>The data array storing the channel data, corresponding to
+<a class="reference internal" href="#glitter2.storage.data_file.DataFile.timestamps" title="glitter2.storage.data_file.DataFile.timestamps"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DataFile.timestamps</span></code></a>. If <a class="reference internal" href="#glitter2.storage.data_file.TemporalDataChannelBase.data_arrays" title="glitter2.storage.data_file.TemporalDataChannelBase.data_arrays"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data_arrays</span></code></a> has only one
+array, e.g. after seeing all frames, this is it.</p>
+<p>See <a class="reference internal" href="#glitter2.storage.data_file.TemporalDataChannelBase.data_arrays" title="glitter2.storage.data_file.TemporalDataChannelBase.data_arrays"><code class="xref py py-attr docutils literal notranslate"><span class="pre">data_arrays</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.TemporalDataChannelBase.data_arrays">
+<span class="sig-name descname"><span class="pre">data_arrays</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">nixio.data_array.DataArray</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#glitter2.storage.data_file.TemporalDataChannelBase.data_arrays" title="Permalink to this definition"></a></dt>
+<dd><p>The channel data for the disjointed frame intervals.</p>
+<p>This corresponds exactly to <code class="xref py py-attr docutils literal notranslate"><span class="pre">DatFile.timestamps_arrays</span></code> with the
+arrays of the same keys containing the data for the corresponding
+intervals.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.TemporalDataChannelBase.default_data_value">
+<span class="sig-name descname"><span class="pre">default_data_value</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#glitter2.storage.data_file.TemporalDataChannelBase.default_data_value" title="Permalink to this definition"></a></dt>
+<dd><p>The per-channel type default data used before the user modifies
+the data. E.g. for an event channel it may default to False.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.TemporalDataChannelBase.get_timestamp_value">
+<span class="sig-name descname"><span class="pre">get_timestamp_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#glitter2.storage.data_file.TemporalDataChannelBase.get_timestamp_value" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the value of the data array for the given timestamp <code class="docutils literal notranslate"><span class="pre">t</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.TemporalDataChannelBase.get_timestamps_modified_state">
+<span class="sig-name descname"><span class="pre">get_timestamps_modified_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#glitter2.storage.data_file.TemporalDataChannelBase.get_timestamps_modified_state" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a dict whose keys are timestamps and values indicate whether
+the data for the timestamp has been changed from the
+<a class="reference internal" href="#glitter2.storage.data_file.TemporalDataChannelBase.default_data_value" title="glitter2.storage.data_file.TemporalDataChannelBase.default_data_value"><code class="xref py py-attr docutils literal notranslate"><span class="pre">default_data_value</span></code></a> (True means it’s not the default).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.TemporalDataChannelBase.merge_arrays">
+<span class="sig-name descname"><span class="pre">merge_arrays</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arr_num1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arr_num2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.TemporalDataChannelBase.merge_arrays" title="Permalink to this definition"></a></dt>
+<dd><p>Merges the data arrays into a single array.</p>
+<p>The same as <code class="xref py py-attr docutils literal notranslate"><span class="pre">DatFile._merge_timestamp_channels_arrays</span></code>, but for
+data arrays.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.TemporalDataChannelBase.pad_channel_to_num_frames">
+<span class="sig-name descname"><span class="pre">pad_channel_to_num_frames</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">array_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.TemporalDataChannelBase.pad_channel_to_num_frames" title="Permalink to this definition"></a></dt>
+<dd><p>Pads the channel data arrays to the given size, if it’s smaller.</p>
+<p>See <a class="reference internal" href="#glitter2.storage.data_file.DataFile.pad_channel_to_num_frames_interval" title="glitter2.storage.data_file.DataFile.pad_channel_to_num_frames_interval"><code class="xref py py-attr docutils literal notranslate"><span class="pre">DataFile.pad_channel_to_num_frames_interval</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.TemporalDataChannelBase.read_initial_data">
+<span class="sig-name descname"><span class="pre">read_initial_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reopen</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.TemporalDataChannelBase.read_initial_data" title="Permalink to this definition"></a></dt>
+<dd><p>Reads the channel data previously written to the file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.TemporalDataChannelBase.reopen_file">
+<span class="sig-name descname"><span class="pre">reopen_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">nixio.block.Block</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.TemporalDataChannelBase.reopen_file" title="Permalink to this definition"></a></dt>
+<dd><p>Repopulates the data links from the provided block.</p>
+<p>Used after re-opening an unchanged nix file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.TemporalDataChannelBase.reset_data_to_default">
+<span class="sig-name descname"><span class="pre">reset_data_to_default</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.TemporalDataChannelBase.reset_data_to_default" title="Permalink to this definition"></a></dt>
+<dd><p>Resets all the data array values to the <a class="reference internal" href="#glitter2.storage.data_file.TemporalDataChannelBase.default_data_value" title="glitter2.storage.data_file.TemporalDataChannelBase.default_data_value"><code class="xref py py-attr docutils literal notranslate"><span class="pre">default_data_value</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.TemporalDataChannelBase.set_channel_data">
+<span class="sig-name descname"><span class="pre">set_channel_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.TemporalDataChannelBase.set_channel_data" title="Permalink to this definition"></a></dt>
+<dd><p>Changes the values of the data array (optionally masked).</p>
+<p>Must have <code class="xref py py-attr docutils literal notranslate"><span class="pre">saw_all_timestamps</span></code> before this can be used.</p>
+<p>Number of items in data must be the same as the number of true
+elements in mask, if provided.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.TemporalDataChannelBase.set_timestamp_value">
+<span class="sig-name descname"><span class="pre">set_timestamp_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.TemporalDataChannelBase.set_timestamp_value" title="Permalink to this definition"></a></dt>
+<dd><p>Changes the value of the data array for the given timestamp <code class="docutils literal notranslate"><span class="pre">t</span></code>
+to <code class="docutils literal notranslate"><span class="pre">value</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.ZoneChannelData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">glitter2.storage.data_file.</span></span><span class="sig-name descname"><span class="pre">ZoneChannelData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">nixio.block.Block</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#glitter2.storage.data_file.DataFile" title="glitter2.storage.data_file.DataFile"><span class="pre">glitter2.storage.data_file.DataFile</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.ZoneChannelData" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#glitter2.storage.data_file.DataChannelBase" title="glitter2.storage.data_file.DataChannelBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">glitter2.storage.data_file.DataChannelBase</span></code></a></p>
+<p>Channel that stores a static zone.</p>
+<p>Unlike the event and position channels, this contains no data and only
+metadata. The metadata stores the shape of the drawn zone as e.g.
+a circle, a polygon, an ellipse, etc.</p>
+<p>Metadata: The required metadata is the name key (unique across all
+channels) and the shape_config key data. The shape data is the state of a
+<a class="reference external" href="https://kivy-garden.github.io/painter/flower.html#kivy_garden.painter.PaintShape" title="(in Painter)"><code class="xref py py-class docutils literal notranslate"><span class="pre">PaintShape</span></code></a> using
+<a class="reference external" href="https://kivy-garden.github.io/painter/flower.html#kivy_garden.painter.PaintShape.get_state" title="(in Painter)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_state()</span></code></a>.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.ZoneChannelData.create_initial_data">
+<span class="sig-name descname"><span class="pre">create_initial_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.ZoneChannelData.create_initial_data" title="Permalink to this definition"></a></dt>
+<dd><p>Creates whatever initial data structures are needed for storing the
+channel data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.ZoneChannelData.read_initial_data">
+<span class="sig-name descname"><span class="pre">read_initial_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reopen</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.ZoneChannelData.read_initial_data" title="Permalink to this definition"></a></dt>
+<dd><p>Reads the channel data previously written to the file.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="glitter2.storage.data_file.read_nix_prop">
+<span class="sig-prename descclassname"><span class="pre">glitter2.storage.data_file.</span></span><span class="sig-name descname"><span class="pre">read_nix_prop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prop</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#glitter2.storage.data_file.read_nix_prop" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a nox property value across different nix versions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>prop</strong> – the nix Property.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The value stored in the property.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="storage.html" class="btn btn-neutral float-left" title="Storage Controller" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="imports/api.html" class="btn btn-neutral float-right" title="&lt;no title&gt;" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Matthew Einhorn.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Glitter2 User Guide &mdash; Glitter2  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation" href="installation.html" />
+    <link rel="prev" title="Welcome to Glitter2’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Glitter2
+            <img src="_static/glitter2_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Glitter2 User Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#video-guide">Video guide</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#data-file-management">Data file management</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#player-controls">Player controls</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#event-channels">Event channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#position-channels">Position channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#zone-channels">Zone channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#spatial-calibration">Spatial calibration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#exporting-raw-data">Exporting raw data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#exporting-statistics">Exporting statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#importing-overview">Importing overview</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#importing-csv-files">Importing - CSV files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#importing-legacy-glitter-files">Importing - legacy Glitter files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#importing-cleversys-txt-files">Importing - CleverSys TXT files</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="app.html">Glitter2 App</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/api.html">The Glitter2 API</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Glitter2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Glitter2 User Guide</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/guide.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="glitter2-user-guide">
+<h1>Glitter2 User Guide<a class="headerlink" href="#glitter2-user-guide" title="Permalink to this headline"></a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline"></a></h2>
+<p>Glitter2 is an application for coding and analysing behavioral data from videos.</p>
+<p>It supports coding events with event channels, spatial tracking with position channels,
+and static zones with zone channels.</p>
+<p>Coded data is stored in H5 files created by default alongside the video files.
+The complete raw coded data can then be batch exported to excel files. Additionally,
+summary statistics can be computed from the coded data and batch exported to a single
+excel file that can be loaded in any statistics program.</p>
+<p>Externally coded data (such as from automatic tracking tools) can also be batch imported
+into Glitter2 for correction or analysis.</p>
+</section>
+<section id="video-guide">
+<h2>Video guide<a class="headerlink" href="#video-guide" title="Permalink to this headline"></a></h2>
+<p>Following is a video guide for each of the Glitter2 components. Or you can watch the complete
+<a class="reference external" href="https://www.youtube.com/playlist?list=PLbAoVl3hzvSuQecPq8zr14lkqOfz8DdSW">playlist</a>.</p>
+<p>Please see the <a class="reference internal" href="installation.html#install-glitter2"><span class="std std-ref">Installation</span></a> section for instructions on how to download and install Glitter2.</p>
+<p>Example video, coded H5 file, and python scripts can be found in the repository
+<a class="reference external" href="https://github.com/matham/glitter2/tree/master/examples">examples</a> directory.
+Example exported raw and summary files as well as files Glitter2 can import
+(csv, cleversys, H5 files) can be found in the
+<a class="reference external" href="https://github.com/matham/glitter2/tree/master/examples/data">data</a> sub-directory.</p>
+<section id="data-file-management">
+<h3>Data file management<a class="headerlink" href="#data-file-management" title="Permalink to this headline"></a></h3>
+<p>Glitter2 stores the coded video data in H5 files. This video shows how to load and save the video and data files.</p>
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/hY6aEq7DTs8" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></section>
+<section id="player-controls">
+<h3>Player controls<a class="headerlink" href="#player-controls" title="Permalink to this headline"></a></h3>
+<p>This video shows that various video controls in Glitter2.</p>
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/DDeKbf3TXe4" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></section>
+<section id="event-channels">
+<h3>Event channels<a class="headerlink" href="#event-channels" title="Permalink to this headline"></a></h3>
+<p>Event channels code behavioral events that occur in the video. This shows how to code and manage event channels.</p>
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/24UqRtZm8yg" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></section>
+<section id="position-channels">
+<h3>Position channels<a class="headerlink" href="#position-channels" title="Permalink to this headline"></a></h3>
+<p>Position channels track the position of objects within the video. This shows how to track and manage position channels.</p>
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/ecapv9Huig0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></section>
+<section id="zone-channels">
+<h3>Zone channels<a class="headerlink" href="#zone-channels" title="Permalink to this headline"></a></h3>
+<p>Zone channels define static regions in the video used for analysis. This shows how to draw and manage zone channels.</p>
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/KeGklLKoA9E" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></section>
+<section id="spatial-calibration">
+<h3>Spatial calibration<a class="headerlink" href="#spatial-calibration" title="Permalink to this headline"></a></h3>
+<p>Calibration is used to relate the video pixel dimensions to the real-world dimensions in meters.</p>
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/BcPOnE5BX8U" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></section>
+<section id="exporting-raw-data">
+<h3>Exporting raw data<a class="headerlink" href="#exporting-raw-data" title="Permalink to this headline"></a></h3>
+<p>Glitter2 can export the raw coded data and metadata in the H5 data files to excel files.</p>
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/lwe9boLTqQw" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></section>
+<section id="exporting-statistics">
+<h3>Exporting statistics<a class="headerlink" href="#exporting-statistics" title="Permalink to this headline"></a></h3>
+<p>Glitter2 can compute summary statistics from the coded data and then export them to a single excel file for analysis.</p>
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/WbXVfUIrRek" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></section>
+<section id="importing-overview">
+<h3>Importing overview<a class="headerlink" href="#importing-overview" title="Permalink to this headline"></a></h3>
+<p>Glitter2 can import externally coded data and create Glitter2 H5 files from them that can be opened in Glitter2.
+This provides a general overview of the process.</p>
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/ojw6KCx2Wl8" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe><section id="importing-csv-files">
+<h4>Importing - CSV files<a class="headerlink" href="#importing-csv-files" title="Permalink to this headline"></a></h4>
+<p>Glitter2 can import CSV files that contain event, position, or zone channels that has been coded externally.</p>
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/moe_uqa5AUM" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></section>
+<section id="importing-legacy-glitter-files">
+<h4>Importing - legacy Glitter files<a class="headerlink" href="#importing-legacy-glitter-files" title="Permalink to this headline"></a></h4>
+<p>Glitter2 can upgrade H5 files that have been created by older versions of Glitter and which cannot be opened
+with the current version of Glitter2.</p>
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/OPELCE-6rg4" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></section>
+<section id="importing-cleversys-txt-files">
+<h4>Importing - CleverSys TXT files<a class="headerlink" href="#importing-cleversys-txt-files" title="Permalink to this headline"></a></h4>
+<p>Glitter2 can import TXT files exported by the CleverSys tracking program. These files contain tracked position
+channels as well as, optionally, static zones.</p>
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/Ad6PxGLbXcY" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></section>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to Glitter2’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="installation.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Matthew Einhorn.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

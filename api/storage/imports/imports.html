@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data import &mdash; Glitter2  documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Legacy Glitter file importer" href="legacy.html" />
+    <link rel="prev" title="&lt;no title&gt;" href="api.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../../index.html" class="icon icon-home"> Glitter2
+            <img src="../../../_static/glitter2_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../guide.html">Glitter2 User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../app.html">Glitter2 App</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../api.html">The Glitter2 API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../glitter2.html">Glitter2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../analysis/analysis.html">Data Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../analysis/export.html">Data Export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../channel/channel.html">Data Channels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../channel/widgets.html">Channel widgets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../storage.html">Storage Controller</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../data_file.html">Data file</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Data import</a></li>
+<li class="toctree-l2"><a class="reference internal" href="legacy.html">Legacy Glitter file importer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="clever_sys.html">CleverSys Import</a></li>
+<li class="toctree-l2"><a class="reference internal" href="csv.html">CSV import</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../player/player.html">Video Player</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../player/widgets.html">Video Player widgets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../utils.html">Utilities</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Glitter2</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../api.html">The Glitter2 API</a> &raquo;</li>
+          <li><a href="../api.html">&lt;no title&gt;</a> &raquo;</li>
+          <li><a href="api.html">&lt;no title&gt;</a> &raquo;</li>
+      <li>Data import</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/api/storage/imports/imports.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <span class="target" id="module-glitter2.storage.imports"></span><section id="data-import">
+<h1>Data import<a class="headerlink" href="#data-import" title="Permalink to this headline"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="glitter2.storage.imports.map_frame_rate_to_timestamps">
+<span class="sig-prename descclassname"><span class="pre">glitter2.storage.imports.</span></span><span class="sig-name descname"><span class="pre">map_frame_rate_to_timestamps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timestamps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_frame</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#glitter2.storage.imports.map_frame_rate_to_timestamps" title="Permalink to this definition"></a></dt>
+<dd><p>Maps video frames given as integer multiples of a frame rate to a
+monotonic list of timestamps.</p>
+<p>E.g. given a frame rate of <code class="docutils literal notranslate"><span class="pre">10</span></code>, a start frame number of <code class="docutils literal notranslate"><span class="pre">5</span></code> and a end
+frame number of <code class="docutils literal notranslate"><span class="pre">10</span></code>, and a list of timestamps of
+<code class="docutils literal notranslate"><span class="pre">[.1,</span> <span class="pre">.2,</span> <span class="pre">.3,</span> <span class="pre">.4,</span> <span class="pre">.5,</span> <span class="pre">.58,</span> <span class="pre">.6,</span> <span class="pre">.66,</span> <span class="pre">.7,</span> <span class="pre">.9,</span> <span class="pre">1.0,</span> <span class="pre">1.1]</span></code>, it returns:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">map_frame_rate_to_timestamps</span><span class="p">(</span>            <span class="p">[</span><span class="mf">.1</span><span class="p">,</span> <span class="mf">.2</span><span class="p">,</span> <span class="mf">.3</span><span class="p">,</span> <span class="mf">.4</span><span class="p">,</span> <span class="mf">.5</span><span class="p">,</span> <span class="mf">.58</span><span class="p">,</span> <span class="mf">.6</span><span class="p">,</span> <span class="mf">.66</span><span class="p">,</span> <span class="mf">.7</span><span class="p">,</span> <span class="mf">.74</span><span class="p">,</span> <span class="mf">.9</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">],</span>             <span class="mf">10.</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="go">{5: [0.5],</span>
+<span class="go"> 6: [0.58, 0.6],</span>
+<span class="go"> 7: [0.66, 0.7, 0.74],</span>
+<span class="go"> 9: [0.9],</span>
+<span class="go"> 10: [1.0]</span>
+<span class="go">}</span>
+</pre></div>
+</div>
+<p>Target timestamps outside the first/last frame time
+(with some fuzzy factor) are not assigned to any frames.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>timestamps</strong> – The sorted list of timestamps to be mapped to. It is
+assumed to be continuous with no gaps (i.e. all value between
+start and end of timestamps can be coded).</p></li>
+<li><p><strong>frame_rate</strong> – The frame rate used to convert the frame numbers into
+estimated timestamps.</p></li>
+<li><p><strong>min_frame</strong> – The frame number of the start frame (as integer multiple
+of the frame rate).</p></li>
+<li><p><strong>max_frame</strong> – The frame number of the end frame (as integer multiple
+of the frame rate).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The mapping.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="glitter2.storage.imports.map_timestamps_to_timestamps">
+<span class="sig-prename descclassname"><span class="pre">glitter2.storage.imports.</span></span><span class="sig-name descname"><span class="pre">map_timestamps_to_timestamps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src_timestamps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_timestamps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#glitter2.storage.imports.map_timestamps_to_timestamps" title="Permalink to this definition"></a></dt>
+<dd><p>Maps a continuous list of timestamps into another list of timestamps so
+that given an event occurring in the source timestamps, we can translate
+that event’s occurrence into target timestamps.</p>
+<p>E.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">target_timestamps</span> <span class="o">=</span>              <span class="p">[</span><span class="mf">.1</span><span class="p">,</span> <span class="mf">.2</span><span class="p">,</span> <span class="mf">.3</span><span class="p">,</span> <span class="mf">.4</span><span class="p">,</span> <span class="mf">.5</span><span class="p">,</span> <span class="mf">.58</span><span class="p">,</span> <span class="mf">.6</span><span class="p">,</span> <span class="mf">.66</span><span class="p">,</span> <span class="mf">.7</span><span class="p">,</span> <span class="mf">.9</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.1</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">source_timestamps</span> <span class="o">=</span> <span class="p">[</span><span class="mf">.1</span><span class="p">,</span> <span class="mf">.2</span><span class="p">,</span> <span class="mf">.4</span><span class="p">,</span> <span class="mf">.5</span><span class="p">,</span> <span class="mf">.7</span><span class="p">,</span> <span class="mf">.8</span><span class="p">,</span> <span class="mf">.96</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">map_timestamps_to_timestamps</span><span class="p">(</span><span class="n">source_timestamps</span><span class="p">,</span> <span class="n">target_timestamps</span><span class="p">)</span>
+<span class="go">{0.1: [0.1],</span>
+<span class="go"> 0.2: [0.2, 0.3],</span>
+<span class="go"> 0.4: [0.4],</span>
+<span class="go"> 0.5: [0.5, 0.58],</span>
+<span class="go"> 0.7: [0.6, 0.66, 0.7],</span>
+<span class="go"> 0.96: [0.9, 1.0]</span>
+<span class="go">}</span>
+</pre></div>
+</div>
+<p>Target timestamps outside the first/last timestamp of the source timestamps
+(with some fuzzy factor) are not assigned to any source timestamps.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>src_timestamps</strong> – The sorted list of timestamps to map from. It is
+assumed to be continuous with no gaps (i.e. all value between
+start and end of timestamps can be coded).</p></li>
+<li><p><strong>target_timestamps</strong> – The sorted list of timestamps to be mapped to.
+It is assumed to be continuous with no gaps (i.e. all value between
+start and end of timestamps can be coded).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>The mapping.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="api.html" class="btn btn-neutral float-left" title="&lt;no title&gt;" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="legacy.html" class="btn btn-neutral float-right" title="Legacy Glitter file importer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2020, Matthew Einhorn.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
