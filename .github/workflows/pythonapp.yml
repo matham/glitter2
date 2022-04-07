@@ -133,13 +133,13 @@ jobs:
         git clone https://github.com/kivy/kivy-sdk-packager.git
         cd kivy-sdk-packager/osx
 
-        curl -O -L https://github.com/kivy/kivy/releases/download/2.1.0/Kivy.dmg
-        hdiutil attach Kivy.dmg -mountroot .
-
-        cp -R Kivy/Kivy.app Glitter2.app
+        source ../ci/osx_ci.sh
+        install_platypus
+        ./create-osx-bundle.sh -k "2.1.0" -n Glitter2 -v "0.1.1.dev5" -a "Matthew Einhorn, CPL Lab" -o \
+            "org.cpl.glitter2" -i "../../glitter2/doc/source/images/glitter2_icon.png"
     - name: Install Glitter pip dependencies
       run: |
-        pushd ../kivy-sdk-packager/osx/Glitter2.app/Contents/Resources/venv/bin
+        pushd ../kivy-sdk-packager/osx/build/Glitter2.app/Contents/Resources/venv/bin
         source activate
         popd
 
@@ -153,29 +153,48 @@ jobs:
           curl -sLO https://github.com/matham/glitter2/releases/download/v0.1.0/numexpr-2.8.2.dev1-cp39-cp39-macosx_11_0_arm64.whl
           popd
 
-          pip install wheels/*.whl --platform macosx_11_0_arm64 --only-binary=:all: --find-links wheels --target ../kivy-sdk-packager/osx/Glitter2.app/Contents/Resources/venv/lib/python*/site-packages
-          mv ../kivy-sdk-packager/osx/Glitter2.app/Contents/Resources/venv/lib/python*/site-packages/bin/* ../kivy-sdk-packager/osx/Glitter2.app/Contents/Resources/venv/bin
+          pip install wheels/*.whl --platform macosx_11_0_arm64 --only-binary=:all: --find-links wheels --target ../kivy-sdk-packager/osx/build/Glitter2.app/Contents/Resources/venv/lib/python*/site-packages
+          mv ../kivy-sdk-packager/osx/build/Glitter2.app/Contents/Resources/venv/lib/python*/site-packages/bin/* ../kivy-sdk-packager/osx/build/Glitter2.app/Contents/Resources/venv/bin
         else
-          python -m pip install https://github.com/kivy/pyobjus/archive/refs/heads/master.zip
           python -m pip install .
         fi
     - name: Finalize Glitter bundle
       run: |
         cd ../kivy-sdk-packager/osx
 
-        pushd Glitter2.app/Contents/Resources/
+        pushd build/Glitter2.app/Contents/Resources/
         ln -s ./venv/bin/glitter2 yourapp
         popd
 
-        ./fix-bundle-metadata.sh Glitter2.app -n Glitter2 -v "0.1.1.dev0" -a "Matthew Einhorn, CPL Lab" -o \
-            "org.cpl.glitter2" -i "../../glitter2/doc/source/images/glitter2_icon.png"
-        ./cleanup-app.sh Glitter2.app
+        ./cleanup-app.sh build/Glitter2.app
+        ./relocate.sh build/Glitter2.app
+    - name: Codesign executable
+      env:
+        MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+        MAC_DEV_ID: ${{ secrets.MAC_DEV_ID }}
+        MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+        MACOS_KEYCHAIN_PWD: ${{ secrets.MACOS_KEYCHAIN_PWD }}
+      run: |
+        pushd ../kivy-sdk-packager/osx
 
-        ./relocate.sh Glitter2.app
+        echo "$MACOS_CERTIFICATE" | base64 --decode --output certificate.p12
+        security create-keychain -p "$MACOS_KEYCHAIN_PWD" build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p "$MACOS_KEYCHAIN_PWD" build.keychain
+        security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
+        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_KEYCHAIN_PWD" build.keychain
+        /usr/bin/codesign --force --deep -s "$MAC_DEV_ID" build/Glitter2.app -v
+    - name: Clean up keychain
+      if: ${{ always() }}
+      run: |
+        pushd ../kivy-sdk-packager/osx
+
+        security delete-keychain build.keychain
+        rm certificate.p12
     - name: Create dmg
       run: |
         pushd ../kivy-sdk-packager/osx
-        ./create-osx-dmg.sh Glitter2.app Glitter2
+        ./create-osx-dmg.sh build/Glitter2.app Glitter2
         popd
 
         mkdir osx_app
